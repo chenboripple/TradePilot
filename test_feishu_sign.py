@@ -10,8 +10,8 @@ import time
 import httpx
 
 # 配置
-WEBHOOK = "https://open.feishu.cn/open-apis/bot/v2/hook/859cba37-0ce9-4381-90d4-dc15140af209"
-SECRET = "aWsbZogAYvx4dSMBAePj4d"
+WEBHOOK = "xxx"
+SECRET = "xx"
 
 print("="*70)
 print("📱 飞书签名测试")

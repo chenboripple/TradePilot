@@ -327,7 +327,7 @@ class TushareDataLoader:
 if __name__ == "__main__":
     import time
     
-    TOKEN = "3900cd9a9e8ec10fc1249e98ea6d7a7eb88c8b9a2131e268f20efec4"
+    TOKEN = "your_tushare_token_here"
     loader = TushareDataLoader(TOKEN)
     
     # 获取科华生物日线数据

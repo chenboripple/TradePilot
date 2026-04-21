@@ -26,7 +26,7 @@ from ripple_tradePilot.data.tushare_loader import TushareDataLoader
 
 # 从环境变量或配置中获取Tushare Token
 # 项目中已配置，这里直接使用示例中的token
-TOKEN = "3900cd9a9e8ec10fc1249e98ea6d7a7eb88c8b9a2131e268f20efec4"
+TOKEN = "your_tushare_token_here"
 
 # 重点关注行业关键词
 FOCUS_INDUSTRIES = {

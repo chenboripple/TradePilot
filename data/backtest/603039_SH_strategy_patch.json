@@ -1,0 +1,15 @@
+{
+  "symbol": "603039.SH",
+  "current_profile_name": "breakout_603039",
+  "suggested_profile_name": "603039_dt_3_0_5_0_5",
+  "suggested_profile": {
+    "kind": "dual_thrust",
+    "dual_thrust": {
+      "lookback": 3,
+      "k1": 0.5,
+      "k2": 0.5
+    }
+  },
+  "switch_symbol_to_profile": "603039_dt_3_0_5_0_5",
+  "rollback_profile_name_hint": "breakout_603039_v1"
+}

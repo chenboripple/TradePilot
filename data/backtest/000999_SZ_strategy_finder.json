@@ -1,0 +1,195 @@
+{
+  "symbol": "000999.SZ",
+  "name": "华润三九",
+  "generated_at": "2026-03-23 22:05:13",
+  "weights": {
+    "3m": 0.45,
+    "6m": 0.3,
+    "1m": 0.2,
+    "1y": 0.05
+  },
+  "current_profile_name": "combo_000999",
+  "suggested_profile_name": "000999_combo_ma5_15_rsi16_35_65_v1",
+  "top": [
+    {
+      "name": "COMBO_MA5_15_RSI16_35_65_V1",
+      "profile_spec": {
+        "kind": "combo_vote",
+        "vote_threshold": 1,
+        "components": [
+          {
+            "name": "ma",
+            "kind": "ma",
+            "ma": {
+              "fast": 5,
+              "slow": 15
+            }
+          },
+          {
+            "name": "rsi",
+            "kind": "rsi",
+            "rsi": {
+              "period": 16,
+              "oversold": 35,
+              "overbought": 65
+            }
+          }
+        ]
+      },
+      "periods": {
+        "1y": {
+          "total_return": 13.315082409200144,
+          "max_drawdown": 8.997432187225217,
+          "total_trades": 8,
+          "win_rate": 75.0,
+          "sharpe": 1.2699985356100838,
+          "annual_return": 13.354002889517247,
+          "final_capital": 113315.08240920014
+        },
+        "6m": {
+          "total_return": 10.55132906620005,
+          "max_drawdown": 3.0483700800717726,
+          "total_trades": 4,
+          "win_rate": 75.0,
+          "sharpe": 1.8475000989385422,
+          "annual_return": 21.008790056377723,
+          "final_capital": 110551.32906620005
+        },
+        "3m": {
+          "total_return": 6.25989262860005,
+          "max_drawdown": 2.932615284197064,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 2.3177036851836643,
+          "annual_return": 25.668074049295253,
+          "final_capital": 106259.89262860005
+        },
+        "1m": {
+          "total_return": 0.9082243456000142,
+          "max_drawdown": 0.12135750616679844,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 4.424009338484783,
+          "annual_return": 9.072603920839706,
+          "final_capital": 100908.22434560001
+        }
+      },
+      "score": 9.868809899836082
+    },
+    {
+      "name": "COMBO_RSI16_35_65_BB26_2.0_V1",
+      "profile_spec": {
+        "kind": "combo_vote",
+        "vote_threshold": 1,
+        "components": [
+          {
+            "name": "rsi",
+            "kind": "rsi",
+            "rsi": {
+              "period": 16,
+              "oversold": 35,
+              "overbought": 65
+            }
+          },
+          {
+            "name": "bb",
+            "kind": "bollinger",
+            "bb": {
+              "period": 26,
+              "std_dev": 2.0
+            }
+          }
+        ]
+      },
+      "periods": {
+        "1y": {
+          "total_return": 6.438493405500092,
+          "max_drawdown": 10.833669100394735,
+          "total_trades": 5,
+          "win_rate": 60.0,
+          "sharpe": 0.638464438324129,
+          "annual_return": 6.456740721952348,
+          "final_capital": 106438.49340550009
+        },
+        "6m": {
+          "total_return": 7.324568947800013,
+          "max_drawdown": 2.038400991846227,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 1.7788429771323553,
+          "annual_return": 14.382706562430059,
+          "final_capital": 107324.56894780001
+        },
+        "3m": {
+          "total_return": 5.363069283000004,
+          "max_drawdown": 1.0954768336203335,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 2.2969337555615295,
+          "annual_return": 21.723358505414893,
+          "final_capital": 105363.069283
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": 8.236369993981707
+    },
+    {
+      "name": "RSI_16_35_65",
+      "profile_spec": {
+        "kind": "rsi",
+        "rsi": {
+          "period": 16,
+          "oversold": 35,
+          "overbought": 65
+        }
+      },
+      "periods": {
+        "1y": {
+          "total_return": 6.841039621000106,
+          "max_drawdown": 10.773589710293745,
+          "total_trades": 5,
+          "win_rate": 60.0,
+          "sharpe": 0.6621120886903586,
+          "annual_return": 6.860464128575905,
+          "final_capital": 106841.0396210001
+        },
+        "6m": {
+          "total_return": 7.052922466200035,
+          "max_drawdown": 2.910972358980551,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 1.5943712225235722,
+          "annual_return": 13.832961439469194,
+          "final_capital": 107052.92246620003
+        },
+        "3m": {
+          "total_return": 5.099412403800016,
+          "max_drawdown": 2.8779937498935313,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 1.9642970916236033,
+          "annual_return": 20.5811534924063,
+          "final_capital": 105099.41240380002
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": 7.226751977561997
+    }
+  ]
+}

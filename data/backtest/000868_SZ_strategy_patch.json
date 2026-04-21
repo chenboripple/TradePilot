@@ -1,0 +1,14 @@
+{
+  "symbol": "000868.SZ",
+  "current_profile_name": "grid_combo_000868",
+  "suggested_profile_name": "000868_ma_10_30",
+  "suggested_profile": {
+    "kind": "ma",
+    "ma": {
+      "fast": 10,
+      "slow": 30
+    }
+  },
+  "switch_symbol_to_profile": "000868_ma_10_30",
+  "rollback_profile_name_hint": "grid_combo_000868_v1"
+}

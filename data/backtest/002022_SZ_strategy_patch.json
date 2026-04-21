@@ -1,0 +1,15 @@
+{
+  "symbol": "002022.SZ",
+  "current_profile_name": "grid_combo_002022",
+  "suggested_profile_name": "002022_rsi_6_20_60",
+  "suggested_profile": {
+    "kind": "rsi",
+    "rsi": {
+      "period": 6,
+      "oversold": 20,
+      "overbought": 60
+    }
+  },
+  "switch_symbol_to_profile": "002022_rsi_6_20_60",
+  "rollback_profile_name_hint": "grid_combo_002022_v1"
+}

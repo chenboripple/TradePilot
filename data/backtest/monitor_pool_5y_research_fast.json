@@ -1,0 +1,510 @@
+[
+  {
+    "code": "002022.SZ",
+    "name": "科华生物",
+    "current": {
+      "meta": {
+        "kind": "grid_combo",
+        "ma": [
+          5,
+          20
+        ],
+        "rsi": [
+          6,
+          20,
+          60
+        ],
+        "bb": [
+          20,
+          2.0
+        ],
+        "vote": 2
+      },
+      "result": {
+        "total_return": -43.17510499999998,
+        "max_drawdown": 60.90180297477158,
+        "total_trades": 1,
+        "win_rate": 100.0,
+        "sharpe": -0.18733981658772073
+      },
+      "score": -82.65288586780153
+    },
+    "best": {
+      "meta": {
+        "kind": "macd",
+        "fast": 8,
+        "slow": 21,
+        "signal": 6
+      },
+      "result": {
+        "total_return": 36.63680450000037,
+        "max_drawdown": 32.01850911852366,
+        "total_trades": 58,
+        "win_rate": 43.103448275862064,
+        "sharpe": 0.36752985058982807
+      },
+      "score": 17.26334828183532
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 8,
+          "slow": 21,
+          "signal": 6
+        },
+        "result": {
+          "total_return": 36.63680450000037,
+          "max_drawdown": 32.01850911852366,
+          "total_trades": 58,
+          "win_rate": 43.103448275862064,
+          "sharpe": 0.36752985058982807
+        },
+        "score": 17.26334828183532
+      },
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 10,
+          "slow": 24,
+          "signal": 8
+        },
+        "result": {
+          "total_return": 22.079483400000218,
+          "max_drawdown": 33.28564973109631,
+          "total_trades": 44,
+          "win_rate": 45.45454545454545,
+          "sharpe": 0.282958406047126
+        },
+        "score": 1.522885591578059
+      },
+      {
+        "meta": {
+          "kind": "breakout_rsi",
+          "window": 10,
+          "rsi_period": 6,
+          "buy_rsi": 55,
+          "sell_rsi": 45
+        },
+        "result": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0
+        },
+        "score": -10.0
+      }
+    ]
+  },
+  {
+    "code": "600309.SH",
+    "name": "万华化学",
+    "current": {
+      "meta": {
+        "kind": "grid_combo",
+        "ma": [
+          10,
+          34
+        ],
+        "rsi": [
+          16,
+          35,
+          65
+        ],
+        "bb": [
+          26,
+          1.8
+        ],
+        "vote": 2
+      },
+      "result": {
+        "total_return": 15.59918430000002,
+        "max_drawdown": 14.715756917612769,
+        "total_trades": 2,
+        "win_rate": 100.0,
+        "sharpe": 0.3270557170386468
+      },
+      "score": 12.405008734625593
+    },
+    "best": {
+      "meta": {
+        "kind": "grid_combo",
+        "ma": [
+          10,
+          34
+        ],
+        "rsi": [
+          16,
+          35,
+          65
+        ],
+        "bb": [
+          26,
+          1.8
+        ],
+        "vote": 2
+      },
+      "result": {
+        "total_return": 15.59918430000002,
+        "max_drawdown": 14.715756917612769,
+        "total_trades": 2,
+        "win_rate": 100.0,
+        "sharpe": 0.3270557170386468
+      },
+      "score": 12.405008734625593
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "grid_combo",
+          "ma": [
+            10,
+            34
+          ],
+          "rsi": [
+            16,
+            35,
+            65
+          ],
+          "bb": [
+            26,
+            1.8
+          ],
+          "vote": 2
+        },
+        "result": {
+          "total_return": 15.59918430000002,
+          "max_drawdown": 14.715756917612769,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 0.3270557170386468
+        },
+        "score": 12.405008734625593
+      },
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 20,
+          "entry_std": 2.0,
+          "exit_std": 0.5
+        },
+        "result": {
+          "total_return": 12.357694500000157,
+          "max_drawdown": 34.96424087592903,
+          "total_trades": 20,
+          "win_rate": 60.0,
+          "sharpe": 0.22650973605502794
+        },
+        "score": 0.511698654717879
+      },
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 20,
+          "entry_std": 2.5,
+          "exit_std": 0.5
+        },
+        "result": {
+          "total_return": -2.215294999999969,
+          "max_drawdown": 14.074476195679594,
+          "total_trades": 6,
+          "win_rate": 33.33333333333333,
+          "sharpe": -0.010862501726657264
+        },
+        "score": -2.7142932260410113
+      }
+    ]
+  },
+  {
+    "code": "603039.SH",
+    "name": "泛海微",
+    "current": {
+      "meta": {
+        "kind": "macd",
+        "fast": 12,
+        "slow": 26,
+        "signal": 9
+      },
+      "result": {
+        "total_return": 133.9094137000003,
+        "max_drawdown": 45.566512390150805,
+        "total_trades": 39,
+        "win_rate": 46.15384615384615,
+        "sharpe": 0.6741471568578674
+      },
+      "score": 107.94024205019916
+    },
+    "best": {
+      "meta": {
+        "kind": "macd",
+        "fast": 12,
+        "slow": 26,
+        "signal": 9
+      },
+      "result": {
+        "total_return": 133.9094137000003,
+        "max_drawdown": 45.566512390150805,
+        "total_trades": 39,
+        "win_rate": 46.15384615384615,
+        "sharpe": 0.6741471568578674
+      },
+      "score": 107.94024205019916
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 12,
+          "slow": 26,
+          "signal": 9
+        },
+        "result": {
+          "total_return": 133.9094137000003,
+          "max_drawdown": 45.566512390150805,
+          "total_trades": 39,
+          "win_rate": 46.15384615384615,
+          "sharpe": 0.6741471568578674
+        },
+        "score": 107.94024205019916
+      },
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 10,
+          "slow": 24,
+          "signal": 8
+        },
+        "result": {
+          "total_return": 126.07395050000045,
+          "max_drawdown": 51.98276782857333,
+          "total_trades": 46,
+          "win_rate": 39.130434782608695,
+          "sharpe": 0.6580172587455795
+        },
+        "score": 96.17437609658435
+      },
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 8,
+          "slow": 21,
+          "signal": 6
+        },
+        "result": {
+          "total_return": 40.462636500000315,
+          "max_drawdown": 55.82384947291884,
+          "total_trades": 61,
+          "win_rate": 31.147540983606557,
+          "sharpe": 0.37074743104967656
+        },
+        "score": 6.822063971497393
+      }
+    ]
+  },
+  {
+    "code": "000868.SZ",
+    "name": "安凯客车",
+    "current": {
+      "meta": {
+        "kind": "grid_combo",
+        "ma": [
+          5,
+          20
+        ],
+        "rsi": [
+          6,
+          25,
+          65
+        ],
+        "bb": [
+          20,
+          1.8
+        ],
+        "vote": 2
+      },
+      "result": {
+        "total_return": 10.676072000000014,
+        "max_drawdown": 35.9323536,
+        "total_trades": 1,
+        "win_rate": 100.0,
+        "sharpe": 0.21599280893666722
+      },
+      "score": -11.803376115316647
+    },
+    "best": {
+      "meta": {
+        "kind": "mean_reversion",
+        "lookback": 30,
+        "entry_std": 2.0,
+        "exit_std": 1.0
+      },
+      "result": {
+        "total_return": 113.3603404000001,
+        "max_drawdown": 45.80664660435994,
+        "total_trades": 14,
+        "win_rate": 71.42857142857143,
+        "sharpe": 0.8000359726982914
+      },
+      "score": 97.87653230087558
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 30,
+          "entry_std": 2.0,
+          "exit_std": 1.0
+        },
+        "result": {
+          "total_return": 113.3603404000001,
+          "max_drawdown": 45.80664660435994,
+          "total_trades": 14,
+          "win_rate": 71.42857142857143,
+          "sharpe": 0.8000359726982914
+        },
+        "score": 97.87653230087558
+      },
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 20,
+          "entry_std": 2.5,
+          "exit_std": 0.5
+        },
+        "result": {
+          "total_return": 35.828797200000025,
+          "max_drawdown": 27.202077689935372,
+          "total_trades": 8,
+          "win_rate": 75.0,
+          "sharpe": 0.5568991583679301
+        },
+        "score": 30.292046377878453
+      },
+      {
+        "meta": {
+          "kind": "grid_combo",
+          "ma": [
+            3,
+            10
+          ],
+          "rsi": [
+            4,
+            20,
+            60
+          ],
+          "bb": [
+            20,
+            1.8
+          ],
+          "vote": 2
+        },
+        "result": {
+          "total_return": 42.039092000000004,
+          "max_drawdown": 37.21997529881328,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 0.38050377596562585
+        },
+        "score": 25.609625700540164
+      }
+    ]
+  },
+  {
+    "code": "000999.SZ",
+    "name": "华润三九",
+    "current": {
+      "meta": {
+        "kind": "grid_combo",
+        "ma": [
+          10,
+          30
+        ],
+        "rsi": [
+          16,
+          35,
+          65
+        ],
+        "bb": [
+          26,
+          1.8
+        ],
+        "vote": 2
+      },
+      "result": {
+        "total_return": 13.898094600000011,
+        "max_drawdown": 54.4172394925089,
+        "total_trades": 1,
+        "win_rate": 100.0,
+        "sharpe": 0.2455177580722181
+      },
+      "score": -19.524660305144234
+    },
+    "best": {
+      "meta": {
+        "kind": "macd",
+        "fast": 12,
+        "slow": 26,
+        "signal": 9
+      },
+      "result": {
+        "total_return": 109.24588560000058,
+        "max_drawdown": 34.130758646789815,
+        "total_trades": 41,
+        "win_rate": 48.78048780487805,
+        "sharpe": 0.6737098945875672
+      },
+      "score": 90.13597988486453
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 12,
+          "slow": 26,
+          "signal": 9
+        },
+        "result": {
+          "total_return": 109.24588560000058,
+          "max_drawdown": 34.130758646789815,
+          "total_trades": 41,
+          "win_rate": 48.78048780487805,
+          "sharpe": 0.6737098945875672
+        },
+        "score": 90.13597988486453
+      },
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 10,
+          "slow": 24,
+          "signal": 8
+        },
+        "result": {
+          "total_return": 99.04670280000079,
+          "max_drawdown": 31.36754635440048,
+          "total_trades": 43,
+          "win_rate": 46.51162790697674,
+          "sharpe": 0.6440390300646412
+        },
+        "score": 81.4463701376837
+      },
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 30,
+          "entry_std": 2.0,
+          "exit_std": 1.0
+        },
+        "result": {
+          "total_return": 55.77901750000011,
+          "max_drawdown": 24.090164269244237,
+          "total_trades": 15,
+          "win_rate": 73.33333333333333,
+          "sharpe": 0.6200905571828048
+        },
+        "score": 52.42537172436759
+      }
+    ]
+  }
+]

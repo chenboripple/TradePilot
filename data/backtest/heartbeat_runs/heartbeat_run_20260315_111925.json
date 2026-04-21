@@ -1,0 +1,224 @@
+{
+  "run_at": "2026-03-15 11:19:10",
+  "mode": "incremental-cache",
+  "results": [
+    {
+      "symbol": "002022.SZ",
+      "name": "科华生物",
+      "decision": "data-insufficient",
+      "error": "数据不足：44 条"
+    },
+    {
+      "symbol": "600309.SH",
+      "name": "万华化学",
+      "baseline_params": {
+        "ma_fast": 5,
+        "ma_slow": 15,
+        "rsi_period": 14,
+        "rsi_oversold": 35,
+        "rsi_overbought": 65,
+        "bb_period": 20,
+        "bb_std": 2.0
+      },
+      "baseline_params_label": "MA5/15, RSI14/35/65, BB20/2.0",
+      "baseline_result": {
+        "initial_capital": 100000.0,
+        "final_capital": 145088.221,
+        "total_return": 45.08822099999999,
+        "total_trades": 8,
+        "win_rate": 75.0,
+        "max_drawdown": 8.885748946593267,
+        "score": 43.47820886869235,
+        "trades": [
+          {
+            "date": "2025-05-14",
+            "pnl": 5779.999999999997,
+            "price": 58.29,
+            "shares": 1700
+          },
+          {
+            "date": "2025-07-08",
+            "pnl": 2087.9999999999936,
+            "price": 55.3,
+            "shares": 1800
+          },
+          {
+            "date": "2025-09-08",
+            "pnl": 11343.999999999995,
+            "price": 69.6,
+            "shares": 1600
+          },
+          {
+            "date": "2025-09-16",
+            "pnl": -2912.000000000012,
+            "price": 66.61,
+            "shares": 1600
+          },
+          {
+            "date": "2025-10-17",
+            "pnl": -4402.999999999994,
+            "price": 61.51,
+            "shares": 1700
+          },
+          {
+            "date": "2025-11-07",
+            "pnl": 6238.999999999991,
+            "price": 65.27,
+            "shares": 1700
+          },
+          {
+            "date": "2026-02-05",
+            "pnl": 26576.0,
+            "price": 83.61,
+            "shares": 1600
+          },
+          {
+            "date": "2026-03-12",
+            "pnl": 899.9999999999915,
+            "price": 86.6,
+            "shares": 1500
+          }
+        ]
+      },
+      "candidate_params": {
+        "ma_fast": 5,
+        "ma_slow": 15,
+        "rsi_period": 14,
+        "rsi_oversold": 35,
+        "rsi_overbought": 65,
+        "bb_period": 20,
+        "bb_std": 2.0
+      },
+      "candidate_params_label": "MA5/15, RSI14/35/65, BB20/2.0",
+      "candidate_result": {
+        "initial_capital": 100000.0,
+        "final_capital": 145088.221,
+        "total_return": 45.08822099999999,
+        "total_trades": 8,
+        "win_rate": 75.0,
+        "max_drawdown": 8.885748946593267,
+        "score": 43.47820886869235,
+        "trades": [
+          {
+            "date": "2025-05-14",
+            "pnl": 5779.999999999997,
+            "price": 58.29,
+            "shares": 1700
+          },
+          {
+            "date": "2025-07-08",
+            "pnl": 2087.9999999999936,
+            "price": 55.3,
+            "shares": 1800
+          },
+          {
+            "date": "2025-09-08",
+            "pnl": 11343.999999999995,
+            "price": 69.6,
+            "shares": 1600
+          },
+          {
+            "date": "2025-09-16",
+            "pnl": -2912.000000000012,
+            "price": 66.61,
+            "shares": 1600
+          },
+          {
+            "date": "2025-10-17",
+            "pnl": -4402.999999999994,
+            "price": 61.51,
+            "shares": 1700
+          },
+          {
+            "date": "2025-11-07",
+            "pnl": 6238.999999999991,
+            "price": 65.27,
+            "shares": 1700
+          },
+          {
+            "date": "2026-02-05",
+            "pnl": 26576.0,
+            "price": 83.61,
+            "shares": 1600
+          },
+          {
+            "date": "2026-03-12",
+            "pnl": 899.9999999999915,
+            "price": 86.6,
+            "shares": 1500
+          }
+        ]
+      },
+      "decision": "keep-baseline",
+      "active_params": {
+        "ma_fast": 5,
+        "ma_slow": 15,
+        "rsi_period": 14,
+        "rsi_oversold": 35,
+        "rsi_overbought": 65,
+        "bb_period": 20,
+        "bb_std": 2.0
+      },
+      "active_params_label": "MA5/15, RSI14/35/65, BB20/2.0",
+      "active_result": {
+        "initial_capital": 100000.0,
+        "final_capital": 145088.221,
+        "total_return": 45.08822099999999,
+        "total_trades": 8,
+        "win_rate": 75.0,
+        "max_drawdown": 8.885748946593267,
+        "score": 43.47820886869235,
+        "trades": [
+          {
+            "date": "2025-05-14",
+            "pnl": 5779.999999999997,
+            "price": 58.29,
+            "shares": 1700
+          },
+          {
+            "date": "2025-07-08",
+            "pnl": 2087.9999999999936,
+            "price": 55.3,
+            "shares": 1800
+          },
+          {
+            "date": "2025-09-08",
+            "pnl": 11343.999999999995,
+            "price": 69.6,
+            "shares": 1600
+          },
+          {
+            "date": "2025-09-16",
+            "pnl": -2912.000000000012,
+            "price": 66.61,
+            "shares": 1600
+          },
+          {
+            "date": "2025-10-17",
+            "pnl": -4402.999999999994,
+            "price": 61.51,
+            "shares": 1700
+          },
+          {
+            "date": "2025-11-07",
+            "pnl": 6238.999999999991,
+            "price": 65.27,
+            "shares": 1700
+          },
+          {
+            "date": "2026-02-05",
+            "pnl": 26576.0,
+            "price": 83.61,
+            "shares": 1600
+          },
+          {
+            "date": "2026-03-12",
+            "pnl": 899.9999999999915,
+            "price": 86.6,
+            "shares": 1500
+          }
+        ]
+      }
+    }
+  ]
+}

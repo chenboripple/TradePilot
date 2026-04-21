@@ -1,0 +1,750 @@
+{
+  "002022.SZ": {
+    "name": "科华生物",
+    "bars": 241,
+    "grid_count": 448,
+    "top10": [
+      {
+        "label": "MA10/30, RSI8/25/75, BB20/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 8,
+          "rsi_oversold": 25,
+          "rsi_overbought": 75,
+          "bb_period": 20,
+          "bb_std": 2.0
+        },
+        "total_return": 34.70142590000006,
+        "max_drawdown": 13.315014466768385,
+        "win_rate": 75.0,
+        "total_trades": 8,
+        "score": 31.541170836631125,
+        "final_capital": 134701.42590000006
+      },
+      {
+        "label": "MA8/21, RSI8/25/75, BB30/2.0",
+        "params": {
+          "ma_fast": 8,
+          "ma_slow": 21,
+          "rsi_period": 8,
+          "rsi_oversold": 25,
+          "rsi_overbought": 75,
+          "bb_period": 30,
+          "bb_std": 2.0
+        },
+        "total_return": 33.249826400000074,
+        "max_drawdown": 9.909790932511589,
+        "win_rate": 87.5,
+        "total_trades": 8,
+        "score": 31.53139957362102,
+        "final_capital": 133249.82640000008
+      },
+      {
+        "label": "MA10/30, RSI10/30/70, BB20/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 10,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 20,
+          "bb_std": 2.0
+        },
+        "total_return": 34.56410630000004,
+        "max_drawdown": 13.327637319990773,
+        "win_rate": 75.0,
+        "total_trades": 8,
+        "score": 31.399433238003272,
+        "final_capital": 134564.10630000004
+      },
+      {
+        "label": "MA10/30, RSI8/25/75, BB30/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 8,
+          "rsi_oversold": 25,
+          "rsi_overbought": 75,
+          "bb_period": 30,
+          "bb_std": 2.0
+        },
+        "total_return": 29.82021960000004,
+        "max_drawdown": 8.72332538406559,
+        "win_rate": 75.0,
+        "total_trades": 8,
+        "score": 28.267055715577083,
+        "final_capital": 129820.21960000004
+      },
+      {
+        "label": "MA8/21, RSI14/30/70, BB30/2.0",
+        "params": {
+          "ma_fast": 8,
+          "ma_slow": 21,
+          "rsi_period": 14,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 30,
+          "bb_std": 2.0
+        },
+        "total_return": 26.557754200000012,
+        "max_drawdown": 7.94329018536383,
+        "win_rate": 100.0,
+        "total_trades": 3,
+        "score": 25.777602635122673,
+        "final_capital": 126557.75420000001
+      },
+      {
+        "label": "MA10/30, RSI8/25/75, BB26/1.8",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 8,
+          "rsi_oversold": 25,
+          "rsi_overbought": 75,
+          "bb_period": 26,
+          "bb_std": 1.8
+        },
+        "total_return": 27.66179560000004,
+        "max_drawdown": 10.23547898687665,
+        "win_rate": 75.0,
+        "total_trades": 8,
+        "score": 25.579377954593213,
+        "final_capital": 127661.79560000004
+      },
+      {
+        "label": "MA10/30, RSI10/30/70, BB26/1.8",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 10,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 26,
+          "bb_std": 1.8
+        },
+        "total_return": 27.801974900000044,
+        "max_drawdown": 10.338588385955655,
+        "win_rate": 62.5,
+        "total_trades": 8,
+        "score": 25.433468964915566,
+        "final_capital": 127801.97490000004
+      },
+      {
+        "label": "MA10/30, RSI10/30/70, BB30/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 10,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 30,
+          "bb_std": 2.0
+        },
+        "total_return": 27.801974900000044,
+        "max_drawdown": 10.338588385955655,
+        "win_rate": 62.5,
+        "total_trades": 8,
+        "score": 25.433468964915566,
+        "final_capital": 127801.97490000004
+      },
+      {
+        "label": "MA10/30, RSI10/35/65, BB20/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 10,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 20,
+          "bb_std": 2.0
+        },
+        "total_return": 27.54952590000005,
+        "max_drawdown": 13.338621938528991,
+        "win_rate": 62.5,
+        "total_trades": 8,
+        "score": 24.131008221514904,
+        "final_capital": 127549.52590000005
+      },
+      {
+        "label": "MA10/30, RSI14/35/65, BB20/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 14,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 20,
+          "bb_std": 2.0
+        },
+        "total_return": 27.91196690000004,
+        "max_drawdown": 17.025617563885078,
+        "win_rate": 75.0,
+        "total_trades": 8,
+        "score": 23.45300075264026,
+        "final_capital": 127911.96690000004
+      }
+    ]
+  },
+  "600309.SH": {
+    "name": "万华化学",
+    "bars": 241,
+    "grid_count": 448,
+    "top10": [
+      {
+        "label": "MA10/34, RSI16/35/65, BB26/1.8",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 34,
+          "rsi_period": 16,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 26,
+          "bb_std": 1.8
+        },
+        "total_return": 51.39758350000007,
+        "max_drawdown": 9.931490710241297,
+        "win_rate": 80.0,
+        "total_trades": 5,
+        "score": 49.52156175141562,
+        "final_capital": 151397.58350000007
+      },
+      {
+        "label": "MA5/15, RSI16/35/65, BB26/1.8",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 15,
+          "rsi_period": 16,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 26,
+          "bb_std": 1.8
+        },
+        "total_return": 50.71371570000001,
+        "max_drawdown": 9.613138197202192,
+        "win_rate": 85.71428571428571,
+        "total_trades": 7,
+        "score": 49.063403045264955,
+        "final_capital": 150713.7157
+      },
+      {
+        "label": "MA5/15, RSI14/30/70, BB26/1.8",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 15,
+          "rsi_period": 14,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 26,
+          "bb_std": 1.8
+        },
+        "total_return": 49.19333009999996,
+        "max_drawdown": 9.161484007717851,
+        "win_rate": 85.71428571428571,
+        "total_trades": 7,
+        "score": 47.70109641158443,
+        "final_capital": 149193.33009999996
+      },
+      {
+        "label": "MA5/15, RSI14/35/65, BB30/2.0",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 15,
+          "rsi_period": 14,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 30,
+          "bb_std": 2.0
+        },
+        "total_return": 49.16575729999997,
+        "max_drawdown": 9.392514148209298,
+        "win_rate": 85.71428571428571,
+        "total_trades": 7,
+        "score": 47.59266306241243,
+        "final_capital": 149165.75729999997
+      },
+      {
+        "label": "MA5/15, RSI16/35/65, BB30/2.0",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 15,
+          "rsi_period": 16,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 30,
+          "bb_std": 2.0
+        },
+        "total_return": 46.84599650000001,
+        "max_drawdown": 9.214541632120204,
+        "win_rate": 85.71428571428571,
+        "total_trades": 7,
+        "score": 45.335192643043655,
+        "final_capital": 146845.9965
+      },
+      {
+        "label": "MA13/34, RSI16/35/65, BB26/1.8",
+        "params": {
+          "ma_fast": 13,
+          "ma_slow": 34,
+          "rsi_period": 16,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 26,
+          "bb_std": 1.8
+        },
+        "total_return": 46.933408900000096,
+        "max_drawdown": 9.66027882758146,
+        "win_rate": 80.0,
+        "total_trades": 5,
+        "score": 45.15231131034658,
+        "final_capital": 146933.4089000001
+      },
+      {
+        "label": "MA5/15, RSI14/30/70, BB30/2.0",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 15,
+          "rsi_period": 14,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 30,
+          "bb_std": 2.0
+        },
+        "total_return": 45.77367489999998,
+        "max_drawdown": 9.298124530977946,
+        "win_rate": 85.71428571428571,
+        "total_trades": 7,
+        "score": 44.23361702844342,
+        "final_capital": 145773.67489999998
+      },
+      {
+        "label": "MA5/15, RSI14/35/65, BB26/1.8",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 15,
+          "rsi_period": 14,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 26,
+          "bb_std": 1.8
+        },
+        "total_return": 45.45705299999999,
+        "max_drawdown": 9.545854403357598,
+        "win_rate": 85.71428571428571,
+        "total_trades": 7,
+        "score": 43.83028967311054,
+        "final_capital": 145457.05299999999
+      },
+      {
+        "label": "MA10/34, RSI14/35/65, BB30/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 34,
+          "rsi_period": 14,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 30,
+          "bb_std": 2.0
+        },
+        "total_return": 46.34097200000001,
+        "max_drawdown": 11.653375744246212,
+        "win_rate": 66.66666666666666,
+        "total_trades": 3,
+        "score": 43.595623822847166,
+        "final_capital": 146340.972
+      },
+      {
+        "label": "MA5/15, RSI14/35/65, BB20/2.0",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 15,
+          "rsi_period": 14,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 20,
+          "bb_std": 2.0
+        },
+        "total_return": 45.08822099999999,
+        "max_drawdown": 8.885748946593267,
+        "win_rate": 75.0,
+        "total_trades": 8,
+        "score": 43.47820886869235,
+        "final_capital": 145088.221
+      }
+    ]
+  },
+  "603039.SH": {
+    "name": "泛海微",
+    "bars": 241,
+    "grid_count": 448,
+    "top10": [
+      {
+        "label": "MA5/20, RSI12/30/70, BB14/1.5",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 20,
+          "rsi_period": 12,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 14,
+          "bb_std": 1.5
+        },
+        "total_return": 32.78961380000002,
+        "max_drawdown": 11.222745572633727,
+        "win_rate": 40.0,
+        "total_trades": 5,
+        "score": 29.661652849578214,
+        "final_capital": 132789.61380000002
+      },
+      {
+        "label": "MA5/20, RSI12/30/70, BB14/1.8",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 20,
+          "rsi_period": 12,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 14,
+          "bb_std": 1.8
+        },
+        "total_return": 22.285904600000023,
+        "max_drawdown": 15.136345444037527,
+        "win_rate": 40.0,
+        "total_trades": 5,
+        "score": 17.78818369458689,
+        "final_capital": 122285.90460000002
+      },
+      {
+        "label": "MA5/20, RSI10/30/70, BB14/1.5",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 20,
+          "rsi_period": 10,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 14,
+          "bb_std": 1.5
+        },
+        "total_return": 23.94985770000002,
+        "max_drawdown": 24.478723858152648,
+        "win_rate": 60.0,
+        "total_trades": 5,
+        "score": 16.582304349646595,
+        "final_capital": 123949.85770000002
+      },
+      {
+        "label": "MA5/20, RSI10/35/65, BB14/1.5",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 20,
+          "rsi_period": 10,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 14,
+          "bb_std": 1.5
+        },
+        "total_return": 23.274655200000023,
+        "max_drawdown": 24.60825282991268,
+        "win_rate": 60.0,
+        "total_trades": 5,
+        "score": 15.861766709530585,
+        "final_capital": 123274.65520000002
+      },
+      {
+        "label": "MA8/21, RSI10/30/70, BB14/1.5",
+        "params": {
+          "ma_fast": 8,
+          "ma_slow": 21,
+          "rsi_period": 10,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 14,
+          "bb_std": 1.5
+        },
+        "total_return": 15.664205900000058,
+        "max_drawdown": 17.73870241762011,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 10.884231482404447,
+        "final_capital": 115664.20590000006
+      },
+      {
+        "label": "MA8/21, RSI12/30/70, BB14/1.5",
+        "params": {
+          "ma_fast": 8,
+          "ma_slow": 21,
+          "rsi_period": 12,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 14,
+          "bb_std": 1.5
+        },
+        "total_return": 15.655714500000059,
+        "max_drawdown": 17.73977374930948,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 10.87536511631317,
+        "final_capital": 115655.71450000006
+      },
+      {
+        "label": "MA8/21, RSI10/35/65, BB14/1.5",
+        "params": {
+          "ma_fast": 8,
+          "ma_slow": 21,
+          "rsi_period": 10,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 14,
+          "bb_std": 1.5
+        },
+        "total_return": 15.045208400000046,
+        "max_drawdown": 17.817139866388757,
+        "win_rate": 83.33333333333334,
+        "total_trades": 6,
+        "score": 10.475876113430648,
+        "final_capital": 115045.20840000005
+      },
+      {
+        "label": "MA5/20, RSI10/30/70, BB14/1.8",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 20,
+          "rsi_period": 10,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 14,
+          "bb_std": 1.8
+        },
+        "total_return": 16.21474190000004,
+        "max_drawdown": 24.596951772004964,
+        "win_rate": 50.0,
+        "total_trades": 4,
+        "score": 8.605808779798302,
+        "final_capital": 116214.74190000004
+      },
+      {
+        "label": "MA5/20, RSI10/35/65, BB14/1.8",
+        "params": {
+          "ma_fast": 5,
+          "ma_slow": 20,
+          "rsi_period": 10,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 14,
+          "bb_std": 1.8
+        },
+        "total_return": 15.539539400000038,
+        "max_drawdown": 24.735884820999253,
+        "win_rate": 50.0,
+        "total_trades": 4,
+        "score": 7.881979712650301,
+        "final_capital": 115539.53940000004
+      },
+      {
+        "label": "MA8/21, RSI10/35/65, BB14/1.8",
+        "params": {
+          "ma_fast": 8,
+          "ma_slow": 21,
+          "rsi_period": 10,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 14,
+          "bb_std": 1.8
+        },
+        "total_return": 9.503979800000058,
+        "max_drawdown": 19.423510430402118,
+        "win_rate": 66.66666666666666,
+        "total_trades": 6,
+        "score": 4.03908448269265,
+        "final_capital": 109503.97980000006
+      }
+    ]
+  },
+  "000868.SZ": {
+    "name": "安凯客车",
+    "bars": 241,
+    "grid_count": 448,
+    "top10": [
+      {
+        "label": "MA10/30, RSI8/25/75, BB26/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 8,
+          "rsi_oversold": 25,
+          "rsi_overbought": 75,
+          "bb_period": 26,
+          "bb_std": 2.0
+        },
+        "total_return": 31.732055099999997,
+        "max_drawdown": 9.746183953203142,
+        "win_rate": 62.5,
+        "total_trades": 8,
+        "score": 29.570890716378898,
+        "final_capital": 131732.0551
+      },
+      {
+        "label": "MA10/30, RSI14/30/70, BB26/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 14,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 26,
+          "bb_std": 2.0
+        },
+        "total_return": 28.464595900000056,
+        "max_drawdown": 5.541198031478071,
+        "win_rate": 80.0,
+        "total_trades": 5,
+        "score": 28.125176588982733,
+        "final_capital": 128464.59590000006
+      },
+      {
+        "label": "MA10/30, RSI10/35/65, BB26/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 10,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 26,
+          "bb_std": 2.0
+        },
+        "total_return": 26.893352700000108,
+        "max_drawdown": 8.910253581814063,
+        "win_rate": 63.63636363636363,
+        "total_trades": 11,
+        "score": 25.04749121909246,
+        "final_capital": 126893.3527000001
+      },
+      {
+        "label": "MA10/34, RSI8/25/75, BB26/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 34,
+          "rsi_period": 8,
+          "rsi_oversold": 25,
+          "rsi_overbought": 75,
+          "bb_period": 26,
+          "bb_std": 2.0
+        },
+        "total_return": 24.956819600000017,
+        "max_drawdown": 9.733698602262088,
+        "win_rate": 83.33333333333334,
+        "total_trades": 6,
+        "score": 23.216691755874955,
+        "final_capital": 124956.81960000002
+      },
+      {
+        "label": "MA10/34, RSI14/30/70, BB26/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 34,
+          "rsi_period": 14,
+          "rsi_oversold": 30,
+          "rsi_overbought": 70,
+          "bb_period": 26,
+          "bb_std": 2.0
+        },
+        "total_return": 23.113609300000025,
+        "max_drawdown": 5.367571576267083,
+        "win_rate": 60.0,
+        "total_trades": 5,
+        "score": 22.434959248306544,
+        "final_capital": 123113.60930000003
+      },
+      {
+        "label": "MA8/21, RSI12/35/65, BB20/1.5",
+        "params": {
+          "ma_fast": 8,
+          "ma_slow": 21,
+          "rsi_period": 12,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 20,
+          "bb_std": 1.5
+        },
+        "total_return": 22.156506100000044,
+        "max_drawdown": 7.044025908404246,
+        "win_rate": 90.0,
+        "total_trades": 10,
+        "score": 21.49109703205856,
+        "final_capital": 122156.50610000004
+      },
+      {
+        "label": "MA10/30, RSI14/35/65, BB26/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 14,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 26,
+          "bb_std": 2.0
+        },
+        "total_return": 22.279022500000064,
+        "max_drawdown": 7.064483906553646,
+        "win_rate": 80.0,
+        "total_trades": 5,
+        "score": 21.40645313270629,
+        "final_capital": 122279.02250000006
+      },
+      {
+        "label": "MA10/30, RSI16/35/65, BB26/2.0",
+        "params": {
+          "ma_fast": 10,
+          "ma_slow": 30,
+          "rsi_period": 16,
+          "rsi_oversold": 35,
+          "rsi_overbought": 65,
+          "bb_period": 26,
+          "bb_std": 2.0
+        },
+        "total_return": 20.461446600000038,
+        "max_drawdown": 5.534230931492419,
+        "win_rate": 80.0,
+        "total_trades": 5,
+        "score": 20.124465773977693,
+        "final_capital": 120461.44660000004
+      },
+      {
+        "label": "MA8/21, RSI8/25/75, BB26/2.0",
+        "params": {
+          "ma_fast": 8,
+          "ma_slow": 21,
+          "rsi_period": 8,
+          "rsi_oversold": 25,
+          "rsi_overbought": 75,
+          "bb_period": 26,
+          "bb_std": 2.0
+        },
+        "total_return": 20.48429830000008,
+        "max_drawdown": 14.013000179041764,
+        "win_rate": 62.5,
+        "total_trades": 8,
+        "score": 16.829748237335465,
+        "final_capital": 120484.29830000008
+      },
+      {
+        "label": "MA3/10, RSI8/25/75, BB20/1.5",
+        "params": {
+          "ma_fast": 3,
+          "ma_slow": 10,
+          "rsi_period": 8,
+          "rsi_oversold": 25,
+          "rsi_overbought": 75,
+          "bb_period": 20,
+          "bb_std": 1.5
+        },
+        "total_return": 18.628025500000003,
+        "max_drawdown": 9.982333454778612,
+        "win_rate": 66.66666666666666,
+        "total_trades": 12,
+        "score": 16.467542124160822,
+        "final_capital": 118628.0255
+      }
+    ]
+  }
+}

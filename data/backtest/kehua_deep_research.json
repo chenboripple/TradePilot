@@ -1,0 +1,684 @@
+{
+  "symbol": "002022.SZ",
+  "name": "科华生物",
+  "research_date": "2026-03-19 00:20:35",
+  "horizons": [
+    "5y",
+    "3y",
+    "1y",
+    "6m",
+    "3m",
+    "1m"
+  ],
+  "weights": {
+    "5y": 0.1,
+    "3y": 0.15,
+    "1y": 0.35,
+    "6m": 0.2,
+    "3m": 0.15,
+    "1m": 0.05
+  },
+  "total_strategies": 42,
+  "top_10": [
+    {
+      "name": "Grid_5_15_6_20_60_20_2.0_1",
+      "periods": {
+        "5y": {
+          "total_return": -49.91053825029938,
+          "max_drawdown": 74.09726371070447,
+          "total_trades": 68,
+          "win_rate": 54.41176470588235,
+          "sharpe": -0.366995881272938,
+          "annual_return": -12.933638253812664,
+          "final_capital": 50089.46174970062
+        },
+        "3y": {
+          "total_return": -7.1422360408994425,
+          "max_drawdown": 49.2329928275319,
+          "total_trades": 39,
+          "win_rate": 58.97435897435898,
+          "sharpe": 0.038405969019609396,
+          "annual_return": -2.4419895444468875,
+          "final_capital": 92857.76395910056
+        },
+        "1y": {
+          "total_return": 49.19150090730033,
+          "max_drawdown": 7.376564404316123,
+          "total_trades": 16,
+          "win_rate": 75.0,
+          "sharpe": 2.66442089349214,
+          "annual_return": 49.355562564072855,
+          "final_capital": 149191.50090730033
+        },
+        "6m": {
+          "total_return": 22.25577597990018,
+          "max_drawdown": 7.401056639476552,
+          "total_trades": 9,
+          "win_rate": 88.88888888888889,
+          "sharpe": 3.3608950574238134,
+          "annual_return": 49.62986193578573,
+          "final_capital": 122255.77597990018
+        },
+        "3m": {
+          "total_return": 22.15314704700014,
+          "max_drawdown": 2.8520095387154605,
+          "total_trades": 4,
+          "win_rate": 100.0,
+          "sharpe": 3.994678600983611,
+          "annual_return": 127.19917636866498,
+          "final_capital": 122153.14704700014
+        },
+        "1m": {
+          "total_return": 6.754926763400028,
+          "max_drawdown": 0.7183774771100083,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 6.892710251233309,
+          "annual_return": 195.78865680976247,
+          "final_capital": 106754.92676340003
+        }
+      },
+      "score": 52.81639484304024
+    },
+    {
+      "name": "Grid_5_20_6_20_60_20_2.0_1",
+      "periods": {
+        "5y": {
+          "total_return": -46.71834335869934,
+          "max_drawdown": 65.34481064684607,
+          "total_trades": 66,
+          "win_rate": 50.0,
+          "sharpe": -0.3484230509563574,
+          "annual_return": -11.849353122868166,
+          "final_capital": 53281.65664130066
+        },
+        "3y": {
+          "total_return": -3.790872065499425,
+          "max_drawdown": 36.91422981824955,
+          "total_trades": 39,
+          "win_rate": 51.28205128205128,
+          "sharpe": 0.07168484824828923,
+          "annual_return": -1.281098935522762,
+          "final_capital": 96209.12793450058
+        },
+        "1y": {
+          "total_return": 38.37202782010034,
+          "max_drawdown": 6.588453883700904,
+          "total_trades": 16,
+          "win_rate": 68.75,
+          "sharpe": 2.2253417031336094,
+          "annual_return": 38.49554411215475,
+          "final_capital": 138372.02782010034
+        },
+        "6m": {
+          "total_return": 9.791490144800118,
+          "max_drawdown": 6.583113970929262,
+          "total_trades": 8,
+          "win_rate": 75.0,
+          "sharpe": 1.6410839514851672,
+          "annual_return": 20.60359788187016,
+          "final_capital": 109791.49014480012
+        },
+        "3m": {
+          "total_return": 20.77599126070009,
+          "max_drawdown": 1.0672399818153457,
+          "total_trades": 4,
+          "win_rate": 100.0,
+          "sharpe": 3.933284413550436,
+          "annual_return": 116.87656026412503,
+          "final_capital": 120775.99126070009
+        },
+        "1m": {
+          "total_return": 5.390652493200003,
+          "max_drawdown": 0.4771990571868912,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 6.278629152089095,
+          "annual_return": 138.95023244314197,
+          "final_capital": 105390.6524932
+        }
+      },
+      "score": 40.3481119915576
+    },
+    {
+      "name": "BB_20_2.0",
+      "periods": {
+        "5y": {
+          "total_return": -34.65746435899983,
+          "max_drawdown": 61.39716329651381,
+          "total_trades": 14,
+          "win_rate": 50.0,
+          "sharpe": -0.21544133889840555,
+          "annual_return": -8.171320506430336,
+          "final_capital": 65342.53564100017
+        },
+        "3y": {
+          "total_return": -8.426444743599902,
+          "max_drawdown": 45.081358980232125,
+          "total_trades": 9,
+          "win_rate": 44.44444444444444,
+          "sharpe": -0.006221096965573636,
+          "annual_return": -2.8942283995141316,
+          "final_capital": 91573.5552564001
+        },
+        "1y": {
+          "total_return": 37.570165949700076,
+          "max_drawdown": 7.181497847703149,
+          "total_trades": 3,
+          "win_rate": 66.66666666666666,
+          "sharpe": 2.402296840740654,
+          "annual_return": 37.69076800334925,
+          "final_capital": 137570.16594970008
+        },
+        "6m": {
+          "total_return": 4.192158920800022,
+          "max_drawdown": 7.079164416,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": 0.8228305852212948,
+          "annual_return": 8.584558186877157,
+          "final_capital": 104192.15892080002
+        },
+        "3m": {
+          "total_return": 6.516965614,
+          "max_drawdown": 1.5731470900980455,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 3.2693704368921788,
+          "annual_return": 29.553106259602167,
+          "final_capital": 106516.965614
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": 31.101189990056525
+    },
+    {
+      "name": "MA_5_15",
+      "periods": {
+        "5y": {
+          "total_return": -11.902726800099467,
+          "max_drawdown": 42.777234362448354,
+          "total_trades": 40,
+          "win_rate": 42.5,
+          "sharpe": 0.03394382511181891,
+          "annual_return": -2.506790225138944,
+          "final_capital": 88097.27319990053
+        },
+        "3y": {
+          "total_return": 4.943798061300345,
+          "max_drawdown": 25.215221240199888,
+          "total_trades": 20,
+          "win_rate": 55.00000000000001,
+          "sharpe": 0.19212964853926132,
+          "annual_return": 1.6229921547346704,
+          "final_capital": 104943.79806130035
+        },
+        "1y": {
+          "total_return": 30.417587754900143,
+          "max_drawdown": 13.305570963756628,
+          "total_trades": 5,
+          "win_rate": 80.0,
+          "sharpe": 1.12150990293093,
+          "annual_return": 30.512774046250236,
+          "final_capital": 130417.58775490015
+        },
+        "6m": {
+          "total_return": 2.618665174700058,
+          "max_drawdown": 13.320129751715513,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 0.3668914747074826,
+          "annual_return": 5.32086219326835,
+          "final_capital": 102618.66517470006
+        },
+        "3m": {
+          "total_return": -0.6393493644999544,
+          "max_drawdown": 13.316539830978833,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": 0.02048979248572967,
+          "annual_return": -2.5961732367988266,
+          "final_capital": 99360.65063550005
+        },
+        "1m": {
+          "total_return": 1.2903075929000334,
+          "max_drawdown": 0.5936924070999666,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 2.555659345737557,
+          "annual_return": 23.70189607232247,
+          "final_capital": 101290.30759290003
+        }
+      },
+      "score": 23.691071318708175
+    },
+    {
+      "name": "RSI_14_30_70",
+      "periods": {
+        "5y": {
+          "total_return": 6.422163024000286,
+          "max_drawdown": 42.04280794521301,
+          "total_trades": 18,
+          "win_rate": 61.111111111111114,
+          "sharpe": 0.18592888425198942,
+          "annual_return": 1.2547296025235966,
+          "final_capital": 106422.16302400029
+        },
+        "3y": {
+          "total_return": -6.213934280199828,
+          "max_drawdown": 42.25831996475212,
+          "total_trades": 11,
+          "win_rate": 54.54545454545454,
+          "sharpe": 0.037220960511244086,
+          "annual_return": -2.1176734772825334,
+          "final_capital": 93786.06571980017
+        },
+        "1y": {
+          "total_return": 22.205914457800112,
+          "max_drawdown": 8.644756215023598,
+          "total_trades": 4,
+          "win_rate": 75.0,
+          "sharpe": 1.3346456698659934,
+          "annual_return": 22.273259488408126,
+          "final_capital": 122205.91445780011
+        },
+        "6m": {
+          "total_return": 14.230133100100023,
+          "max_drawdown": 7.910333526426393,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 1.6064448023684024,
+          "annual_return": 30.580654766281114,
+          "final_capital": 114230.13310010002
+        },
+        "3m": {
+          "total_return": -0.5847509205999813,
+          "max_drawdown": 7.908100987082654,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -0.12468059829819213,
+          "annual_return": -2.376480988914731,
+          "final_capital": 99415.24907940002
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": 19.24217552602116
+    },
+    {
+      "name": "MA_5_20",
+      "periods": {
+        "5y": {
+          "total_return": -15.111219476599565,
+          "max_drawdown": 41.97298823962167,
+          "total_trades": 33,
+          "win_rate": 36.36363636363637,
+          "sharpe": 0.0031152470401039144,
+          "annual_return": -3.2286880875252444,
+          "final_capital": 84888.78052340043
+        },
+        "3y": {
+          "total_return": 5.2687574238002854,
+          "max_drawdown": 24.998312727799902,
+          "total_trades": 16,
+          "win_rate": 43.75,
+          "sharpe": 0.19654220489421742,
+          "annual_return": 1.727872057145019,
+          "final_capital": 105268.75742380029
+        },
+        "1y": {
+          "total_return": 25.975722016400148,
+          "max_drawdown": 13.343494787059793,
+          "total_trades": 5,
+          "win_rate": 80.0,
+          "sharpe": 0.990643661633848,
+          "annual_return": 26.05566547663958,
+          "final_capital": 125975.72201640015
+        },
+        "6m": {
+          "total_return": 1.0706660692000587,
+          "max_drawdown": 13.340267771191014,
+          "total_trades": 2,
+          "win_rate": 50.0,
+          "sharpe": 0.21242530096987666,
+          "annual_return": 2.1587730537981242,
+          "final_capital": 101070.66606920006
+        },
+        "3m": {
+          "total_return": 0.670966475400026,
+          "max_drawdown": 13.31018730585666,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 0.24231717907191896,
+          "annual_return": 2.7804793938355887,
+          "final_capital": 100670.96647540003
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": 18.382684626127404
+    },
+    {
+      "name": "Grid_10_30_8_25_65_20_1.8_1",
+      "periods": {
+        "5y": {
+          "total_return": -29.881430952099414,
+          "max_drawdown": 49.22130868536348,
+          "total_trades": 42,
+          "win_rate": 42.857142857142854,
+          "sharpe": -0.10797404986958502,
+          "annual_return": -6.864373470549778,
+          "final_capital": 70118.56904790059
+        },
+        "3y": {
+          "total_return": -30.566584285899616,
+          "max_drawdown": 45.64309041049972,
+          "total_trades": 25,
+          "win_rate": 40.0,
+          "sharpe": -0.33698342314870905,
+          "annual_return": -11.45964940594142,
+          "final_capital": 69433.41571410038
+        },
+        "1y": {
+          "total_return": 18.728027461000167,
+          "max_drawdown": 18.254478941728962,
+          "total_trades": 8,
+          "win_rate": 75.0,
+          "sharpe": 0.7207093573760548,
+          "annual_return": 18.784033720073555,
+          "final_capital": 118728.02746100017
+        },
+        "6m": {
+          "total_return": 4.366491883000082,
+          "max_drawdown": 13.329157514218595,
+          "total_trades": 5,
+          "win_rate": 80.0,
+          "sharpe": 0.507471074972334,
+          "annual_return": 8.949227475219224,
+          "final_capital": 104366.49188300008
+        },
+        "3m": {
+          "total_return": 11.127825373600077,
+          "max_drawdown": 1.8513991750106793,
+          "total_trades": 3,
+          "win_rate": 100.0,
+          "sharpe": 3.834184515659085,
+          "annual_return": 54.14343448505667,
+          "final_capital": 111127.82537360008
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": 7.729571020606363
+    },
+    {
+      "name": "MACD_10_24_8",
+      "periods": {
+        "5y": {
+          "total_return": -0.7033074625994923,
+          "max_drawdown": 37.72410684399923,
+          "total_trades": 42,
+          "win_rate": 40.476190476190474,
+          "sharpe": 0.13081835205351525,
+          "annual_return": -0.14129097899779897,
+          "final_capital": 99296.69253740051
+        },
+        "3y": {
+          "total_return": 5.39020720530038,
+          "max_drawdown": 27.5868837172371,
+          "total_trades": 22,
+          "win_rate": 50.0,
+          "sharpe": 0.19811405613241595,
+          "annual_return": 1.7670143153970308,
+          "final_capital": 105390.20720530038
+        },
+        "1y": {
+          "total_return": 11.661120511500034,
+          "max_drawdown": 15.739128139050726,
+          "total_trades": 4,
+          "win_rate": 75.0,
+          "sharpe": 0.6038046424187828,
+          "annual_return": 11.694960917734099,
+          "final_capital": 111661.12051150003
+        },
+        "6m": {
+          "total_return": 2.1587563617000267,
+          "max_drawdown": 14.200120492117549,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 0.33139664597268254,
+          "annual_return": 4.376362948517798,
+          "final_capital": 102158.75636170003
+        },
+        "3m": {
+          "total_return": 1.6149370074000036,
+          "max_drawdown": 0.9130629925999966,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 1.5065472401232631,
+          "annual_return": 6.790785697198487,
+          "final_capital": 101614.9370074
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": 5.729938131855881
+    },
+    {
+      "name": "BB_26_2.0",
+      "periods": {
+        "5y": {
+          "total_return": -38.53638592829988,
+          "max_drawdown": 62.22720505933124,
+          "total_trades": 10,
+          "win_rate": 50.0,
+          "sharpe": -0.26389611833210735,
+          "annual_return": -9.29024189724148,
+          "final_capital": 61463.61407170012
+        },
+        "3y": {
+          "total_return": -21.16780452669994,
+          "max_drawdown": 47.05332961939999,
+          "total_trades": 6,
+          "win_rate": 50.0,
+          "sharpe": -0.21172630790731317,
+          "annual_return": -7.628839406613508,
+          "final_capital": 78832.19547330006
+        },
+        "1y": {
+          "total_return": 16.52802491860003,
+          "max_drawdown": 7.200571941793636,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 1.3135992036341182,
+          "annual_return": 16.577003106929066,
+          "final_capital": 116528.02491860003
+        },
+        "6m": {
+          "total_return": 7.883148442000006,
+          "max_drawdown": 7.079164416,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 1.0269697704714702,
+          "annual_return": 16.436271066170494,
+          "final_capital": 107883.148442
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": 2.9289736644285855
+    },
+    {
+      "name": "RSI_6_20_60",
+      "periods": {
+        "5y": {
+          "total_return": -58.320913652299545,
+          "max_drawdown": 67.47350585203453,
+          "total_trades": 42,
+          "win_rate": 59.523809523809526,
+          "sharpe": -0.6388418056713151,
+          "annual_return": -16.081352871512568,
+          "final_capital": 41679.08634770045
+        },
+        "3y": {
+          "total_return": -45.782904737699695,
+          "max_drawdown": 55.8177302922372,
+          "total_trades": 27,
+          "win_rate": 51.85185185185185,
+          "sharpe": -0.8814446281283539,
+          "annual_return": -18.473698240698223,
+          "final_capital": 54217.09526230031
+        },
+        "1y": {
+          "total_return": 10.932896214500214,
+          "max_drawdown": 7.374739271636824,
+          "total_trades": 11,
+          "win_rate": 63.63636363636363,
+          "sharpe": 0.9819091071379299,
+          "annual_return": 10.964521257922776,
+          "final_capital": 110932.89621450022
+        },
+        "6m": {
+          "total_return": 13.671173248200095,
+          "max_drawdown": 7.381675422968982,
+          "total_trades": 7,
+          "win_rate": 85.71428571428571,
+          "sharpe": 2.3158290178733885,
+          "annual_return": 29.30236137435831,
+          "final_capital": 113671.1732482001
+        },
+        "3m": {
+          "total_return": 9.63539982210008,
+          "max_drawdown": 1.0704641946669677,
+          "total_trades": 3,
+          "win_rate": 100.0,
+          "sharpe": 3.857247096972649,
+          "annual_return": 45.828761691802455,
+          "final_capital": 109635.39982210008
+        },
+        "1m": {
+          "total_return": 5.390652493200003,
+          "max_drawdown": 0.4771990571868912,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 6.278629152089095,
+          "annual_return": 138.95023244314197,
+          "final_capital": 105390.6524932
+        }
+      },
+      "score": 2.692893504543088
+    }
+  ],
+  "best": {
+    "name": "Grid_5_15_6_20_60_20_2.0_1",
+    "periods": {
+      "5y": {
+        "total_return": -49.91053825029938,
+        "max_drawdown": 74.09726371070447,
+        "total_trades": 68,
+        "win_rate": 54.41176470588235,
+        "sharpe": -0.366995881272938,
+        "annual_return": -12.933638253812664,
+        "final_capital": 50089.46174970062
+      },
+      "3y": {
+        "total_return": -7.1422360408994425,
+        "max_drawdown": 49.2329928275319,
+        "total_trades": 39,
+        "win_rate": 58.97435897435898,
+        "sharpe": 0.038405969019609396,
+        "annual_return": -2.4419895444468875,
+        "final_capital": 92857.76395910056
+      },
+      "1y": {
+        "total_return": 49.19150090730033,
+        "max_drawdown": 7.376564404316123,
+        "total_trades": 16,
+        "win_rate": 75.0,
+        "sharpe": 2.66442089349214,
+        "annual_return": 49.355562564072855,
+        "final_capital": 149191.50090730033
+      },
+      "6m": {
+        "total_return": 22.25577597990018,
+        "max_drawdown": 7.401056639476552,
+        "total_trades": 9,
+        "win_rate": 88.88888888888889,
+        "sharpe": 3.3608950574238134,
+        "annual_return": 49.62986193578573,
+        "final_capital": 122255.77597990018
+      },
+      "3m": {
+        "total_return": 22.15314704700014,
+        "max_drawdown": 2.8520095387154605,
+        "total_trades": 4,
+        "win_rate": 100.0,
+        "sharpe": 3.994678600983611,
+        "annual_return": 127.19917636866498,
+        "final_capital": 122153.14704700014
+      },
+      "1m": {
+        "total_return": 6.754926763400028,
+        "max_drawdown": 0.7183774771100083,
+        "total_trades": 1,
+        "win_rate": 100.0,
+        "sharpe": 6.892710251233309,
+        "annual_return": 195.78865680976247,
+        "final_capital": 106754.92676340003
+      }
+    },
+    "score": 52.81639484304024
+  }
+}

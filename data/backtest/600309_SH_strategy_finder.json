@@ -1,0 +1,164 @@
+{
+  "symbol": "600309.SH",
+  "name": "万华化学",
+  "generated_at": "2026-03-23 22:05:12",
+  "weights": {
+    "3m": 0.45,
+    "6m": 0.3,
+    "1m": 0.2,
+    "1y": 0.05
+  },
+  "current_profile_name": "ma_600309",
+  "suggested_profile_name": "600309_ma_5_20",
+  "top": [
+    {
+      "name": "MA_5_20",
+      "profile_spec": {
+        "kind": "ma",
+        "ma": {
+          "fast": 5,
+          "slow": 20
+        }
+      },
+      "periods": {
+        "1y": {
+          "total_return": 23.38122670130007,
+          "max_drawdown": 17.847187769066455,
+          "total_trades": 5,
+          "win_rate": 40.0,
+          "sharpe": 0.9599553483551483,
+          "annual_return": 23.452465608670536,
+          "final_capital": 123381.22670130007
+        },
+        "6m": {
+          "total_return": 14.43254857330001,
+          "max_drawdown": 10.137143216610314,
+          "total_trades": 2,
+          "win_rate": 50.0,
+          "sharpe": 1.080362561363121,
+          "annual_return": 29.212691486936883,
+          "final_capital": 114432.54857330001
+        },
+        "3m": {
+          "total_return": 7.786814412000006,
+          "max_drawdown": 9.954494875313118,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 1.0978031184014196,
+          "annual_return": 32.59916769296438,
+          "final_capital": 107786.814412
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": 8.516781581939314
+    },
+    {
+      "name": "DT_4_0.5_0.5",
+      "profile_spec": {
+        "kind": "dual_thrust",
+        "dual_thrust": {
+          "lookback": 4,
+          "k1": 0.5,
+          "k2": 0.5
+        }
+      },
+      "periods": {
+        "1y": {
+          "total_return": 24.56085392930011,
+          "max_drawdown": 10.897113695648015,
+          "total_trades": 11,
+          "win_rate": 54.54545454545454,
+          "sharpe": 1.0809231387454818,
+          "annual_return": 24.636032039651013,
+          "final_capital": 124560.85392930011
+        },
+        "6m": {
+          "total_return": 16.142698491400093,
+          "max_drawdown": 9.820771770559173,
+          "total_trades": 6,
+          "win_rate": 50.0,
+          "sharpe": 1.2943343070741884,
+          "annual_return": 32.90837046784225,
+          "final_capital": 116142.6984914001
+        },
+        "3m": {
+          "total_return": 4.635585119100054,
+          "max_drawdown": 10.031268827074841,
+          "total_trades": 3,
+          "win_rate": 66.66666666666666,
+          "sharpe": 0.7393452338236522,
+          "annual_return": 18.59090346140824,
+          "final_capital": 104635.58511910005
+        },
+        "1m": {
+          "total_return": -3.2778489119999863,
+          "max_drawdown": 3.2778489119999863,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -3.68959073136097,
+          "annual_return": -27.393933640613334,
+          "final_capital": 96722.15108800001
+        }
+      },
+      "score": 6.661623646298991
+    },
+    {
+      "name": "DT_3_0.5_0.5",
+      "profile_spec": {
+        "kind": "dual_thrust",
+        "dual_thrust": {
+          "lookback": 3,
+          "k1": 0.5,
+          "k2": 0.5
+        }
+      },
+      "periods": {
+        "1y": {
+          "total_return": 20.45625959520023,
+          "max_drawdown": 12.568853928567448,
+          "total_trades": 14,
+          "win_rate": 57.14285714285714,
+          "sharpe": 0.9174297888709617,
+          "annual_return": 20.517865724678373,
+          "final_capital": 120456.25959520023
+        },
+        "6m": {
+          "total_return": 17.543513397800126,
+          "max_drawdown": 9.712066534221876,
+          "total_trades": 7,
+          "win_rate": 57.14285714285714,
+          "sharpe": 1.350581962543163,
+          "annual_return": 35.972346487231775,
+          "final_capital": 117543.51339780012
+        },
+        "3m": {
+          "total_return": 4.635585119100054,
+          "max_drawdown": 10.031268827074841,
+          "total_trades": 3,
+          "win_rate": 66.66666666666666,
+          "sharpe": 0.7393452338236522,
+          "annual_return": 18.59090346140824,
+          "final_capital": 104635.58511910005
+        },
+        "1m": {
+          "total_return": -5.09938159379999,
+          "max_drawdown": 6.223825538218555,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -4.094325959636415,
+          "annual_return": -39.512843203847616,
+          "final_capital": 94900.61840620001
+        }
+      },
+      "score": 6.419860917453623
+    }
+  ]
+}

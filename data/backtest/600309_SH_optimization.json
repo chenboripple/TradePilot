@@ -1,0 +1,234 @@
+{
+  "symbol": "600309.SH",
+  "name": "万华化学",
+  "days": 365,
+  "default_params": {
+    "total_return": 17.696713200000055,
+    "total_trades": 4,
+    "win_rate": 50.0,
+    "max_drawdown": 0,
+    "final_capital": 117696.71320000006
+  },
+  "best_params": {
+    "ma": [
+      5,
+      15
+    ],
+    "rsi": [
+      14,
+      35,
+      65
+    ],
+    "bb": [
+      20,
+      2.0
+    ],
+    "total_return": 45.08822099999999,
+    "total_trades": 8,
+    "win_rate": 75.0,
+    "max_drawdown": 0,
+    "final_capital": 145088.221
+  },
+  "top_10": [
+    {
+      "ma": [
+        5,
+        15
+      ],
+      "rsi": [
+        14,
+        35,
+        65
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "total_return": 45.08822099999999,
+      "total_trades": 8,
+      "win_rate": 75.0,
+      "max_drawdown": 0,
+      "final_capital": 145088.221
+    },
+    {
+      "ma": [
+        5,
+        15
+      ],
+      "rsi": [
+        14,
+        30,
+        70
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "total_return": 43.485283000000024,
+      "total_trades": 8,
+      "win_rate": 75.0,
+      "max_drawdown": 0,
+      "final_capital": 143485.28300000002
+    },
+    {
+      "ma": [
+        3,
+        10
+      ],
+      "rsi": [
+        14,
+        35,
+        65
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "total_return": 25.433137500000086,
+      "total_trades": 13,
+      "win_rate": 61.53846153846154,
+      "max_drawdown": 0,
+      "final_capital": 125433.13750000008
+    },
+    {
+      "ma": [
+        5,
+        20
+      ],
+      "rsi": [
+        14,
+        35,
+        65
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "total_return": 25.358641900000062,
+      "total_trades": 4,
+      "win_rate": 75.0,
+      "max_drawdown": 0,
+      "final_capital": 125358.64190000006
+    },
+    {
+      "ma": [
+        3,
+        12
+      ],
+      "rsi": [
+        14,
+        35,
+        65
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "total_return": 25.06129290000007,
+      "total_trades": 10,
+      "win_rate": 80.0,
+      "max_drawdown": 0,
+      "final_capital": 125061.29290000007
+    },
+    {
+      "ma": [
+        3,
+        12
+      ],
+      "rsi": [
+        14,
+        30,
+        70
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "total_return": 24.193362600000082,
+      "total_trades": 11,
+      "win_rate": 72.72727272727273,
+      "max_drawdown": 0,
+      "final_capital": 124193.36260000008
+    },
+    {
+      "ma": [
+        3,
+        10
+      ],
+      "rsi": [
+        14,
+        30,
+        70
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "total_return": 24.104807900000086,
+      "total_trades": 13,
+      "win_rate": 61.53846153846154,
+      "max_drawdown": 0,
+      "final_capital": 124104.80790000009
+    },
+    {
+      "ma": [
+        5,
+        20
+      ],
+      "rsi": [
+        14,
+        30,
+        70
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "total_return": 17.696713200000055,
+      "total_trades": 4,
+      "win_rate": 50.0,
+      "max_drawdown": 0,
+      "final_capital": 117696.71320000006
+    },
+    {
+      "ma": [
+        5,
+        15
+      ],
+      "rsi": [
+        14,
+        30,
+        70
+      ],
+      "bb": [
+        14,
+        1.8
+      ],
+      "total_return": 43.933842399999996,
+      "total_trades": 8,
+      "win_rate": 75.0,
+      "max_drawdown": 23.957937415140368,
+      "final_capital": 143933.8424
+    },
+    {
+      "ma": [
+        5,
+        15
+      ],
+      "rsi": [
+        14,
+        35,
+        65
+      ],
+      "bb": [
+        14,
+        1.8
+      ],
+      "total_return": 43.933842399999996,
+      "total_trades": 8,
+      "win_rate": 75.0,
+      "max_drawdown": 23.957937415140368,
+      "final_capital": 143933.8424
+    }
+  ]
+}

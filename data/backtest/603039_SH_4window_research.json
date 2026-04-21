@@ -1,0 +1,4982 @@
+{
+  "symbol": "603039.SH",
+  "timestamp": "2026-03-19T01:14:13.768725",
+  "horizons": [
+    "1y",
+    "6m",
+    "3m",
+    "1m"
+  ],
+  "weights": {
+    "1y": 0.5,
+    "6m": 0.25,
+    "3m": 0.2,
+    "1m": 0.05
+  },
+  "total_strategies_tested": 288,
+  "valid_strategies": 258,
+  "top_10": [
+    {
+      "name": "MACD_f12_s20_sig7",
+      "score": 11.7,
+      "metrics": {
+        "1y": {
+          "total_return": 29.46,
+          "max_drawdown": -19.23,
+          "total_trades": 8,
+          "win_rate": 37.5,
+          "sharpe": 0.97,
+          "annual_return": 24.57,
+          "final_capital": 129457.68,
+          "avg_trade_return": 3911.65
+        },
+        "6m": {
+          "total_return": 12.74,
+          "max_drawdown": -18.13,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.88,
+          "annual_return": 17.33,
+          "final_capital": 112743.34,
+          "avg_trade_return": 2834.18
+        },
+        "3m": {
+          "total_return": 30.58,
+          "max_drawdown": -7.02,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.12,
+          "annual_return": 105.72,
+          "final_capital": 130578.58,
+          "avg_trade_return": 32005.62
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    {
+      "name": "MACD_f12_s20_sig9",
+      "score": 4.29,
+      "metrics": {
+        "1y": {
+          "total_return": 18.51,
+          "max_drawdown": -23.36,
+          "total_trades": 7,
+          "win_rate": 42.86,
+          "sharpe": 0.68,
+          "annual_return": 15.55,
+          "final_capital": 118511.2,
+          "avg_trade_return": 3114.53
+        },
+        "6m": {
+          "total_return": 13.43,
+          "max_drawdown": -15.97,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.93,
+          "annual_return": 18.28,
+          "final_capital": 113433.02,
+          "avg_trade_return": 4080.97
+        },
+        "3m": {
+          "total_return": 28.81,
+          "max_drawdown": -7.11,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 2.97,
+          "annual_return": 98.29,
+          "final_capital": 128812.28,
+          "avg_trade_return": 32005.62
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    {
+      "name": "MACD_f15_s20_sig7",
+      "score": 4.17,
+      "metrics": {
+        "1y": {
+          "total_return": 17.81,
+          "max_drawdown": -23.07,
+          "total_trades": 9,
+          "win_rate": 33.33,
+          "sharpe": 0.67,
+          "annual_return": 14.97,
+          "final_capital": 117811.65,
+          "avg_trade_return": 2168.54
+        },
+        "6m": {
+          "total_return": 9.18,
+          "max_drawdown": -19.75,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.68,
+          "annual_return": 12.42,
+          "final_capital": 109184.5,
+          "avg_trade_return": 2121.81
+        },
+        "3m": {
+          "total_return": 30.58,
+          "max_drawdown": -7.02,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.12,
+          "annual_return": 105.72,
+          "final_capital": 130578.58,
+          "avg_trade_return": 32005.62
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    {
+      "name": "MACD_f8_s20_sig9",
+      "score": 3.04,
+      "metrics": {
+        "1y": {
+          "total_return": 10.14,
+          "max_drawdown": -24.45,
+          "total_trades": 10,
+          "win_rate": 30.0,
+          "sharpe": 0.44,
+          "annual_return": 8.56,
+          "final_capital": 110140.42,
+          "avg_trade_return": 1180.38
+        },
+        "6m": {
+          "total_return": 15.36,
+          "max_drawdown": -18.57,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 1.03,
+          "annual_return": 20.97,
+          "final_capital": 115360.17,
+          "avg_trade_return": 3367.91
+        },
+        "3m": {
+          "total_return": 32.33,
+          "max_drawdown": -7.16,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.28,
+          "annual_return": 113.26,
+          "final_capital": 132327.57,
+          "avg_trade_return": 33803.82
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    {
+      "name": "MACD_f12_s30_sig9",
+      "score": 1.97,
+      "metrics": {
+        "1y": {
+          "total_return": 30.58,
+          "max_drawdown": -20.77,
+          "total_trades": 6,
+          "win_rate": 50.0,
+          "sharpe": 1.01,
+          "annual_return": 25.48,
+          "final_capital": 130580.33,
+          "avg_trade_return": 5148.5
+        },
+        "6m": {
+          "total_return": 16.86,
+          "max_drawdown": -15.61,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 1.15,
+          "annual_return": 23.07,
+          "final_capital": 116862.15,
+          "avg_trade_return": 5662.37
+        },
+        "3m": {
+          "total_return": 0.03,
+          "max_drawdown": -1.93,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.04,
+          "annual_return": 0.08,
+          "final_capital": 100030.71,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    {
+      "name": "MACD_f15_s20_sig12",
+      "score": 1.55,
+      "metrics": {
+        "1y": {
+          "total_return": 17.07,
+          "max_drawdown": -21.31,
+          "total_trades": 6,
+          "win_rate": 33.33,
+          "sharpe": 0.69,
+          "annual_return": 14.35,
+          "final_capital": 117074.96,
+          "avg_trade_return": 3438.41
+        },
+        "6m": {
+          "total_return": 9.31,
+          "max_drawdown": -19.24,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.69,
+          "annual_return": 12.59,
+          "final_capital": 109310.83,
+          "avg_trade_return": 3153.0
+        },
+        "3m": {
+          "total_return": 29.09,
+          "max_drawdown": -8.4,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.01,
+          "annual_return": 99.44,
+          "final_capital": 129089.17,
+          "avg_trade_return": 32761.55
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    {
+      "name": "MACD_f15_s20_sig9",
+      "score": -1.78,
+      "metrics": {
+        "1y": {
+          "total_return": 11.3,
+          "max_drawdown": -27.47,
+          "total_trades": 8,
+          "win_rate": 37.5,
+          "sharpe": 0.48,
+          "annual_return": 9.53,
+          "final_capital": 111296.76,
+          "avg_trade_return": 1800.29
+        },
+        "6m": {
+          "total_return": 10.3,
+          "max_drawdown": -16.4,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.74,
+          "annual_return": 13.95,
+          "final_capital": 110298.63,
+          "avg_trade_return": 3298.09
+        },
+        "3m": {
+          "total_return": 25.9,
+          "max_drawdown": -8.59,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 2.68,
+          "annual_return": 86.42,
+          "final_capital": 125904.66,
+          "avg_trade_return": 28985.18
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    {
+      "name": "MACD_f8_s20_sig7",
+      "score": -2.45,
+      "metrics": {
+        "1y": {
+          "total_return": 1.33,
+          "max_drawdown": -28.77,
+          "total_trades": 10,
+          "win_rate": 30.0,
+          "sharpe": 0.19,
+          "annual_return": 1.13,
+          "final_capital": 101330.43,
+          "avg_trade_return": 286.27
+        },
+        "6m": {
+          "total_return": 13.19,
+          "max_drawdown": -16.58,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.9,
+          "annual_return": 17.94,
+          "final_capital": 113189.01,
+          "avg_trade_return": 2923.47
+        },
+        "3m": {
+          "total_return": 33.37,
+          "max_drawdown": -7.11,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.29,
+          "annual_return": 117.83,
+          "final_capital": 133370.6,
+          "avg_trade_return": 34849.38
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    {
+      "name": "MACD_f8_s30_sig12",
+      "score": -3.67,
+      "metrics": {
+        "1y": {
+          "total_return": 19.67,
+          "max_drawdown": -20.22,
+          "total_trades": 6,
+          "win_rate": 33.33,
+          "sharpe": 0.76,
+          "annual_return": 16.5,
+          "final_capital": 119665.88,
+          "avg_trade_return": 3324.5
+        },
+        "6m": {
+          "total_return": 16.73,
+          "max_drawdown": -14.81,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 1.14,
+          "annual_return": 22.89,
+          "final_capital": 116731.37,
+          "avg_trade_return": 5618.99
+        },
+        "3m": {
+          "total_return": 0.03,
+          "max_drawdown": -1.93,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.04,
+          "annual_return": 0.08,
+          "final_capital": 100030.71,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    {
+      "name": "MACD_f15_s26_sig9",
+      "score": -3.86,
+      "metrics": {
+        "1y": {
+          "total_return": 24.65,
+          "max_drawdown": -16.77,
+          "total_trades": 5,
+          "win_rate": 40.0,
+          "sharpe": 0.91,
+          "annual_return": 20.62,
+          "final_capital": 124654.78,
+          "avg_trade_return": 5683.53
+        },
+        "6m": {
+          "total_return": 15.69,
+          "max_drawdown": -15.32,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 1.04,
+          "annual_return": 21.42,
+          "final_capital": 115686.05,
+          "avg_trade_return": 6356.3
+        },
+        "3m": {
+          "total_return": -2.7,
+          "max_drawdown": -4.09,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.19,
+          "annual_return": -7.14,
+          "final_capital": 97295.76,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    }
+  ],
+  "all_results": {
+    "MACD_f8_s20_sig7": {
+      "score": -2.45,
+      "metrics": {
+        "1y": {
+          "total_return": 1.33,
+          "max_drawdown": -28.77,
+          "total_trades": 10,
+          "win_rate": 30.0,
+          "sharpe": 0.19,
+          "annual_return": 1.13,
+          "final_capital": 101330.43,
+          "avg_trade_return": 286.27
+        },
+        "6m": {
+          "total_return": 13.19,
+          "max_drawdown": -16.58,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.9,
+          "annual_return": 17.94,
+          "final_capital": 113189.01,
+          "avg_trade_return": 2923.47
+        },
+        "3m": {
+          "total_return": 33.37,
+          "max_drawdown": -7.11,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.29,
+          "annual_return": 117.83,
+          "final_capital": 133370.6,
+          "avg_trade_return": 34849.38
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s20_sig7_zc": {
+      "score": -36.78,
+      "metrics": {
+        "1y": {
+          "total_return": -24.53,
+          "max_drawdown": -24.53,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.56,
+          "annual_return": -21.3,
+          "final_capital": 75466.53,
+          "avg_trade_return": -24486.97
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s20_sig9": {
+      "score": 3.04,
+      "metrics": {
+        "1y": {
+          "total_return": 10.14,
+          "max_drawdown": -24.45,
+          "total_trades": 10,
+          "win_rate": 30.0,
+          "sharpe": 0.44,
+          "annual_return": 8.56,
+          "final_capital": 110140.42,
+          "avg_trade_return": 1180.38
+        },
+        "6m": {
+          "total_return": 15.36,
+          "max_drawdown": -18.57,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 1.03,
+          "annual_return": 20.97,
+          "final_capital": 115360.17,
+          "avg_trade_return": 3367.91
+        },
+        "3m": {
+          "total_return": 32.33,
+          "max_drawdown": -7.16,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.28,
+          "annual_return": 113.26,
+          "final_capital": 132327.57,
+          "avg_trade_return": 33803.82
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s20_sig9_zc": {
+      "score": -34.39,
+      "metrics": {
+        "1y": {
+          "total_return": -20.74,
+          "max_drawdown": -20.74,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.54,
+          "annual_return": -17.95,
+          "final_capital": 79256.04,
+          "avg_trade_return": -20695.04
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s20_sig12": {
+      "score": -10.08,
+      "metrics": {
+        "1y": {
+          "total_return": -1.7,
+          "max_drawdown": -23.06,
+          "total_trades": 9,
+          "win_rate": 33.33,
+          "sharpe": 0.09,
+          "annual_return": -1.45,
+          "final_capital": 98299.56,
+          "avg_trade_return": 529.37
+        },
+        "6m": {
+          "total_return": 4.35,
+          "max_drawdown": -19.45,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.39,
+          "annual_return": 5.83,
+          "final_capital": 104347.84,
+          "avg_trade_return": 2183.86
+        },
+        "3m": {
+          "total_return": 24.19,
+          "max_drawdown": -9.67,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 2.61,
+          "annual_return": 79.64,
+          "final_capital": 124192.89,
+          "avg_trade_return": 32005.62
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s20_sig12_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s26_sig7": {
+      "score": -8.14,
+      "metrics": {
+        "1y": {
+          "total_return": 13.64,
+          "max_drawdown": -19.96,
+          "total_trades": 10,
+          "win_rate": 30.0,
+          "sharpe": 0.53,
+          "annual_return": 11.49,
+          "final_capital": 113635.14,
+          "avg_trade_return": 1683.57
+        },
+        "6m": {
+          "total_return": 9.86,
+          "max_drawdown": -19.07,
+          "total_trades": 6,
+          "win_rate": 16.67,
+          "sharpe": 0.72,
+          "annual_return": 13.35,
+          "final_capital": 109861.28,
+          "avg_trade_return": 2141.65
+        },
+        "3m": {
+          "total_return": -2.35,
+          "max_drawdown": -7.04,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -0.61,
+          "annual_return": -6.22,
+          "final_capital": 97653.22,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s26_sig7_zc": {
+      "score": -39.39,
+      "metrics": {
+        "1y": {
+          "total_return": -29.44,
+          "max_drawdown": -29.44,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.19,
+          "annual_return": -25.68,
+          "final_capital": 70555.92,
+          "avg_trade_return": -29399.05
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s26_sig9": {
+      "score": -14.24,
+      "metrics": {
+        "1y": {
+          "total_return": 14.06,
+          "max_drawdown": -22.96,
+          "total_trades": 8,
+          "win_rate": 37.5,
+          "sharpe": 0.56,
+          "annual_return": 11.84,
+          "final_capital": 114056.98,
+          "avg_trade_return": 2708.87
+        },
+        "6m": {
+          "total_return": 3.88,
+          "max_drawdown": -19.91,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.36,
+          "annual_return": 5.21,
+          "final_capital": 103884.44,
+          "avg_trade_return": 2091.15
+        },
+        "3m": {
+          "total_return": -5.74,
+          "max_drawdown": -7.06,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.0,
+          "annual_return": -14.77,
+          "final_capital": 94260.42,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s26_sig9_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s26_sig12": {
+      "score": -7.92,
+      "metrics": {
+        "1y": {
+          "total_return": 19.42,
+          "max_drawdown": -20.91,
+          "total_trades": 6,
+          "win_rate": 33.33,
+          "sharpe": 0.72,
+          "annual_return": 16.3,
+          "final_capital": 119418.46,
+          "avg_trade_return": 3849.52
+        },
+        "6m": {
+          "total_return": 11.67,
+          "max_drawdown": -14.6,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 0.82,
+          "annual_return": 15.84,
+          "final_capital": 111668.56,
+          "avg_trade_return": 4973.31
+        },
+        "3m": {
+          "total_return": -2.7,
+          "max_drawdown": -4.09,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.19,
+          "annual_return": -7.14,
+          "final_capital": 97295.76,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s26_sig12_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s30_sig7": {
+      "score": -7.15,
+      "metrics": {
+        "1y": {
+          "total_return": 19.52,
+          "max_drawdown": -22.05,
+          "total_trades": 8,
+          "win_rate": 37.5,
+          "sharpe": 0.71,
+          "annual_return": 16.38,
+          "final_capital": 119515.51,
+          "avg_trade_return": 2858.07
+        },
+        "6m": {
+          "total_return": 8.57,
+          "max_drawdown": -18.98,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.64,
+          "annual_return": 11.58,
+          "final_capital": 108571.47,
+          "avg_trade_return": 2279.96
+        },
+        "3m": {
+          "total_return": -2.35,
+          "max_drawdown": -7.04,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -0.61,
+          "annual_return": -6.22,
+          "final_capital": 97653.22,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s30_sig7_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s30_sig9": {
+      "score": -10.95,
+      "metrics": {
+        "1y": {
+          "total_return": 18.0,
+          "max_drawdown": -19.59,
+          "total_trades": 7,
+          "win_rate": 42.86,
+          "sharpe": 0.67,
+          "annual_return": 15.12,
+          "final_capital": 117996.24,
+          "avg_trade_return": 3651.8
+        },
+        "6m": {
+          "total_return": 7.55,
+          "max_drawdown": -15.26,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.57,
+          "annual_return": 10.18,
+          "final_capital": 107545.81,
+          "avg_trade_return": 3589.98
+        },
+        "3m": {
+          "total_return": -5.74,
+          "max_drawdown": -7.06,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.0,
+          "annual_return": -14.77,
+          "final_capital": 94260.42,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s30_sig9_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s30_sig12": {
+      "score": -3.67,
+      "metrics": {
+        "1y": {
+          "total_return": 19.67,
+          "max_drawdown": -20.22,
+          "total_trades": 6,
+          "win_rate": 33.33,
+          "sharpe": 0.76,
+          "annual_return": 16.5,
+          "final_capital": 119665.88,
+          "avg_trade_return": 3324.5
+        },
+        "6m": {
+          "total_return": 16.73,
+          "max_drawdown": -14.81,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 1.14,
+          "annual_return": 22.89,
+          "final_capital": 116731.37,
+          "avg_trade_return": 5618.99
+        },
+        "3m": {
+          "total_return": 0.03,
+          "max_drawdown": -1.93,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.04,
+          "annual_return": 0.08,
+          "final_capital": 100030.71,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f8_s30_sig12_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s20_sig7": {
+      "score": 11.7,
+      "metrics": {
+        "1y": {
+          "total_return": 29.46,
+          "max_drawdown": -19.23,
+          "total_trades": 8,
+          "win_rate": 37.5,
+          "sharpe": 0.97,
+          "annual_return": 24.57,
+          "final_capital": 129457.68,
+          "avg_trade_return": 3911.65
+        },
+        "6m": {
+          "total_return": 12.74,
+          "max_drawdown": -18.13,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.88,
+          "annual_return": 17.33,
+          "final_capital": 112743.34,
+          "avg_trade_return": 2834.18
+        },
+        "3m": {
+          "total_return": 30.58,
+          "max_drawdown": -7.02,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.12,
+          "annual_return": 105.72,
+          "final_capital": 130578.58,
+          "avg_trade_return": 32005.62
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s20_sig7_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s20_sig9": {
+      "score": 4.29,
+      "metrics": {
+        "1y": {
+          "total_return": 18.51,
+          "max_drawdown": -23.36,
+          "total_trades": 7,
+          "win_rate": 42.86,
+          "sharpe": 0.68,
+          "annual_return": 15.55,
+          "final_capital": 118511.2,
+          "avg_trade_return": 3114.53
+        },
+        "6m": {
+          "total_return": 13.43,
+          "max_drawdown": -15.97,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.93,
+          "annual_return": 18.28,
+          "final_capital": 113433.02,
+          "avg_trade_return": 4080.97
+        },
+        "3m": {
+          "total_return": 28.81,
+          "max_drawdown": -7.11,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 2.97,
+          "annual_return": 98.29,
+          "final_capital": 128812.28,
+          "avg_trade_return": 32005.62
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s20_sig9_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s20_sig12": {
+      "score": -6.43,
+      "metrics": {
+        "1y": {
+          "total_return": 12.08,
+          "max_drawdown": -22.36,
+          "total_trades": 6,
+          "win_rate": 33.33,
+          "sharpe": 0.53,
+          "annual_return": 10.19,
+          "final_capital": 112075.28,
+          "avg_trade_return": 3215.51
+        },
+        "6m": {
+          "total_return": 2.1,
+          "max_drawdown": -19.13,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.24,
+          "annual_return": 2.81,
+          "final_capital": 102100.25,
+          "avg_trade_return": 2154.46
+        },
+        "3m": {
+          "total_return": 21.46,
+          "max_drawdown": -11.82,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 2.33,
+          "annual_return": 69.16,
+          "final_capital": 121460.5,
+          "avg_trade_return": 28985.18
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s20_sig12_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s26_sig7": {
+      "score": -20.06,
+      "metrics": {
+        "1y": {
+          "total_return": 5.48,
+          "max_drawdown": -23.98,
+          "total_trades": 8,
+          "win_rate": 37.5,
+          "sharpe": 0.31,
+          "annual_return": 4.64,
+          "final_capital": 105481.35,
+          "avg_trade_return": 1564.41
+        },
+        "6m": {
+          "total_return": 0.8,
+          "max_drawdown": -20.46,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.16,
+          "annual_return": 1.06,
+          "final_capital": 100797.35,
+          "avg_trade_return": 1473.64
+        },
+        "3m": {
+          "total_return": -5.74,
+          "max_drawdown": -7.06,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.0,
+          "annual_return": -14.77,
+          "final_capital": 94260.42,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s26_sig7_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s26_sig9": {
+      "score": -14.13,
+      "metrics": {
+        "1y": {
+          "total_return": 14.52,
+          "max_drawdown": -20.91,
+          "total_trades": 6,
+          "win_rate": 33.33,
+          "sharpe": 0.58,
+          "annual_return": 12.23,
+          "final_capital": 114522.49,
+          "avg_trade_return": 3671.2
+        },
+        "6m": {
+          "total_return": 7.15,
+          "max_drawdown": -15.59,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 0.55,
+          "annual_return": 9.64,
+          "final_capital": 107151.92,
+          "avg_trade_return": 4637.65
+        },
+        "3m": {
+          "total_return": -5.74,
+          "max_drawdown": -7.06,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.0,
+          "annual_return": -14.77,
+          "final_capital": 94260.42,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s26_sig9_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s26_sig12": {
+      "score": -5.44,
+      "metrics": {
+        "1y": {
+          "total_return": 20.39,
+          "max_drawdown": -19.78,
+          "total_trades": 5,
+          "win_rate": 40.0,
+          "sharpe": 0.79,
+          "annual_return": 17.11,
+          "final_capital": 120393.9,
+          "avg_trade_return": 4277.46
+        },
+        "6m": {
+          "total_return": 13.82,
+          "max_drawdown": -15.78,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 0.96,
+          "annual_return": 18.81,
+          "final_capital": 113816.27,
+          "avg_trade_return": 4889.06
+        },
+        "3m": {
+          "total_return": -0.58,
+          "max_drawdown": -1.97,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -0.38,
+          "annual_return": -1.56,
+          "final_capital": 99419.52,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s26_sig12_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s30_sig7": {
+      "score": -13.79,
+      "metrics": {
+        "1y": {
+          "total_return": 13.94,
+          "max_drawdown": -20.91,
+          "total_trades": 7,
+          "win_rate": 28.57,
+          "sharpe": 0.56,
+          "annual_return": 11.75,
+          "final_capital": 113944.72,
+          "avg_trade_return": 3031.24
+        },
+        "6m": {
+          "total_return": 6.39,
+          "max_drawdown": -16.33,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.5,
+          "annual_return": 8.61,
+          "final_capital": 106394.43,
+          "avg_trade_return": 3302.1
+        },
+        "3m": {
+          "total_return": -5.74,
+          "max_drawdown": -7.06,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.0,
+          "annual_return": -14.77,
+          "final_capital": 94260.42,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s30_sig7_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s30_sig9": {
+      "score": 1.97,
+      "metrics": {
+        "1y": {
+          "total_return": 30.58,
+          "max_drawdown": -20.77,
+          "total_trades": 6,
+          "win_rate": 50.0,
+          "sharpe": 1.01,
+          "annual_return": 25.48,
+          "final_capital": 130580.33,
+          "avg_trade_return": 5148.5
+        },
+        "6m": {
+          "total_return": 16.86,
+          "max_drawdown": -15.61,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 1.15,
+          "annual_return": 23.07,
+          "final_capital": 116862.15,
+          "avg_trade_return": 5662.37
+        },
+        "3m": {
+          "total_return": 0.03,
+          "max_drawdown": -1.93,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.04,
+          "annual_return": 0.08,
+          "final_capital": 100030.71,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s30_sig9_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s30_sig12": {
+      "score": -6.7,
+      "metrics": {
+        "1y": {
+          "total_return": 18.61,
+          "max_drawdown": -22.21,
+          "total_trades": 5,
+          "win_rate": 40.0,
+          "sharpe": 0.74,
+          "annual_return": 15.63,
+          "final_capital": 118609.59,
+          "avg_trade_return": 3806.19
+        },
+        "6m": {
+          "total_return": 11.62,
+          "max_drawdown": -16.54,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 0.83,
+          "annual_return": 15.77,
+          "final_capital": 111617.02,
+          "avg_trade_return": 3970.81
+        },
+        "3m": {
+          "total_return": -0.12,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": -0.32,
+          "final_capital": 99882.12,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f12_s30_sig12_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s20_sig7": {
+      "score": 4.17,
+      "metrics": {
+        "1y": {
+          "total_return": 17.81,
+          "max_drawdown": -23.07,
+          "total_trades": 9,
+          "win_rate": 33.33,
+          "sharpe": 0.67,
+          "annual_return": 14.97,
+          "final_capital": 117811.65,
+          "avg_trade_return": 2168.54
+        },
+        "6m": {
+          "total_return": 9.18,
+          "max_drawdown": -19.75,
+          "total_trades": 5,
+          "win_rate": 20.0,
+          "sharpe": 0.68,
+          "annual_return": 12.42,
+          "final_capital": 109184.5,
+          "avg_trade_return": 2121.81
+        },
+        "3m": {
+          "total_return": 30.58,
+          "max_drawdown": -7.02,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.12,
+          "annual_return": 105.72,
+          "final_capital": 130578.58,
+          "avg_trade_return": 32005.62
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s20_sig7_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s20_sig9": {
+      "score": -1.78,
+      "metrics": {
+        "1y": {
+          "total_return": 11.3,
+          "max_drawdown": -27.47,
+          "total_trades": 8,
+          "win_rate": 37.5,
+          "sharpe": 0.48,
+          "annual_return": 9.53,
+          "final_capital": 111296.76,
+          "avg_trade_return": 1800.29
+        },
+        "6m": {
+          "total_return": 10.3,
+          "max_drawdown": -16.4,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.74,
+          "annual_return": 13.95,
+          "final_capital": 110298.63,
+          "avg_trade_return": 3298.09
+        },
+        "3m": {
+          "total_return": 25.9,
+          "max_drawdown": -8.59,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 2.68,
+          "annual_return": 86.42,
+          "final_capital": 125904.66,
+          "avg_trade_return": 28985.18
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s20_sig9_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s20_sig12": {
+      "score": 1.55,
+      "metrics": {
+        "1y": {
+          "total_return": 17.07,
+          "max_drawdown": -21.31,
+          "total_trades": 6,
+          "win_rate": 33.33,
+          "sharpe": 0.69,
+          "annual_return": 14.35,
+          "final_capital": 117074.96,
+          "avg_trade_return": 3438.41
+        },
+        "6m": {
+          "total_return": 9.31,
+          "max_drawdown": -19.24,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.69,
+          "annual_return": 12.59,
+          "final_capital": 109310.83,
+          "avg_trade_return": 3153.0
+        },
+        "3m": {
+          "total_return": 29.09,
+          "max_drawdown": -8.4,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 3.01,
+          "annual_return": 99.44,
+          "final_capital": 129089.17,
+          "avg_trade_return": 32761.55
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s20_sig12_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s26_sig7": {
+      "score": -11.62,
+      "metrics": {
+        "1y": {
+          "total_return": 2.51,
+          "max_drawdown": -25.71,
+          "total_trades": 7,
+          "win_rate": 28.57,
+          "sharpe": 0.22,
+          "annual_return": 2.13,
+          "final_capital": 102509.35,
+          "avg_trade_return": 1311.61
+        },
+        "6m": {
+          "total_return": 2.1,
+          "max_drawdown": -19.13,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": 0.24,
+          "annual_return": 2.81,
+          "final_capital": 102100.25,
+          "avg_trade_return": 2154.46
+        },
+        "3m": {
+          "total_return": 21.19,
+          "max_drawdown": -11.84,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 2.3,
+          "annual_return": 68.14,
+          "final_capital": 121190.15,
+          "avg_trade_return": 28714.91
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s26_sig7_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s26_sig9": {
+      "score": -3.86,
+      "metrics": {
+        "1y": {
+          "total_return": 24.65,
+          "max_drawdown": -16.77,
+          "total_trades": 5,
+          "win_rate": 40.0,
+          "sharpe": 0.91,
+          "annual_return": 20.62,
+          "final_capital": 124654.78,
+          "avg_trade_return": 5683.53
+        },
+        "6m": {
+          "total_return": 15.69,
+          "max_drawdown": -15.32,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 1.04,
+          "annual_return": 21.42,
+          "final_capital": 115686.05,
+          "avg_trade_return": 6356.3
+        },
+        "3m": {
+          "total_return": -2.7,
+          "max_drawdown": -4.09,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.19,
+          "annual_return": -7.14,
+          "final_capital": 97295.76,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s26_sig9_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s26_sig12": {
+      "score": -9.4,
+      "metrics": {
+        "1y": {
+          "total_return": 12.32,
+          "max_drawdown": -22.12,
+          "total_trades": 5,
+          "win_rate": 40.0,
+          "sharpe": 0.53,
+          "annual_return": 10.39,
+          "final_capital": 112315.9,
+          "avg_trade_return": 2226.93
+        },
+        "6m": {
+          "total_return": 6.46,
+          "max_drawdown": -16.54,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 0.5,
+          "annual_return": 8.7,
+          "final_capital": 106463.3,
+          "avg_trade_return": 1743.7
+        },
+        "3m": {
+          "total_return": 1.33,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 1.68,
+          "annual_return": 3.64,
+          "final_capital": 101330.39,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s26_sig12_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s30_sig7": {
+      "score": -4.99,
+      "metrics": {
+        "1y": {
+          "total_return": 24.73,
+          "max_drawdown": -21.63,
+          "total_trades": 6,
+          "win_rate": 50.0,
+          "sharpe": 0.86,
+          "annual_return": 20.68,
+          "final_capital": 124725.08,
+          "avg_trade_return": 4758.63
+        },
+        "6m": {
+          "total_return": 12.52,
+          "max_drawdown": -15.31,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 0.88,
+          "annual_return": 17.02,
+          "final_capital": 112520.28,
+          "avg_trade_return": 5256.93
+        },
+        "3m": {
+          "total_return": -2.7,
+          "max_drawdown": -4.09,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.19,
+          "annual_return": -7.14,
+          "final_capital": 97295.76,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s30_sig7_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s30_sig9": {
+      "score": -5.88,
+      "metrics": {
+        "1y": {
+          "total_return": 19.97,
+          "max_drawdown": -20.15,
+          "total_trades": 5,
+          "win_rate": 40.0,
+          "sharpe": 0.78,
+          "annual_return": 16.75,
+          "final_capital": 119968.35,
+          "avg_trade_return": 4192.37
+        },
+        "6m": {
+          "total_return": 13.44,
+          "max_drawdown": -16.17,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 0.94,
+          "annual_return": 18.3,
+          "final_capital": 113443.39,
+          "avg_trade_return": 4755.59
+        },
+        "3m": {
+          "total_return": -0.58,
+          "max_drawdown": -1.97,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -0.38,
+          "annual_return": -1.56,
+          "final_capital": 99419.52,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s30_sig9_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s30_sig12": {
+      "score": -14.56,
+      "metrics": {
+        "1y": {
+          "total_return": 8.8,
+          "max_drawdown": -23.08,
+          "total_trades": 5,
+          "win_rate": 40.0,
+          "sharpe": 0.43,
+          "annual_return": 7.44,
+          "final_capital": 108798.63,
+          "avg_trade_return": 1838.77
+        },
+        "6m": {
+          "total_return": 4.32,
+          "max_drawdown": -17.17,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": 0.38,
+          "annual_return": 5.79,
+          "final_capital": 104319.0,
+          "avg_trade_return": 1532.56
+        },
+        "3m": {
+          "total_return": -0.12,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": -0.32,
+          "final_capital": 99882.12,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "MACD_f15_s30_sig12_zc": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w10_e5": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w10_e7": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w15_e7": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w15_e10": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w20_e6": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w20_e10": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w20_e14": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w25_e7": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w25_e12": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w25_e17": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w30_e9": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w30_e15": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "Donchian_w30_e21": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp15_m1.5": {
+      "score": -39.56,
+      "metrics": {
+        "1y": {
+          "total_return": -19.52,
+          "max_drawdown": -32.58,
+          "total_trades": 3,
+          "win_rate": 0.0,
+          "sharpe": -0.39,
+          "annual_return": -16.87,
+          "final_capital": 80476.86,
+          "avg_trade_return": -6460.24
+        },
+        "6m": {
+          "total_return": -5.88,
+          "max_drawdown": -24.6,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -0.17,
+          "annual_return": -7.75,
+          "final_capital": 94120.66,
+          "avg_trade_return": -2886.44
+        },
+        "3m": {
+          "total_return": -2.17,
+          "max_drawdown": -23.9,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.05,
+          "annual_return": -5.76,
+          "final_capital": 97827.87,
+          "avg_trade_return": -2118.1
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp15_m2.0": {
+      "score": -67.15,
+      "metrics": {
+        "1y": {
+          "total_return": -34.26,
+          "max_drawdown": -44.93,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.62,
+          "annual_return": -30.02,
+          "final_capital": 65736.28,
+          "avg_trade_return": -34217.16
+        },
+        "6m": {
+          "total_return": -29.08,
+          "max_drawdown": -36.62,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.26,
+          "annual_return": -36.73,
+          "final_capital": 70918.78,
+          "avg_trade_return": -29033.62
+        },
+        "3m": {
+          "total_return": -22.53,
+          "max_drawdown": -35.97,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -2.16,
+          "annual_return": -49.85,
+          "final_capital": 77471.06,
+          "avg_trade_return": -22480.72
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp15_m2.5": {
+      "score": -68.82,
+      "metrics": {
+        "1y": {
+          "total_return": -34.3,
+          "max_drawdown": -45.81,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -0.61,
+          "annual_return": -30.05,
+          "final_capital": 65702.98,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": -29.12,
+          "max_drawdown": -37.63,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.22,
+          "annual_return": -36.77,
+          "final_capital": 70883.1,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": -22.57,
+          "max_drawdown": -36.97,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.03,
+          "annual_return": -49.92,
+          "final_capital": 77433.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp15_m3.0": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp20_m1.5": {
+      "score": -59.74,
+      "metrics": {
+        "1y": {
+          "total_return": -34.87,
+          "max_drawdown": -35.92,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.79,
+          "annual_return": -30.56,
+          "final_capital": 65133.56,
+          "avg_trade_return": -34824.1
+        },
+        "6m": {
+          "total_return": -21.41,
+          "max_drawdown": -29.76,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.86,
+          "annual_return": -27.45,
+          "final_capital": 78588.8,
+          "avg_trade_return": -21361.3
+        },
+        "3m": {
+          "total_return": -14.35,
+          "max_drawdown": -29.21,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.33,
+          "annual_return": -34.21,
+          "final_capital": 85652.41,
+          "avg_trade_return": -14296.91
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp20_m2.0": {
+      "score": -71.94,
+      "metrics": {
+        "1y": {
+          "total_return": -40.52,
+          "max_drawdown": -42.27,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -0.97,
+          "annual_return": -35.72,
+          "final_capital": 59482.72,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": -29.12,
+          "max_drawdown": -37.63,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.22,
+          "annual_return": -36.77,
+          "final_capital": 70883.1,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": -22.57,
+          "max_drawdown": -36.97,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.03,
+          "annual_return": -49.92,
+          "final_capital": 77433.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp20_m2.5": {
+      "score": -69.43,
+      "metrics": {
+        "1y": {
+          "total_return": -28.51,
+          "max_drawdown": -35.71,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.77,
+          "annual_return": -24.84,
+          "final_capital": 71492.49,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": -28.51,
+          "max_drawdown": -35.71,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.21,
+          "annual_return": -36.05,
+          "final_capital": 71492.49,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": -28.51,
+          "max_drawdown": -35.71,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -3.18,
+          "annual_return": -59.64,
+          "final_capital": 71492.49,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp20_m3.0": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp25_m1.5": {
+      "score": -64.36,
+      "metrics": {
+        "1y": {
+          "total_return": -29.08,
+          "max_drawdown": -36.62,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.01,
+          "annual_return": -25.35,
+          "final_capital": 70918.78,
+          "avg_trade_return": -29033.62
+        },
+        "6m": {
+          "total_return": -30.37,
+          "max_drawdown": -35.45,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.4,
+          "annual_return": -38.25,
+          "final_capital": 69633.34,
+          "avg_trade_return": -30321.27
+        },
+        "3m": {
+          "total_return": -22.53,
+          "max_drawdown": -35.97,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -2.16,
+          "annual_return": -49.85,
+          "final_capital": 77471.06,
+          "avg_trade_return": -22480.72
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp25_m2.0": {
+      "score": -69.43,
+      "metrics": {
+        "1y": {
+          "total_return": -28.51,
+          "max_drawdown": -35.71,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.77,
+          "annual_return": -24.84,
+          "final_capital": 71492.49,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": -28.51,
+          "max_drawdown": -35.71,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.21,
+          "annual_return": -36.05,
+          "final_capital": 71492.49,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": -28.51,
+          "max_drawdown": -35.71,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -3.18,
+          "annual_return": -59.64,
+          "final_capital": 71492.49,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp25_m2.5": {
+      "score": -74.34,
+      "metrics": {
+        "1y": {
+          "total_return": -31.94,
+          "max_drawdown": -36.87,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.01,
+          "annual_return": -27.92,
+          "final_capital": 68058.03,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": -31.94,
+          "max_drawdown": -36.87,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.51,
+          "annual_return": -40.11,
+          "final_capital": 68058.03,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": -31.94,
+          "max_drawdown": -36.87,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -3.62,
+          "annual_return": -64.67,
+          "final_capital": 68058.03,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p10_cp25_m3.0": {
+      "score": -20.0,
+      "metrics": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp15_m1.5": {
+      "score": -23.54,
+      "metrics": {
+        "1y": {
+          "total_return": -6.29,
+          "max_drawdown": -26.03,
+          "total_trades": 3,
+          "win_rate": 66.67,
+          "sharpe": 0.0,
+          "annual_return": -5.38,
+          "final_capital": 93705.23,
+          "avg_trade_return": -2047.2
+        },
+        "6m": {
+          "total_return": 6.14,
+          "max_drawdown": -17.44,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 0.45,
+          "annual_return": 8.26,
+          "final_capital": 106138.02,
+          "avg_trade_return": 3124.04
+        },
+        "3m": {
+          "total_return": 6.13,
+          "max_drawdown": -17.44,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 0.72,
+          "annual_return": 17.45,
+          "final_capital": 106130.07,
+          "avg_trade_return": 6186.59
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp15_m2.0": {
+      "score": -32.83,
+      "metrics": {
+        "1y": {
+          "total_return": -13.73,
+          "max_drawdown": -28.93,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": -0.2,
+          "annual_return": -11.81,
+          "final_capital": 86267.91,
+          "avg_trade_return": -4527.05
+        },
+        "6m": {
+          "total_return": -2.08,
+          "max_drawdown": -21.56,
+          "total_trades": 2,
+          "win_rate": 50.0,
+          "sharpe": 0.03,
+          "annual_return": -2.76,
+          "final_capital": 97923.71,
+          "avg_trade_return": -984.34
+        },
+        "3m": {
+          "total_return": 1.63,
+          "max_drawdown": -20.94,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 0.3,
+          "annual_return": 4.47,
+          "final_capital": 101630.92,
+          "avg_trade_return": 1686.09
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp15_m2.5": {
+      "score": -54.21,
+      "metrics": {
+        "1y": {
+          "total_return": -27.11,
+          "max_drawdown": -38.93,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.42,
+          "annual_return": -23.58,
+          "final_capital": 72894.96,
+          "avg_trade_return": -27056.33
+        },
+        "6m": {
+          "total_return": -16.79,
+          "max_drawdown": -28.58,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.65,
+          "annual_return": -21.71,
+          "final_capital": 83214.8,
+          "avg_trade_return": -16736.68
+        },
+        "3m": {
+          "total_return": -14.35,
+          "max_drawdown": -29.21,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.33,
+          "annual_return": -34.21,
+          "final_capital": 85652.41,
+          "avg_trade_return": -14296.91
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp15_m3.0": {
+      "score": -67.15,
+      "metrics": {
+        "1y": {
+          "total_return": -34.26,
+          "max_drawdown": -44.93,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.62,
+          "annual_return": -30.02,
+          "final_capital": 65736.28,
+          "avg_trade_return": -34217.16
+        },
+        "6m": {
+          "total_return": -29.08,
+          "max_drawdown": -36.62,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.26,
+          "annual_return": -36.73,
+          "final_capital": 70918.78,
+          "avg_trade_return": -29033.62
+        },
+        "3m": {
+          "total_return": -22.53,
+          "max_drawdown": -35.97,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -2.16,
+          "annual_return": -49.85,
+          "final_capital": 77471.06,
+          "avg_trade_return": -22480.72
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp20_m1.5": {
+      "score": -43.44,
+      "metrics": {
+        "1y": {
+          "total_return": -27.4,
+          "max_drawdown": -28.57,
+          "total_trades": 3,
+          "win_rate": 0.0,
+          "sharpe": -0.74,
+          "annual_return": -23.85,
+          "final_capital": 72602.01,
+          "avg_trade_return": -9089.58
+        },
+        "6m": {
+          "total_return": -5.88,
+          "max_drawdown": -24.6,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -0.17,
+          "annual_return": -7.75,
+          "final_capital": 94120.66,
+          "avg_trade_return": -2886.44
+        },
+        "3m": {
+          "total_return": -2.17,
+          "max_drawdown": -23.9,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.05,
+          "annual_return": -5.76,
+          "final_capital": 97827.87,
+          "avg_trade_return": -2118.1
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp20_m2.0": {
+      "score": -61.87,
+      "metrics": {
+        "1y": {
+          "total_return": -39.61,
+          "max_drawdown": -40.58,
+          "total_trades": 3,
+          "win_rate": 0.0,
+          "sharpe": -1.3,
+          "annual_return": -34.89,
+          "final_capital": 60394.76,
+          "avg_trade_return": -13162.42
+        },
+        "6m": {
+          "total_return": -19.94,
+          "max_drawdown": -31.29,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -1.03,
+          "annual_return": -25.65,
+          "final_capital": 80055.55,
+          "avg_trade_return": -9922.67
+        },
+        "3m": {
+          "total_return": -14.35,
+          "max_drawdown": -29.21,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.33,
+          "annual_return": -34.21,
+          "final_capital": 85652.41,
+          "avg_trade_return": -14296.91
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp20_m2.5": {
+      "score": -70.29,
+      "metrics": {
+        "1y": {
+          "total_return": -40.49,
+          "max_drawdown": -41.45,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.99,
+          "annual_return": -35.7,
+          "final_capital": 59508.88,
+          "avg_trade_return": -40450.47
+        },
+        "6m": {
+          "total_return": -29.08,
+          "max_drawdown": -36.62,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.26,
+          "annual_return": -36.73,
+          "final_capital": 70918.78,
+          "avg_trade_return": -29033.62
+        },
+        "3m": {
+          "total_return": -22.53,
+          "max_drawdown": -35.97,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -2.16,
+          "annual_return": -49.85,
+          "final_capital": 77471.06,
+          "avg_trade_return": -22480.72
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp20_m3.0": {
+      "score": -72.18,
+      "metrics": {
+        "1y": {
+          "total_return": -40.52,
+          "max_drawdown": -42.27,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -0.97,
+          "annual_return": -35.72,
+          "final_capital": 59482.72,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": -24.78,
+          "max_drawdown": -36.13,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.72,
+          "annual_return": -31.56,
+          "final_capital": 75223.73,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": -24.78,
+          "max_drawdown": -36.13,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.47,
+          "annual_return": -53.69,
+          "final_capital": 75223.73,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp25_m1.5": {
+      "score": -47.29,
+      "metrics": {
+        "1y": {
+          "total_return": -18.29,
+          "max_drawdown": -26.98,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -0.76,
+          "annual_return": -15.79,
+          "final_capital": 81706.37,
+          "avg_trade_return": -9095.62
+        },
+        "6m": {
+          "total_return": -20.3,
+          "max_drawdown": -26.12,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -1.13,
+          "annual_return": -26.08,
+          "final_capital": 79701.76,
+          "avg_trade_return": -10100.86
+        },
+        "3m": {
+          "total_return": -10.62,
+          "max_drawdown": -26.14,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.94,
+          "annual_return": -26.19,
+          "final_capital": 89375.56,
+          "avg_trade_return": -10572.64
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp25_m2.0": {
+      "score": -59.58,
+      "metrics": {
+        "1y": {
+          "total_return": -25.95,
+          "max_drawdown": -33.82,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.88,
+          "annual_return": -22.56,
+          "final_capital": 74049.7,
+          "avg_trade_return": -25901.76
+        },
+        "6m": {
+          "total_return": -27.44,
+          "max_drawdown": -32.74,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.24,
+          "annual_return": -34.78,
+          "final_capital": 72555.54,
+          "avg_trade_return": -27398.2
+        },
+        "3m": {
+          "total_return": -19.19,
+          "max_drawdown": -33.21,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.83,
+          "annual_return": -43.79,
+          "final_capital": 80810.71,
+          "avg_trade_return": -19140.06
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp25_m2.5": {
+      "score": -64.05,
+      "metrics": {
+        "1y": {
+          "total_return": -24.78,
+          "max_drawdown": -36.13,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.38,
+          "annual_return": -21.51,
+          "final_capital": 75223.73,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": -24.78,
+          "max_drawdown": -36.13,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.72,
+          "annual_return": -31.56,
+          "final_capital": 75223.73,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": -24.78,
+          "max_drawdown": -36.13,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.47,
+          "annual_return": -53.69,
+          "final_capital": 75223.73,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p14_cp25_m3.0": {
+      "score": -69.43,
+      "metrics": {
+        "1y": {
+          "total_return": -28.51,
+          "max_drawdown": -35.71,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.77,
+          "annual_return": -24.84,
+          "final_capital": 71492.49,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": -28.51,
+          "max_drawdown": -35.71,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.21,
+          "annual_return": -36.05,
+          "final_capital": 71492.49,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": -28.51,
+          "max_drawdown": -35.71,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -3.18,
+          "annual_return": -59.64,
+          "final_capital": 71492.49,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p20_cp15_m1.5": {
+      "score": -24.21,
+      "metrics": {
+        "1y": {
+          "total_return": -11.66,
+          "max_drawdown": -28.0,
+          "total_trades": 4,
+          "win_rate": 50.0,
+          "sharpe": -0.2,
+          "annual_return": -10.02,
+          "final_capital": 88335.15,
+          "avg_trade_return": -2869.09
+        },
+        "6m": {
+          "total_return": 9.58,
+          "max_drawdown": -17.8,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 0.61,
+          "annual_return": 12.96,
+          "final_capital": 109580.61,
+          "avg_trade_return": 4846.54
+        },
+        "3m": {
+          "total_return": 9.57,
+          "max_drawdown": -17.8,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 1.0,
+          "annual_return": 28.04,
+          "final_capital": 109572.66,
+          "avg_trade_return": 9631.58
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p20_cp15_m2.0": {
+      "score": -41.18,
+      "metrics": {
+        "1y": {
+          "total_return": -28.31,
+          "max_drawdown": -29.46,
+          "total_trades": 3,
+          "win_rate": 33.33,
+          "sharpe": -1.0,
+          "annual_return": -24.66,
+          "final_capital": 71691.02,
+          "avg_trade_return": -9395.25
+        },
+        "6m": {
+          "total_return": -2.08,
+          "max_drawdown": -21.56,
+          "total_trades": 2,
+          "win_rate": 50.0,
+          "sharpe": 0.03,
+          "annual_return": -2.76,
+          "final_capital": 97923.71,
+          "avg_trade_return": -984.34
+        },
+        "3m": {
+          "total_return": 1.63,
+          "max_drawdown": -20.94,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 0.3,
+          "annual_return": 4.47,
+          "final_capital": 101630.92,
+          "avg_trade_return": 1686.09
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p20_cp15_m2.5": {
+      "score": -59.75,
+      "metrics": {
+        "1y": {
+          "total_return": -24.83,
+          "max_drawdown": -35.49,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -1.09,
+          "annual_return": -21.56,
+          "final_capital": 75171.9,
+          "avg_trade_return": -12365.23
+        },
+        "6m": {
+          "total_return": -24.83,
+          "max_drawdown": -35.49,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -1.35,
+          "annual_return": -31.63,
+          "final_capital": 75171.9,
+          "avg_trade_return": -12365.23
+        },
+        "3m": {
+          "total_return": -22.53,
+          "max_drawdown": -35.97,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -2.16,
+          "annual_return": -49.85,
+          "final_capital": 77471.06,
+          "avg_trade_return": -22480.72
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p20_cp15_m3.0": {
+      "score": -65.67,
+      "metrics": {
+        "1y": {
+          "total_return": -29.12,
+          "max_drawdown": -37.63,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -0.98,
+          "annual_return": -25.38,
+          "final_capital": 70883.1,
+          "avg_trade_return": 0.0
+        },
+        "6m": {
+          "total_return": -29.12,
+          "max_drawdown": -37.63,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.22,
+          "annual_return": -36.77,
+          "final_capital": 70883.1,
+          "avg_trade_return": 0.0
+        },
+        "3m": {
+          "total_return": -22.57,
+          "max_drawdown": -36.97,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -2.03,
+          "annual_return": -49.92,
+          "final_capital": 77433.0,
+          "avg_trade_return": 0.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p20_cp20_m1.5": {
+      "score": -31.39,
+      "metrics": {
+        "1y": {
+          "total_return": -21.06,
+          "max_drawdown": -35.6,
+          "total_trades": 4,
+          "win_rate": 50.0,
+          "sharpe": -0.5,
+          "annual_return": -18.23,
+          "final_capital": 78938.41,
+          "avg_trade_return": -5220.94
+        },
+        "6m": {
+          "total_return": 9.08,
+          "max_drawdown": -17.87,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 0.59,
+          "annual_return": 12.27,
+          "final_capital": 109075.26,
+          "avg_trade_return": 4594.71
+        },
+        "3m": {
+          "total_return": 6.13,
+          "max_drawdown": -17.44,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 0.72,
+          "annual_return": 17.45,
+          "final_capital": 106130.07,
+          "avg_trade_return": 6186.59
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p20_cp20_m2.0": {
+      "score": -32.04,
+      "metrics": {
+        "1y": {
+          "total_return": -15.16,
+          "max_drawdown": -25.69,
+          "total_trades": 3,
+          "win_rate": 66.67,
+          "sharpe": -0.32,
+          "annual_return": -13.05,
+          "final_capital": 84839.12,
+          "avg_trade_return": -5005.94
+        },
+        "6m": {
+          "total_return": 1.64,
+          "max_drawdown": -20.94,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 0.22,
+          "annual_return": 2.19,
+          "final_capital": 101638.87,
+          "avg_trade_return": 873.8
+        },
+        "3m": {
+          "total_return": 1.63,
+          "max_drawdown": -20.94,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 0.3,
+          "annual_return": 4.47,
+          "final_capital": 101630.92,
+          "avg_trade_return": 1686.09
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p20_cp20_m2.5": {
+      "score": -38.31,
+      "metrics": {
+        "1y": {
+          "total_return": -11.12,
+          "max_drawdown": -23.72,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -0.41,
+          "annual_return": -9.54,
+          "final_capital": 88879.06,
+          "avg_trade_return": -5509.59
+        },
+        "6m": {
+          "total_return": -11.12,
+          "max_drawdown": -23.72,
+          "total_trades": 2,
+          "win_rate": 0.0,
+          "sharpe": -0.51,
+          "annual_return": -14.53,
+          "final_capital": 88879.06,
+          "avg_trade_return": -5509.59
+        },
+        "3m": {
+          "total_return": -7.91,
+          "max_drawdown": -23.89,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.66,
+          "annual_return": -19.97,
+          "final_capital": 92092.03,
+          "avg_trade_return": -7855.36
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p20_cp20_m3.0": {
+      "score": -52.12,
+      "metrics": {
+        "1y": {
+          "total_return": -21.41,
+          "max_drawdown": -29.76,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.69,
+          "annual_return": -18.53,
+          "final_capital": 78588.8,
+          "avg_trade_return": -21361.3
+        },
+        "6m": {
+          "total_return": -21.41,
+          "max_drawdown": -29.76,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.86,
+          "annual_return": -27.45,
+          "final_capital": 78588.8,
+          "avg_trade_return": -21361.3
+        },
+        "3m": {
+          "total_return": -14.35,
+          "max_drawdown": -29.21,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.33,
+          "annual_return": -34.21,
+          "final_capital": 85652.41,
+          "avg_trade_return": -14296.91
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    },
+    "ATR_p20_cp25_m1.5": {
+      "score": -34.41,
+      "metrics": {
+        "1y": {
+          "total_return": -14.97,
+          "max_drawdown": -25.64,
+          "total_trades": 3,
+          "win_rate": 66.67,
+          "sharpe": -0.32,
+          "annual_return": -12.88,
+          "final_capital": 85034.37,
+          "avg_trade_return": -4940.88
+        },
+        "6m": {
+          "total_return": -6.0,
+          "max_drawdown": -21.23,
+          "total_trades": 2,
+          "win_rate": 50.0,
+          "sharpe": -0.2,
+          "annual_return": -7.91,
+          "final_capital": 94000.61,
+          "avg_trade_return": -2947.61
+        },
+        "3m": {
+          "total_return": 1.63,
+          "max_drawdown": -20.94,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 0.3,
+          "annual_return": 4.47,
+          "final_capital": 101630.92,
+          "avg_trade_return": 1686.09
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": -0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0,
+          "avg_trade_return": 0.0
+        }
+      }
+    }
+  }
+}

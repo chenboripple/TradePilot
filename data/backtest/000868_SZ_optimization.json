@@ -1,0 +1,54 @@
+{
+  "symbol": "000868.SZ",
+  "name": "安凯客车",
+  "period": "2025-03-18 to 2026-03-18",
+  "current_config": {
+    "ma": [
+      10,
+      30
+    ],
+    "rsi": [
+      14,
+      30,
+      70
+    ],
+    "bb": [
+      26,
+      2.0
+    ]
+  },
+  "best_config": {
+    "ma": [
+      12,
+      30
+    ],
+    "rsi": [
+      10,
+      25,
+      65
+    ],
+    "bb": [
+      26,
+      2.0
+    ],
+    "vote_threshold": 1
+  },
+  "best_result": {
+    "total_return": 35.0477044000001,
+    "total_trades": 10,
+    "win_rate": 70.0,
+    "max_drawdown": 5.3580427486119175,
+    "final_capital": 135047.7044000001,
+    "sharpe": 2.0592322513468906,
+    "calmar": 6.528954041780466
+  },
+  "current_result": {
+    "total_return": -17.500425600000003,
+    "total_trades": 0,
+    "win_rate": 0,
+    "max_drawdown": 22.55275429435834,
+    "final_capital": 82499.5744,
+    "sharpe": -1.1954257419263088,
+    "calmar": -0.7756333899525671
+  }
+}

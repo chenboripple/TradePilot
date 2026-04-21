@@ -1,0 +1,45 @@
+{
+  "current_strategy": "Grid_5_20_6_25_65_20_1.8_1",
+  "periods": {
+    "1y": {
+      "total_return": -16.28898847999975,
+      "max_drawdown": 28.621287275843667,
+      "total_trades": 15,
+      "win_rate": 40.0,
+      "sharpe": -0.8578897556796424,
+      "annual_return": -16.329868025931336,
+      "final_capital": 83711.01152000025,
+      "avg_trade_return": -1010.5785333333221
+    },
+    "6m": {
+      "total_return": -14.036488819899882,
+      "max_drawdown": 17.45456231873625,
+      "total_trades": 7,
+      "win_rate": 28.57142857142857,
+      "sharpe": -1.9112471362336134,
+      "annual_return": -26.16413270187311,
+      "final_capital": 85963.51118010012,
+      "avg_trade_return": -1911.4488571428462
+    },
+    "3m": {
+      "total_return": -6.64817844020002,
+      "max_drawdown": 8.106496738460606,
+      "total_trades": 3,
+      "win_rate": 0.0,
+      "sharpe": -2.762838300634452,
+      "annual_return": -24.582888192986008,
+      "final_capital": 93351.82155979998,
+      "avg_trade_return": -2058.3806666666655
+    },
+    "1m": {
+      "total_return": -0.3278848515000136,
+      "max_drawdown": 2.4086449168541915,
+      "total_trades": 0,
+      "win_rate": 0.0,
+      "sharpe": -0.5026421172455626,
+      "annual_return": -5.303055960666658,
+      "final_capital": 99672.11514849999,
+      "avg_trade_return": 0.0
+    }
+  }
+}

@@ -1,0 +1,19 @@
+[project]
+name = "ripple_tradePilot"
+version = "0.1.0"
+description = "Wave trading system with shared strategy core"
+requires-python = ">=3.9"
+
+dependencies = [
+  "pandas",
+  "numpy",
+  "matplotlib",
+  "fastapi",
+  "uvicorn",
+  "tushare",
+  "akshare",
+  "pyyaml",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

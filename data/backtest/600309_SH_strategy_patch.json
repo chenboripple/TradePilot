@@ -1,0 +1,14 @@
+{
+  "symbol": "600309.SH",
+  "current_profile_name": "ma_600309",
+  "suggested_profile_name": "600309_ma_5_20",
+  "suggested_profile": {
+    "kind": "ma",
+    "ma": {
+      "fast": 5,
+      "slow": 20
+    }
+  },
+  "switch_symbol_to_profile": "600309_ma_5_20",
+  "rollback_profile_name_hint": "ma_600309_v1"
+}

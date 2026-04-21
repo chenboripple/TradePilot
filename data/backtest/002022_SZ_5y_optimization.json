@@ -1,0 +1,108 @@
+{
+  "symbol": "002022.SZ",
+  "name": "科华生物",
+  "period": "2021-01-01 to 2026-03-18",
+  "trading_days": 1252,
+  "price_range": [
+    5.07,
+    19.05
+  ],
+  "current_price": 6.1,
+  "results": [
+    {
+      "strategy": "macd",
+      "params": {
+        "fast": 12,
+        "slow": 24,
+        "signal": 9
+      },
+      "result": {
+        "total_return": 29.937447400000284,
+        "total_trades": 39,
+        "win_rate": 46.15384615384615,
+        "max_drawdown": 34.75799677779401,
+        "final_capital": 129937.44740000028,
+        "sharpe": 0.3286085477636652
+      }
+    },
+    {
+      "strategy": "dual_thrust",
+      "params": {
+        "lookback": 4,
+        "k1": 0.3,
+        "k2": 0.3
+      },
+      "result": {
+        "total_return": 19.27965520000043,
+        "total_trades": 67,
+        "win_rate": 40.298507462686565,
+        "max_drawdown": 40.48590322945448,
+        "final_capital": 119279.65520000043,
+        "sharpe": 0.2653572972026099
+      }
+    },
+    {
+      "strategy": "mean_reversion",
+      "params": {
+        "lookback": 20,
+        "entry_std": 2.5,
+        "exit_std": 0.5
+      },
+      "result": {
+        "total_return": -4.193306399999943,
+        "total_trades": 12,
+        "win_rate": 58.333333333333336,
+        "max_drawdown": 27.930903493407122,
+        "final_capital": 95806.69360000006,
+        "sharpe": 0.029456500886302653
+      }
+    },
+    {
+      "strategy": "breakout",
+      "params": {
+        "lookback": 20,
+        "threshold": 1
+      },
+      "result": {
+        "total_return": -14.145611899999947,
+        "total_trades": 16,
+        "win_rate": 31.25,
+        "max_drawdown": 39.33398383669719,
+        "final_capital": 85854.38810000005,
+        "sharpe": 0.02497203902163936
+      }
+    },
+    {
+      "strategy": "grid",
+      "params": {
+        "spacing": 8,
+        "levels": 3,
+        "pos_per_grid": 0.1
+      },
+      "result": {
+        "total_return": -35.44580189999999,
+        "total_trades": 2,
+        "win_rate": 100.0,
+        "max_drawdown": 63.2411101656642,
+        "final_capital": 64554.19810000001,
+        "sharpe": -0.07876842012321005
+      }
+    }
+  ],
+  "best_strategy": {
+    "strategy": "macd",
+    "params": {
+      "fast": 12,
+      "slow": 24,
+      "signal": 9
+    },
+    "result": {
+      "total_return": 29.937447400000284,
+      "total_trades": 39,
+      "win_rate": 46.15384615384615,
+      "max_drawdown": 34.75799677779401,
+      "final_capital": 129937.44740000028,
+      "sharpe": 0.3286085477636652
+    }
+  }
+}

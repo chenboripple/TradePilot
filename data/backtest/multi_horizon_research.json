@@ -1,0 +1,1180 @@
+[
+  {
+    "code": "002022.SZ",
+    "name": "科华生物",
+    "best": {
+      "meta": {
+        "kind": "grid_combo",
+        "ma": [
+          5,
+          20
+        ],
+        "rsi": [
+          6,
+          20,
+          60
+        ],
+        "bb": [
+          20,
+          2.0
+        ],
+        "vote": 1
+      },
+      "periods": {
+        "5y": {
+          "total_return": -38.37158349999974,
+          "max_drawdown": 62.40621122331851,
+          "total_trades": 65,
+          "win_rate": 50.76923076923077,
+          "sharpe": -0.24066999612004567
+        },
+        "3y": {
+          "total_return": 2.287144100000165,
+          "max_drawdown": 33.29725019999994,
+          "total_trades": 36,
+          "win_rate": 52.77777777777778,
+          "sharpe": 0.15451113056001928
+        },
+        "1y": {
+          "total_return": 35.81250720000014,
+          "max_drawdown": 6.417015138223515,
+          "total_trades": 14,
+          "win_rate": 64.28571428571429,
+          "sharpe": 2.124678494981975
+        },
+        "6m": {
+          "total_return": 9.808362100000057,
+          "max_drawdown": 6.417108795789973,
+          "total_trades": 6,
+          "win_rate": 83.33333333333334,
+          "sharpe": 1.8625546233720116
+        },
+        "3m": {
+          "total_return": 5.958644100000005,
+          "max_drawdown": 0.8820208195719554,
+          "total_trades": 2,
+          "win_rate": 100.0,
+          "sharpe": 3.2532617904380396
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0
+        }
+      },
+      "score": 35.26440604177675
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "grid_combo",
+          "ma": [
+            5,
+            20
+          ],
+          "rsi": [
+            6,
+            20,
+            60
+          ],
+          "bb": [
+            20,
+            2.0
+          ],
+          "vote": 1
+        },
+        "periods": {
+          "5y": {
+            "total_return": -38.37158349999974,
+            "max_drawdown": 62.40621122331851,
+            "total_trades": 65,
+            "win_rate": 50.76923076923077,
+            "sharpe": -0.24066999612004567
+          },
+          "3y": {
+            "total_return": 2.287144100000165,
+            "max_drawdown": 33.29725019999994,
+            "total_trades": 36,
+            "win_rate": 52.77777777777778,
+            "sharpe": 0.15451113056001928
+          },
+          "1y": {
+            "total_return": 35.81250720000014,
+            "max_drawdown": 6.417015138223515,
+            "total_trades": 14,
+            "win_rate": 64.28571428571429,
+            "sharpe": 2.124678494981975
+          },
+          "6m": {
+            "total_return": 9.808362100000057,
+            "max_drawdown": 6.417108795789973,
+            "total_trades": 6,
+            "win_rate": 83.33333333333334,
+            "sharpe": 1.8625546233720116
+          },
+          "3m": {
+            "total_return": 5.958644100000005,
+            "max_drawdown": 0.8820208195719554,
+            "total_trades": 2,
+            "win_rate": 100.0,
+            "sharpe": 3.2532617904380396
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 35.26440604177675
+      },
+      {
+        "meta": {
+          "kind": "grid_combo",
+          "ma": [
+            5,
+            20
+          ],
+          "rsi": [
+            6,
+            20,
+            60
+          ],
+          "bb": [
+            26,
+            2.0
+          ],
+          "vote": 1
+        },
+        "periods": {
+          "5y": {
+            "total_return": -26.399401799999744,
+            "max_drawdown": 58.945331946714276,
+            "total_trades": 62,
+            "win_rate": 56.451612903225815,
+            "sharpe": -0.08590928657050549
+          },
+          "3y": {
+            "total_return": 0.3325124000001815,
+            "max_drawdown": 36.60116329999993,
+            "total_trades": 34,
+            "win_rate": 55.88235294117647,
+            "sharpe": 0.13074465260992052
+          },
+          "1y": {
+            "total_return": 23.399533100000102,
+            "max_drawdown": 6.421975462377707,
+            "total_trades": 13,
+            "win_rate": 61.53846153846154,
+            "sharpe": 1.4880784717705933
+          },
+          "6m": {
+            "total_return": 21.126468700000057,
+            "max_drawdown": 6.417108795789973,
+            "total_trades": 6,
+            "win_rate": 83.33333333333334,
+            "sharpe": 2.3691270238782205
+          },
+          "3m": {
+            "total_return": 5.958644100000005,
+            "max_drawdown": 0.8820208195719554,
+            "total_trades": 2,
+            "win_rate": 100.0,
+            "sharpe": 3.2532617904380396
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 26.124778026507897
+      },
+      {
+        "meta": {
+          "kind": "grid_combo",
+          "ma": [
+            10,
+            30
+          ],
+          "rsi": [
+            14,
+            30,
+            70
+          ],
+          "bb": [
+            26,
+            2.0
+          ],
+          "vote": 1
+        },
+        "periods": {
+          "5y": {
+            "total_return": -24.390827599999827,
+            "max_drawdown": 53.810182622798976,
+            "total_trades": 33,
+            "win_rate": 60.60606060606061,
+            "sharpe": -0.023815929431262883
+          },
+          "3y": {
+            "total_return": -16.48181089999988,
+            "max_drawdown": 38.47521934956402,
+            "total_trades": 18,
+            "win_rate": 50.0,
+            "sharpe": -0.08777005642017627
+          },
+          "1y": {
+            "total_return": 20.732448000000048,
+            "max_drawdown": 10.041890922287786,
+            "total_trades": 6,
+            "win_rate": 83.33333333333334,
+            "sharpe": 1.113775309218941
+          },
+          "6m": {
+            "total_return": 10.056439800000007,
+            "max_drawdown": 7.931606233984892,
+            "total_trades": 2,
+            "win_rate": 100.0,
+            "sharpe": 1.1278183715144832
+          },
+          "3m": {
+            "total_return": -1.7355481,
+            "max_drawdown": 7.948016066848545,
+            "total_trades": 1,
+            "win_rate": 0.0,
+            "sharpe": -0.3868673204355109
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 11.57153677560497
+      }
+    ]
+  },
+  {
+    "code": "600309.SH",
+    "name": "万华化学",
+    "best": {
+      "meta": {
+        "kind": "mean_reversion",
+        "lookback": 20,
+        "entry_std": 2.0,
+        "exit_std": 0.5
+      },
+      "periods": {
+        "5y": {
+          "total_return": 9.850880500000159,
+          "max_drawdown": 35.58531328982998,
+          "total_trades": 19,
+          "win_rate": 57.89473684210527,
+          "sharpe": 0.2075810650750215
+        },
+        "3y": {
+          "total_return": -12.846320299999933,
+          "max_drawdown": 35.47442011469077,
+          "total_trades": 12,
+          "win_rate": 50.0,
+          "sharpe": -0.2635678634165358
+        },
+        "1y": {
+          "total_return": 18.8952343,
+          "max_drawdown": 3.5150047999999954,
+          "total_trades": 4,
+          "win_rate": 100.0,
+          "sharpe": 1.7538180600125006
+        },
+        "6m": {
+          "total_return": 1.3267880999999906,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 2.0584296624396226
+        },
+        "3m": {
+          "total_return": 1.3267880999999906,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 2.9887013900311534
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0
+        }
+      },
+      "score": 18.335216007874692
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 20,
+          "entry_std": 2.0,
+          "exit_std": 0.5
+        },
+        "periods": {
+          "5y": {
+            "total_return": 9.850880500000159,
+            "max_drawdown": 35.58531328982998,
+            "total_trades": 19,
+            "win_rate": 57.89473684210527,
+            "sharpe": 0.2075810650750215
+          },
+          "3y": {
+            "total_return": -12.846320299999933,
+            "max_drawdown": 35.47442011469077,
+            "total_trades": 12,
+            "win_rate": 50.0,
+            "sharpe": -0.2635678634165358
+          },
+          "1y": {
+            "total_return": 18.8952343,
+            "max_drawdown": 3.5150047999999954,
+            "total_trades": 4,
+            "win_rate": 100.0,
+            "sharpe": 1.7538180600125006
+          },
+          "6m": {
+            "total_return": 1.3267880999999906,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 2.0584296624396226
+          },
+          "3m": {
+            "total_return": 1.3267880999999906,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 2.9887013900311534
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 18.335216007874692
+      },
+      {
+        "meta": {
+          "kind": "grid_combo",
+          "ma": [
+            10,
+            30
+          ],
+          "rsi": [
+            14,
+            30,
+            70
+          ],
+          "bb": [
+            26,
+            2.0
+          ],
+          "vote": 1
+        },
+        "periods": {
+          "5y": {
+            "total_return": -23.65537539999983,
+            "max_drawdown": 51.12310986046181,
+            "total_trades": 32,
+            "win_rate": 56.25,
+            "sharpe": -0.14944285625327208
+          },
+          "3y": {
+            "total_return": -22.90996229999991,
+            "max_drawdown": 43.94904611578771,
+            "total_trades": 16,
+            "win_rate": 62.5,
+            "sharpe": -0.3371713530196931
+          },
+          "1y": {
+            "total_return": 25.370092100000026,
+            "max_drawdown": 9.641949325772176,
+            "total_trades": 5,
+            "win_rate": 80.0,
+            "sharpe": 1.445473182218642
+          },
+          "6m": {
+            "total_return": 9.844128000000012,
+            "max_drawdown": 8.293221734844705,
+            "total_trades": 2,
+            "win_rate": 100.0,
+            "sharpe": 1.4557320744871256
+          },
+          "3m": {
+            "total_return": 5.782260200000004,
+            "max_drawdown": 7.666391000000003,
+            "total_trades": 2,
+            "win_rate": 100.0,
+            "sharpe": 1.183073146861165
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 17.499365841143224
+      },
+      {
+        "meta": {
+          "kind": "grid_combo",
+          "ma": [
+            10,
+            34
+          ],
+          "rsi": [
+            6,
+            20,
+            60
+          ],
+          "bb": [
+            26,
+            2.0
+          ],
+          "vote": 1
+        },
+        "periods": {
+          "5y": {
+            "total_return": -32.90858949999974,
+            "max_drawdown": 54.250860213497035,
+            "total_trades": 47,
+            "win_rate": 36.17021276595745,
+            "sharpe": -0.35119703636032873
+          },
+          "3y": {
+            "total_return": -10.326906699999817,
+            "max_drawdown": 36.34573617005756,
+            "total_trades": 28,
+            "win_rate": 39.285714285714285,
+            "sharpe": -0.1013305329537487
+          },
+          "1y": {
+            "total_return": 13.01927260000007,
+            "max_drawdown": 12.18026560088812,
+            "total_trades": 9,
+            "win_rate": 55.55555555555556,
+            "sharpe": 0.8849258096661637
+          },
+          "6m": {
+            "total_return": 5.914041800000021,
+            "max_drawdown": 8.293221734844705,
+            "total_trades": 3,
+            "win_rate": 66.66666666666666,
+            "sharpe": 1.0739363501121875
+          },
+          "3m": {
+            "total_return": 11.80728359999998,
+            "max_drawdown": 4.046855811171502,
+            "total_trades": 2,
+            "win_rate": 100.0,
+            "sharpe": 3.278392137186537
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 8.007209093533493
+      }
+    ]
+  },
+  {
+    "code": "603039.SH",
+    "name": "泛海微",
+    "best": {
+      "meta": {
+        "kind": "macd",
+        "fast": 10,
+        "slow": 24,
+        "signal": 8
+      },
+      "periods": {
+        "5y": {
+          "total_return": 98.91911590000032,
+          "max_drawdown": 51.69110672728499,
+          "total_trades": 45,
+          "win_rate": 37.77777777777778,
+          "sharpe": 0.5929514296235586
+        },
+        "3y": {
+          "total_return": 32.938794300000126,
+          "max_drawdown": 51.61362535220925,
+          "total_trades": 29,
+          "win_rate": 34.48275862068966,
+          "sharpe": 0.4601805441309136
+        },
+        "1y": {
+          "total_return": 25.866067600000036,
+          "max_drawdown": 19.326264829576125,
+          "total_trades": 7,
+          "win_rate": 28.57142857142857,
+          "sharpe": 1.0816928186861918
+        },
+        "6m": {
+          "total_return": 24.547967300000035,
+          "max_drawdown": 9.585619999999981,
+          "total_trades": 3,
+          "win_rate": 33.33333333333333,
+          "sharpe": 2.1355358972190017
+        },
+        "3m": {
+          "total_return": -0.028492199999993317,
+          "max_drawdown": 7.191472197398266,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.05865303504376791
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0
+        }
+      },
+      "score": 36.48124500461434
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 10,
+          "slow": 24,
+          "signal": 8
+        },
+        "periods": {
+          "5y": {
+            "total_return": 98.91911590000032,
+            "max_drawdown": 51.69110672728499,
+            "total_trades": 45,
+            "win_rate": 37.77777777777778,
+            "sharpe": 0.5929514296235586
+          },
+          "3y": {
+            "total_return": 32.938794300000126,
+            "max_drawdown": 51.61362535220925,
+            "total_trades": 29,
+            "win_rate": 34.48275862068966,
+            "sharpe": 0.4601805441309136
+          },
+          "1y": {
+            "total_return": 25.866067600000036,
+            "max_drawdown": 19.326264829576125,
+            "total_trades": 7,
+            "win_rate": 28.57142857142857,
+            "sharpe": 1.0816928186861918
+          },
+          "6m": {
+            "total_return": 24.547967300000035,
+            "max_drawdown": 9.585619999999981,
+            "total_trades": 3,
+            "win_rate": 33.33333333333333,
+            "sharpe": 2.1355358972190017
+          },
+          "3m": {
+            "total_return": -0.028492199999993317,
+            "max_drawdown": 7.191472197398266,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.05865303504376791
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 36.48124500461434
+      },
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 12,
+          "slow": 26,
+          "signal": 9
+        },
+        "periods": {
+          "5y": {
+            "total_return": 107.92583240000025,
+            "max_drawdown": 45.05401239855591,
+            "total_trades": 38,
+            "win_rate": 44.73684210526316,
+            "sharpe": 0.6183665372030392
+          },
+          "3y": {
+            "total_return": 59.09884960000022,
+            "max_drawdown": 44.83085125873515,
+            "total_trades": 23,
+            "win_rate": 43.47826086956522,
+            "sharpe": 0.638631690415723
+          },
+          "1y": {
+            "total_return": 12.791507900000013,
+            "max_drawdown": 22.20636489658025,
+            "total_trades": 6,
+            "win_rate": 33.33333333333333,
+            "sharpe": 0.6208469810745557
+          },
+          "6m": {
+            "total_return": 20.57928750000002,
+            "max_drawdown": 7.99318194340031,
+            "total_trades": 2,
+            "win_rate": 50.0,
+            "sharpe": 1.84844394955302
+          },
+          "3m": {
+            "total_return": -0.9304679999999935,
+            "max_drawdown": 6.941948241245457,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": -0.25459381718059554
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 25.748975143985195
+      },
+      {
+        "meta": {
+          "kind": "macd",
+          "fast": 8,
+          "slow": 21,
+          "signal": 6
+        },
+        "periods": {
+          "5y": {
+            "total_return": 36.562582600000226,
+            "max_drawdown": 56.5076440512769,
+            "total_trades": 59,
+            "win_rate": 30.508474576271187,
+            "sharpe": 0.3607659784269281
+          },
+          "3y": {
+            "total_return": 0.6948506000001653,
+            "max_drawdown": 54.96572444302773,
+            "total_trades": 36,
+            "win_rate": 27.77777777777778,
+            "sharpe": 0.17435436241245625
+          },
+          "1y": {
+            "total_return": 19.477073800000014,
+            "max_drawdown": 22.0717537094613,
+            "total_trades": 8,
+            "win_rate": 25.0,
+            "sharpe": 0.8448306463704959
+          },
+          "6m": {
+            "total_return": 20.809733000000023,
+            "max_drawdown": 8.361252799999988,
+            "total_trades": 3,
+            "win_rate": 33.33333333333333,
+            "sharpe": 1.8091537926202959
+          },
+          "3m": {
+            "total_return": -4.367203999999998,
+            "max_drawdown": 6.854131712076375,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": -1.126963697065175
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 14.998494354349496
+      }
+    ]
+  },
+  {
+    "code": "000868.SZ",
+    "name": "安凯客车",
+    "best": {
+      "meta": {
+        "kind": "grid_combo",
+        "ma": [
+          10,
+          30
+        ],
+        "rsi": [
+          14,
+          30,
+          70
+        ],
+        "bb": [
+          26,
+          2.0
+        ],
+        "vote": 1
+      },
+      "periods": {
+        "5y": {
+          "total_return": 83.87027520000018,
+          "max_drawdown": 57.012247156634565,
+          "total_trades": 31,
+          "win_rate": 58.06451612903226,
+          "sharpe": 0.5253568234983121
+        },
+        "3y": {
+          "total_return": 35.12447270000016,
+          "max_drawdown": 43.5107586553678,
+          "total_trades": 19,
+          "win_rate": 63.1578947368421,
+          "sharpe": 0.490333884632819
+        },
+        "1y": {
+          "total_return": 28.464595900000056,
+          "max_drawdown": 5.541198031478071,
+          "total_trades": 5,
+          "win_rate": 80.0,
+          "sharpe": 2.021794713945836
+        },
+        "6m": {
+          "total_return": -3.4219878000000024,
+          "max_drawdown": 6.201701501580253,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -0.5817954656752583
+        },
+        "3m": {
+          "total_return": -5.098430999999997,
+          "max_drawdown": 7.06545477453321,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": -1.9997881127139725
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0
+        }
+      },
+      "score": 33.97550096249809
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "grid_combo",
+          "ma": [
+            10,
+            30
+          ],
+          "rsi": [
+            14,
+            30,
+            70
+          ],
+          "bb": [
+            26,
+            2.0
+          ],
+          "vote": 1
+        },
+        "periods": {
+          "5y": {
+            "total_return": 83.87027520000018,
+            "max_drawdown": 57.012247156634565,
+            "total_trades": 31,
+            "win_rate": 58.06451612903226,
+            "sharpe": 0.5253568234983121
+          },
+          "3y": {
+            "total_return": 35.12447270000016,
+            "max_drawdown": 43.5107586553678,
+            "total_trades": 19,
+            "win_rate": 63.1578947368421,
+            "sharpe": 0.490333884632819
+          },
+          "1y": {
+            "total_return": 28.464595900000056,
+            "max_drawdown": 5.541198031478071,
+            "total_trades": 5,
+            "win_rate": 80.0,
+            "sharpe": 2.021794713945836
+          },
+          "6m": {
+            "total_return": -3.4219878000000024,
+            "max_drawdown": 6.201701501580253,
+            "total_trades": 1,
+            "win_rate": 0.0,
+            "sharpe": -0.5817954656752583
+          },
+          "3m": {
+            "total_return": -5.098430999999997,
+            "max_drawdown": 7.06545477453321,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": -1.9997881127139725
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 33.97550096249809
+      },
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 30,
+          "entry_std": 2.0,
+          "exit_std": 1.0
+        },
+        "periods": {
+          "5y": {
+            "total_return": 113.3603404000001,
+            "max_drawdown": 45.80664660435994,
+            "total_trades": 14,
+            "win_rate": 71.42857142857143,
+            "sharpe": 0.8161294311477694
+          },
+          "3y": {
+            "total_return": 43.14660980000009,
+            "max_drawdown": 37.48593939999999,
+            "total_trades": 9,
+            "win_rate": 66.66666666666666,
+            "sharpe": 0.6268305478289318
+          },
+          "1y": {
+            "total_return": 3.5310796000000115,
+            "max_drawdown": 16.20585607361658,
+            "total_trades": 3,
+            "win_rate": 66.66666666666666,
+            "sharpe": 0.2915201728591514
+          },
+          "6m": {
+            "total_return": -5.5102848999999985,
+            "max_drawdown": 8.22989311866951,
+            "total_trades": 1,
+            "win_rate": 0.0,
+            "sharpe": -0.8109021904411835
+          },
+          "3m": {
+            "total_return": -5.098430999999997,
+            "max_drawdown": 7.06545477453321,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": -1.9997881127139725
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 8.42594099039683
+      },
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 20,
+          "entry_std": 2.0,
+          "exit_std": 0.5
+        },
+        "periods": {
+          "5y": {
+            "total_return": 12.66957450000003,
+            "max_drawdown": 39.81824752488418,
+            "total_trades": 16,
+            "win_rate": 68.75,
+            "sharpe": 0.22315147335224786
+          },
+          "3y": {
+            "total_return": 9.854289600000062,
+            "max_drawdown": 29.434906443630222,
+            "total_trades": 10,
+            "win_rate": 70.0,
+            "sharpe": 0.2634090428118359
+          },
+          "1y": {
+            "total_return": 7.101593000000007,
+            "max_drawdown": 7.063229778258089,
+            "total_trades": 5,
+            "win_rate": 80.0,
+            "sharpe": 0.6457001378571485
+          },
+          "6m": {
+            "total_return": -2.0239905,
+            "max_drawdown": 6.175003691502286,
+            "total_trades": 2,
+            "win_rate": 50.0,
+            "sharpe": -0.29092957778550715
+          },
+          "3m": {
+            "total_return": -1.9669928999999975,
+            "max_drawdown": 3.246680363968841,
+            "total_trades": 1,
+            "win_rate": 100.0,
+            "sharpe": -0.9096077019814036
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 5.056302206799629
+      }
+    ]
+  },
+  {
+    "code": "000999.SZ",
+    "name": "华润三九",
+    "best": {
+      "meta": {
+        "kind": "mean_reversion",
+        "lookback": 30,
+        "entry_std": 2.0,
+        "exit_std": 1.0
+      },
+      "periods": {
+        "5y": {
+          "total_return": 54.1127317000001,
+          "max_drawdown": 24.332245840953785,
+          "total_trades": 14,
+          "win_rate": 71.42857142857143,
+          "sharpe": 0.622216760535014
+        },
+        "3y": {
+          "total_return": 12.951702100000054,
+          "max_drawdown": 24.21268273210388,
+          "total_trades": 9,
+          "win_rate": 55.55555555555556,
+          "sharpe": 0.33061301587231723
+        },
+        "1y": {
+          "total_return": 1.4014477000000043,
+          "max_drawdown": 10.667264928971534,
+          "total_trades": 3,
+          "win_rate": 33.33333333333333,
+          "sharpe": 0.19224045856440206
+        },
+        "6m": {
+          "total_return": 5.72128880000001,
+          "max_drawdown": 1.1268208457419362,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 1.7120835132124044
+        },
+        "3m": {
+          "total_return": 5.7893092000000035,
+          "max_drawdown": 1.1260742195245337,
+          "total_trades": 1,
+          "win_rate": 100.0,
+          "sharpe": 2.5529685911386157
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0
+        }
+      },
+      "score": 10.685971564622337
+    },
+    "top3": [
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 30,
+          "entry_std": 2.0,
+          "exit_std": 1.0
+        },
+        "periods": {
+          "5y": {
+            "total_return": 54.1127317000001,
+            "max_drawdown": 24.332245840953785,
+            "total_trades": 14,
+            "win_rate": 71.42857142857143,
+            "sharpe": 0.622216760535014
+          },
+          "3y": {
+            "total_return": 12.951702100000054,
+            "max_drawdown": 24.21268273210388,
+            "total_trades": 9,
+            "win_rate": 55.55555555555556,
+            "sharpe": 0.33061301587231723
+          },
+          "1y": {
+            "total_return": 1.4014477000000043,
+            "max_drawdown": 10.667264928971534,
+            "total_trades": 3,
+            "win_rate": 33.33333333333333,
+            "sharpe": 0.19224045856440206
+          },
+          "6m": {
+            "total_return": 5.72128880000001,
+            "max_drawdown": 1.1268208457419362,
+            "total_trades": 1,
+            "win_rate": 100.0,
+            "sharpe": 1.7120835132124044
+          },
+          "3m": {
+            "total_return": 5.7893092000000035,
+            "max_drawdown": 1.1260742195245337,
+            "total_trades": 1,
+            "win_rate": 100.0,
+            "sharpe": 2.5529685911386157
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": 10.685971564622337
+      },
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 30,
+          "entry_std": 2.5,
+          "exit_std": 1.0
+        },
+        "periods": {
+          "5y": {
+            "total_return": 28.27971620000004,
+            "max_drawdown": 14.381759172416707,
+            "total_trades": 7,
+            "win_rate": 57.14285714285714,
+            "sharpe": 0.5198205526023839
+          },
+          "3y": {
+            "total_return": 26.025423800000063,
+            "max_drawdown": 14.655806600045585,
+            "total_trades": 6,
+            "win_rate": 50.0,
+            "sharpe": 0.6399115834498642
+          },
+          "1y": {
+            "total_return": -3.9832946999999987,
+            "max_drawdown": 10.667264928971534,
+            "total_trades": 2,
+            "win_rate": 0.0,
+            "sharpe": -0.4267412322733906
+          },
+          "6m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          },
+          "3m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": -4.17640513106044
+      },
+      {
+        "meta": {
+          "kind": "mean_reversion",
+          "lookback": 20,
+          "entry_std": 2.0,
+          "exit_std": 0.5
+        },
+        "periods": {
+          "5y": {
+            "total_return": 13.613802300000186,
+            "max_drawdown": 19.12301098731444,
+            "total_trades": 17,
+            "win_rate": 41.17647058823529,
+            "sharpe": 0.2595941804615697
+          },
+          "3y": {
+            "total_return": 1.2961621000000887,
+            "max_drawdown": 16.476216699999977,
+            "total_trades": 12,
+            "win_rate": 33.33333333333333,
+            "sharpe": 0.10328733586002863
+          },
+          "1y": {
+            "total_return": -6.627007599999983,
+            "max_drawdown": 13.685340756169495,
+            "total_trades": 4,
+            "win_rate": 25.0,
+            "sharpe": -0.7835708297250871
+          },
+          "6m": {
+            "total_return": 2.5602374000000125,
+            "max_drawdown": 0.6760551411809231,
+            "total_trades": 1,
+            "win_rate": 100.0,
+            "sharpe": 1.7904517187539797
+          },
+          "3m": {
+            "total_return": 2.5602374000000125,
+            "max_drawdown": 0.6760551411809231,
+            "total_trades": 1,
+            "win_rate": 100.0,
+            "sharpe": 2.5938371040336037
+          },
+          "1m": {
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "sharpe": 0.0
+          }
+        },
+        "score": -5.628474270627021
+      }
+    ]
+  }
+]

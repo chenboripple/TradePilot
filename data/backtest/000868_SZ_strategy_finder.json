@@ -1,0 +1,160 @@
+{
+  "symbol": "000868.SZ",
+  "name": "安凯客车",
+  "generated_at": "2026-03-23 22:05:13",
+  "weights": {
+    "3m": 0.45,
+    "6m": 0.3,
+    "1m": 0.2,
+    "1y": 0.05
+  },
+  "current_profile_name": "grid_combo_000868",
+  "suggested_profile_name": "000868_ma_10_30",
+  "top": [
+    {
+      "name": "MA_10_30",
+      "profile_spec": {
+        "kind": "ma",
+        "ma": {
+          "fast": 10,
+          "slow": 30
+        }
+      },
+      "periods": {
+        "1y": {
+          "total_return": -4.786526347199936,
+          "max_drawdown": 10.223476161961717,
+          "total_trades": 4,
+          "win_rate": 25.0,
+          "sharpe": -0.45268634776165023,
+          "annual_return": -4.799355426268537,
+          "final_capital": 95213.47365280006
+        },
+        "6m": {
+          "total_return": -2.133243566999983,
+          "max_drawdown": 3.293835187795941,
+          "total_trades": 1,
+          "win_rate": 0.0,
+          "sharpe": -1.0850436386320619,
+          "annual_return": -4.01638220317535,
+          "final_capital": 97866.75643300002
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": -17.851114907921815
+    },
+    {
+      "name": "DON_10",
+      "profile_spec": {
+        "kind": "donchian",
+        "donchian": {
+          "window": 10
+        }
+      },
+      "periods": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": -20.0
+    },
+    {
+      "name": "DON_20",
+      "profile_spec": {
+        "kind": "donchian",
+        "donchian": {
+          "window": 20
+        }
+      },
+      "periods": {
+        "1y": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        },
+        "6m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        },
+        "3m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        },
+        "1m": {
+          "total_return": 0.0,
+          "max_drawdown": 0.0,
+          "total_trades": 0,
+          "win_rate": 0.0,
+          "sharpe": 0.0,
+          "annual_return": 0.0,
+          "final_capital": 100000.0
+        }
+      },
+      "score": -20.0
+    }
+  ]
+}

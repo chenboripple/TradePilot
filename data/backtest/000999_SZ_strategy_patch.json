@@ -1,0 +1,30 @@
+{
+  "symbol": "000999.SZ",
+  "current_profile_name": "combo_000999",
+  "suggested_profile_name": "000999_combo_ma5_15_rsi16_35_65_v1",
+  "suggested_profile": {
+    "kind": "combo_vote",
+    "vote_threshold": 1,
+    "components": [
+      {
+        "name": "ma",
+        "kind": "ma",
+        "ma": {
+          "fast": 5,
+          "slow": 15
+        }
+      },
+      {
+        "name": "rsi",
+        "kind": "rsi",
+        "rsi": {
+          "period": 16,
+          "oversold": 35,
+          "overbought": 65
+        }
+      }
+    ]
+  },
+  "switch_symbol_to_profile": "000999_combo_ma5_15_rsi16_35_65_v1",
+  "rollback_profile_name_hint": "combo_000999_v1"
+}

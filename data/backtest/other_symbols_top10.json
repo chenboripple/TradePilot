@@ -1,0 +1,342 @@
+{
+  "603039.SH": {
+    "name": "泛海微",
+    "top10": [
+      {
+        "label": "MA5/20, RSI12/30/70, BB14/1.8",
+        "total_return": 22.285904600000023,
+        "max_drawdown": 15.136345444037527,
+        "win_rate": 40.0,
+        "total_trades": 5,
+        "score": 17.78818369458689
+      },
+      {
+        "label": "MA5/20, RSI10/35/65, BB14/1.8",
+        "total_return": 15.539539400000038,
+        "max_drawdown": 24.735884820999253,
+        "win_rate": 50.0,
+        "total_trades": 4,
+        "score": 7.881979712650301
+      },
+      {
+        "label": "MA8/21, RSI10/35/65, BB14/1.8",
+        "total_return": 9.503979800000058,
+        "max_drawdown": 19.423510430402118,
+        "win_rate": 66.66666666666666,
+        "total_trades": 6,
+        "score": 4.03908448269265
+      },
+      {
+        "label": "MA8/21, RSI12/30/70, BB14/1.8",
+        "total_return": 6.121226300000053,
+        "max_drawdown": 17.37516503773594,
+        "win_rate": 60.0,
+        "total_trades": 5,
+        "score": 1.2399185367924745
+      },
+      {
+        "label": "MA5/20, RSI12/30/70, BB26/2.0",
+        "total_return": 1.9602623000000166,
+        "max_drawdown": 10.90117076235159,
+        "win_rate": 40.0,
+        "total_trades": 5,
+        "score": -1.0551474668230398
+      },
+      {
+        "label": "MA8/21, RSI14/30/70, BB20/2.0",
+        "total_return": -1.1315305999999545,
+        "max_drawdown": 13.515854407511554,
+        "win_rate": 25.0,
+        "total_trades": 4,
+        "score": -5.362079642628998
+      },
+      {
+        "label": "MA8/21, RSI14/30/70, BB26/2.0",
+        "total_return": -3.8554154999999737,
+        "max_drawdown": 10.653514152890665,
+        "win_rate": 50.0,
+        "total_trades": 2,
+        "score": -6.584145453511706
+      },
+      {
+        "label": "MA8/21, RSI10/35/65, BB26/2.0",
+        "total_return": -2.7522176999999504,
+        "max_drawdown": 19.225855453558978,
+        "win_rate": 60.0,
+        "total_trades": 5,
+        "score": -8.281267108745592
+      },
+      {
+        "label": "MA10/30, RSI12/30/70, BB14/1.8",
+        "total_return": -1.1275195999999414,
+        "max_drawdown": 23.949540947115928,
+        "win_rate": 57.14285714285714,
+        "total_trades": 7,
+        "score": -8.367001788633372
+      },
+      {
+        "label": "MA10/30, RSI14/30/70, BB14/1.8",
+        "total_return": -1.1275195999999414,
+        "max_drawdown": 23.949540947115928,
+        "win_rate": 57.14285714285714,
+        "total_trades": 7,
+        "score": -8.367001788633372
+      }
+    ]
+  },
+  "000999.SZ": {
+    "name": "华润三九",
+    "top10": [
+      {
+        "label": "MA5/15, RSI12/30/70, BB20/2.0",
+        "total_return": 12.374218000000022,
+        "max_drawdown": 3.641980255878937,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 12.528096339013823
+      },
+      {
+        "label": "MA5/15, RSI14/30/70, BB26/2.0",
+        "total_return": 13.904396700000014,
+        "max_drawdown": 8.988880280250761,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 12.186860030483677
+      },
+      {
+        "label": "MA10/30, RSI12/30/70, BB26/2.0",
+        "total_return": 10.744997200000027,
+        "max_drawdown": 3.1661190999999964,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 11.065426943571458
+      },
+      {
+        "label": "MA8/21, RSI10/35/65, BB26/2.0",
+        "total_return": 12.249808900000076,
+        "max_drawdown": 9.054118877353798,
+        "win_rate": 75.0,
+        "total_trades": 8,
+        "score": 10.580867292926246
+      },
+      {
+        "label": "MA8/21, RSI12/30/70, BB20/1.5",
+        "total_return": 9.402606000000073,
+        "max_drawdown": 2.374076368249612,
+        "win_rate": 87.5,
+        "total_trades": 8,
+        "score": 10.321679271112709
+      },
+      {
+        "label": "MA5/15, RSI14/35/65, BB26/2.0",
+        "total_return": 11.938944100000052,
+        "max_drawdown": 8.892621678663893,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 10.255097941039118
+      },
+      {
+        "label": "MA8/21, RSI14/35/65, BB26/2.0",
+        "total_return": 11.047962500000038,
+        "max_drawdown": 9.014935954749717,
+        "win_rate": 83.33333333333334,
+        "total_trades": 6,
+        "score": 9.559401582504304
+      },
+      {
+        "label": "MA10/30, RSI14/35/65, BB26/2.0",
+        "total_return": 9.176631100000028,
+        "max_drawdown": 3.1097075999999944,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 9.516804868571459
+      },
+      {
+        "label": "MA5/15, RSI12/30/70, BB26/2.0",
+        "total_return": 10.515919800000004,
+        "max_drawdown": 8.911524847761434,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 8.825457531854932
+      },
+      {
+        "label": "MA5/15, RSI14/30/70, BB20/2.0",
+        "total_return": 10.3621618,
+        "max_drawdown": 8.979600056993917,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 8.647873208623558
+      }
+    ]
+  },
+  "000868.SZ": {
+    "name": "安凯客车",
+    "top10": [
+      {
+        "label": "MA10/30, RSI14/30/70, BB26/2.0",
+        "total_return": 28.464595900000056,
+        "max_drawdown": 5.541198031478071,
+        "win_rate": 80.0,
+        "total_trades": 5,
+        "score": 28.125176588982733
+      },
+      {
+        "label": "MA10/30, RSI10/35/65, BB26/2.0",
+        "total_return": 26.893352700000108,
+        "max_drawdown": 8.910253581814063,
+        "win_rate": 63.63636363636363,
+        "total_trades": 11,
+        "score": 25.04749121909246
+      },
+      {
+        "label": "MA10/30, RSI14/35/65, BB26/2.0",
+        "total_return": 22.279022500000064,
+        "max_drawdown": 7.064483906553646,
+        "win_rate": 80.0,
+        "total_trades": 5,
+        "score": 21.40645313270629
+      },
+      {
+        "label": "MA10/30, RSI12/30/70, BB26/2.0",
+        "total_return": 16.59592370000003,
+        "max_drawdown": 10.818575733327156,
+        "win_rate": 100.0,
+        "total_trades": 4,
+        "score": 14.809422193335525
+      },
+      {
+        "label": "MA8/21, RSI12/30/70, BB20/1.5",
+        "total_return": 14.24024320000007,
+        "max_drawdown": 7.044025908404246,
+        "win_rate": 77.77777777777779,
+        "total_trades": 9,
+        "score": 13.330389687614138
+      },
+      {
+        "label": "MA8/21, RSI14/35/65, BB20/1.5",
+        "total_return": 14.063509900000092,
+        "max_drawdown": 7.055863192604198,
+        "win_rate": 77.77777777777779,
+        "total_trades": 9,
+        "score": 13.149513338144178
+      },
+      {
+        "label": "MA8/21, RSI10/35/65, BB20/1.5",
+        "total_return": 13.371867000000057,
+        "max_drawdown": 7.996090714482588,
+        "win_rate": 76.92307692307693,
+        "total_trades": 13,
+        "score": 12.11169678839269
+      },
+      {
+        "label": "MA8/21, RSI14/30/70, BB26/2.0",
+        "total_return": 13.804606000000044,
+        "max_drawdown": 12.086433361398948,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 11.002925752081842
+      },
+      {
+        "label": "MA3/12, RSI10/35/65, BB14/1.8",
+        "total_return": 12.890657100000041,
+        "max_drawdown": 9.963009725650757,
+        "win_rate": 60.0,
+        "total_trades": 10,
+        "score": 10.603603696022276
+      },
+      {
+        "label": "MA8/21, RSI12/30/70, BB20/2.0",
+        "total_return": 12.263841200000039,
+        "max_drawdown": 9.186586190399337,
+        "win_rate": 71.42857142857143,
+        "total_trades": 7,
+        "score": 10.4771074619317
+      }
+    ]
+  },
+  "601816.SH": {
+    "name": "京沪高铁",
+    "top10": [
+      {
+        "label": "MA8/21, RSI14/35/65, BB26/2.0",
+        "total_return": -1.1977817999999534,
+        "max_drawdown": 5.523988139337006,
+        "win_rate": 50.0,
+        "total_trades": 6,
+        "score": -2.1311776487679053
+      },
+      {
+        "label": "MA8/21, RSI12/30/70, BB26/2.0",
+        "total_return": -1.4045954999999668,
+        "max_drawdown": 6.2574263630681495,
+        "win_rate": 50.0,
+        "total_trades": 6,
+        "score": -2.594694727073819
+      },
+      {
+        "label": "MA8/21, RSI14/30/70, BB26/2.0",
+        "total_return": -1.7579611999999325,
+        "max_drawdown": 6.060625526304557,
+        "win_rate": 50.0,
+        "total_trades": 6,
+        "score": -2.8791801342065275
+      },
+      {
+        "label": "MA8/21, RSI14/35/65, BB20/2.0",
+        "total_return": -1.9297752999999356,
+        "max_drawdown": 6.209399944687184,
+        "win_rate": 33.33333333333333,
+        "total_trades": 6,
+        "score": -3.436398613973783
+      },
+      {
+        "label": "MA8/21, RSI12/30/70, BB20/2.0",
+        "total_return": -2.1245769999999613,
+        "max_drawdown": 6.949243454122208,
+        "win_rate": 33.33333333333333,
+        "total_trades": 6,
+        "score": -3.8901455422760676
+      },
+      {
+        "label": "MA8/21, RSI14/30/70, BB20/2.0",
+        "total_return": -2.4879540999999588,
+        "max_drawdown": 6.7440393193324715,
+        "win_rate": 33.33333333333333,
+        "total_trades": 6,
+        "score": -4.181701195099657
+      },
+      {
+        "label": "MA8/21, RSI14/35/65, BB20/1.5",
+        "total_return": -3.3853384999999543,
+        "max_drawdown": 6.209399944687184,
+        "win_rate": 16.666666666666664,
+        "total_trades": 6,
+        "score": -5.225295147307135
+      },
+      {
+        "label": "MA8/21, RSI12/30/70, BB20/1.5",
+        "total_return": -3.5801401999999793,
+        "max_drawdown": 6.949243454122208,
+        "win_rate": 16.666666666666664,
+        "total_trades": 6,
+        "score": -5.679042075609419
+      },
+      {
+        "label": "MA8/21, RSI14/35/65, BB14/1.8",
+        "total_return": -4.369399399999937,
+        "max_drawdown": 9.053163399774807,
+        "win_rate": 44.44444444444444,
+        "total_trades": 9,
+        "score": -6.64911770103223
+      },
+      {
+        "label": "MA3/12, RSI14/35/65, BB20/2.0",
+        "total_return": -5.436221299999976,
+        "max_drawdown": 7.16690142295702,
+        "win_rate": 33.33333333333333,
+        "total_trades": 9,
+        "score": -7.277970131368265
+      }
+    ]
+  }
+}

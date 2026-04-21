@@ -1,0 +1,276 @@
+{
+  "symbol": "002022.SZ",
+  "name": "科华生物",
+  "period": "2025-03-18 to 2026-03-18",
+  "trading_days": 243,
+  "current_config": {
+    "ma": [
+      10,
+      30
+    ],
+    "rsi": [
+      8,
+      25,
+      75
+    ],
+    "bb": [
+      20,
+      2.0
+    ],
+    "vote_threshold": 2
+  },
+  "best_config": {
+    "ma": [
+      5,
+      20
+    ],
+    "rsi": [
+      6,
+      20,
+      60
+    ],
+    "bb": [
+      20,
+      2.0
+    ],
+    "vote_threshold": 1
+  },
+  "best_result": {
+    "total_return": 35.81250720000014,
+    "total_trades": 14,
+    "win_rate": 64.28571428571429,
+    "max_drawdown": 6.417015138223515,
+    "final_capital": 135812.50720000014,
+    "sharpe": 2.124678494981975
+  },
+  "current_result": {
+    "total_return": 13.547250000000014,
+    "total_trades": 1,
+    "win_rate": 100.0,
+    "max_drawdown": 20.473532557900704,
+    "final_capital": 113547.25000000001,
+    "sharpe": 0.6846459298997164
+  },
+  "top_10": [
+    {
+      "ma": [
+        5,
+        20
+      ],
+      "rsi": [
+        6,
+        20,
+        60
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "vote_threshold": 1,
+      "total_return": 35.81250720000014,
+      "total_trades": 14,
+      "win_rate": 64.28571428571429,
+      "max_drawdown": 6.417015138223515,
+      "final_capital": 135812.50720000014,
+      "sharpe": 2.124678494981975
+    },
+    {
+      "ma": [
+        10,
+        30
+      ],
+      "rsi": [
+        10,
+        35,
+        75
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "vote_threshold": 1,
+      "total_return": 46.269505100000124,
+      "total_trades": 10,
+      "win_rate": 60.0,
+      "max_drawdown": 10.041339860750963,
+      "final_capital": 146269.50510000013,
+      "sharpe": 1.87585221608748
+    },
+    {
+      "ma": [
+        5,
+        20
+      ],
+      "rsi": [
+        6,
+        20,
+        60
+      ],
+      "bb": [
+        26,
+        2.0
+      ],
+      "vote_threshold": 1,
+      "total_return": 23.399533100000102,
+      "total_trades": 13,
+      "win_rate": 61.53846153846154,
+      "max_drawdown": 6.421975462377707,
+      "final_capital": 123399.5331000001,
+      "sharpe": 1.4880784717705933
+    },
+    {
+      "ma": [
+        10,
+        30
+      ],
+      "rsi": [
+        6,
+        20,
+        60
+      ],
+      "bb": [
+        26,
+        2.0
+      ],
+      "vote_threshold": 1,
+      "total_return": 47.484225700000124,
+      "total_trades": 12,
+      "win_rate": 75.0,
+      "max_drawdown": 16.397570147202046,
+      "final_capital": 147484.22570000013,
+      "sharpe": 1.5977678800618291
+    },
+    {
+      "ma": [
+        5,
+        20
+      ],
+      "rsi": [
+        6,
+        25,
+        65
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "vote_threshold": 1,
+      "total_return": 24.68162370000008,
+      "total_trades": 13,
+      "win_rate": 53.84615384615385,
+      "max_drawdown": 8.765962287172586,
+      "final_capital": 124681.62370000008,
+      "sharpe": 1.5144838963491343
+    },
+    {
+      "ma": [
+        10,
+        30
+      ],
+      "rsi": [
+        10,
+        30,
+        70
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "vote_threshold": 1,
+      "total_return": 37.30694430000003,
+      "total_trades": 9,
+      "win_rate": 77.77777777777779,
+      "max_drawdown": 13.327637319990773,
+      "final_capital": 137306.94430000003,
+      "sharpe": 1.5089119020458974
+    },
+    {
+      "ma": [
+        5,
+        20
+      ],
+      "rsi": [
+        8,
+        25,
+        65
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "vote_threshold": 1,
+      "total_return": 25.513723800000047,
+      "total_trades": 9,
+      "win_rate": 66.66666666666666,
+      "max_drawdown": 9.531066740619643,
+      "final_capital": 125513.72380000005,
+      "sharpe": 1.609445150876555
+    },
+    {
+      "ma": [
+        10,
+        30
+      ],
+      "rsi": [
+        14,
+        30,
+        70
+      ],
+      "bb": [
+        20,
+        1.5
+      ],
+      "vote_threshold": 1,
+      "total_return": 21.652587500000053,
+      "total_trades": 6,
+      "win_rate": 83.33333333333334,
+      "max_drawdown": 8.401061924962908,
+      "final_capital": 121652.58750000005,
+      "sharpe": 1.1475558224229192
+    },
+    {
+      "ma": [
+        5,
+        20
+      ],
+      "rsi": [
+        6,
+        20,
+        60
+      ],
+      "bb": [
+        20,
+        1.8
+      ],
+      "vote_threshold": 1,
+      "total_return": 16.118522900000098,
+      "total_trades": 14,
+      "win_rate": 64.28571428571429,
+      "max_drawdown": 6.42759300071854,
+      "final_capital": 116118.5229000001,
+      "sharpe": 1.4068396519357853
+    },
+    {
+      "ma": [
+        10,
+        30
+      ],
+      "rsi": [
+        6,
+        20,
+        60
+      ],
+      "bb": [
+        20,
+        2.0
+      ],
+      "vote_threshold": 1,
+      "total_return": 32.93170400000008,
+      "total_trades": 11,
+      "win_rate": 63.63636363636363,
+      "max_drawdown": 13.34553471906282,
+      "final_capital": 132931.70400000009,
+      "sharpe": 1.4440580064611566
+    }
+  ]
+}

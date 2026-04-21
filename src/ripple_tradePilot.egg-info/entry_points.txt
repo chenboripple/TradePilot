@@ -1,0 +1,3 @@
+[console_scripts]
+tradepilot = ripple_tradePilot.cli:cli
+

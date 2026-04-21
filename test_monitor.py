@@ -14,7 +14,7 @@ from ripple_tradePilot.strategies.moving_average import MovingAverageCross
 from ripple_tradePilot.models.types import Side
 
 # 配置
-TOKEN = "3900cd9a9e8ec10fc1249e98ea6d7a7eb88c8b9a2131e268f20efec4"
+TOKEN = "your_tushare_token_here"
 SYMBOL = "002022.SZ"
 NAME = "科华生物"
 

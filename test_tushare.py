@@ -4,7 +4,7 @@
 import tushare as ts
 
 # 设置 Token
-TS_TOKEN = "3900cd9a9e8ec10fc1249e98ea6d7a7eb88c8b9a2131e268f20efec4"
+TS_TOKEN = "your_tushare_token_here"
 ts.set_token(TS_TOKEN)
 
 # 初始化 API

@@ -12,7 +12,7 @@ import pandas as pd
 from ripple_tradePilot.data.tushare_loader import TushareDataLoader
 
 # Tushare Token 从示例中获取
-TOKEN = "3900cd9a9e8ec10fc1249e98ea6d7a7eb88c8b9a2131e268f20efec4"
+TOKEN = "your_tushare_token_here"
 
 # 需要查询的股票列表
 STOCKS = [

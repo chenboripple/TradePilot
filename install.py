@@ -45,7 +45,19 @@ def install():
     
     # 安装依赖
     print("\n📦 安装依赖...")
-    run_cmd(f"{sys.executable} -m pip install -e {project_root}")
+    run_cmd(f"{sys.executable} -m pip install -r {project_root / 'requirements.txt'}")
+    
+    # 设置 PYTHONPATH
+    print("\n🔧 设置环境...")
+    env_file = Path.home() / ".tradepilot" / "env.sh"
+    env_content = f"""# TradePilot 环境变量
+export PYTHONPATH="{project_root}/src:$PYTHONPATH"
+export PATH="{project_root}/scripts:$PATH"
+"""
+    env_file.parent.mkdir(exist_ok=True)
+    env_file.write_text(env_content)
+    print(f"✅ 环境变量文件: {env_file}")
+    print("请运行: source ~/.tradepilot/env.sh")
     
     # 创建配置目录
     config_dir = Path.home() / ".tradepilot"
@@ -96,11 +108,12 @@ symbols:
     
     print("\n✅ 安装完成!")
     print("\n使用方法:")
-    print("  tradepilot --help        显示帮助")
-    print("  tradepilot init          初始化配置")
-    print("  tradepilot config        查看配置")
-    print("  tradepilot backtest SYMBOL  运行回测")
-    print("  tradepilot monitor SYMBOL   监控股票")
+    print("  source ~/.tradepilot/env.sh  加载环境变量")
+    print("  tradepilot --help            显示帮助")
+    print("  tradepilot init              初始化配置")
+    print("  tradepilot config            查看配置")
+    print("  tradepilot backtest SYMBOL   运行回测")
+    print("  tradepilot monitor SYMBOL    监控股票")
     
     print("\n配置说明:")
     print("  1. 编辑配置文件: ~/.tradepilot/config.yaml")

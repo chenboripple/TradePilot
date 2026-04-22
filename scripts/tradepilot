@@ -1,0 +1,3 @@
+#!/bin/bash
+# TradePilot 启动脚本
+PYTHONPATH="$(dirname "$0")/../src" python3 -m ripple_tradePilot.cli "$@"

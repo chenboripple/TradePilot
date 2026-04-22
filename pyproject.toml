@@ -2,18 +2,49 @@
 name = "ripple_tradePilot"
 version = "0.1.0"
 description = "Wave trading system with shared strategy core"
+readme = "README.md"
 requires-python = ">=3.9"
-
-dependencies = [
-  "pandas",
-  "numpy",
-  "matplotlib",
-  "fastapi",
-  "uvicorn",
-  "tushare",
-  "akshare",
-  "pyyaml",
+authors = [
+  { name = "Ripple" }
 ]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Topic :: Office/Business :: Financial :: Investment",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+]
+dependencies = [
+  "pandas>=2.0",
+  "numpy>=1.24",
+  "matplotlib>=3.7",
+  "fastapi>=0.100",
+  "uvicorn>=0.23",
+  "tushare>=1.2",
+  "akshare>=1.10",
+  "pyyaml>=6.0",
+  "httpx>=0.24",
+  "click>=8.0",
+]
+
+[project.scripts]
+tradepilot = "ripple_tradePilot.cli:cli"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+testpaths = ["tests"]

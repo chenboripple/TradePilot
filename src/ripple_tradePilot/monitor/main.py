@@ -5,14 +5,14 @@ TradePilot 实时监控主程序
 
 import asyncio
 import logging
+import os
 import signal as sys_signal
 import sys
 from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import List, Optional, Dict, Tuple
 
-import yaml
-
+from ripple_tradePilot.config_loader import load_config
 from ripple_tradePilot.data.tushare_loader import TushareDataLoader
 from ripple_tradePilot.strategies.moving_average import MovingAverageCross
 from ripple_tradePilot.strategies.rsi import RSI
@@ -172,9 +172,7 @@ class MarketMonitor:
     """市场行情监控器"""
     
     def __init__(self, config_path: str = "config.yaml"):
-        # 加载配置
-        with open(config_path, 'r', encoding='utf-8') as f:
-            self.config = yaml.safe_load(f)
+        self.config = load_config(config_path)
         
         # 初始化数据加载器
         ts_token = self.config['tushare']['token']
@@ -196,7 +194,7 @@ class MarketMonitor:
             self.feishu_notifier = None
         
         # 初始化按标的的策略画像
-        self.strategy_profiles = self.config.get('strategies', {}).get('profiles', {})
+        self.strategy_profiles = self.config.get('strategy_profiles', {})
         logger.info(f"✅ 已加载策略画像：{', '.join(sorted(self.strategy_profiles.keys()))}")
         
         # 监控状态
@@ -220,6 +218,54 @@ class MarketMonitor:
         in_lunch_break = time(11, 30) < current < time(13, 0)
         return in_day_session and not in_lunch_break
     
+    def _run_combo_vote_profile(self, profile: dict, bars: List[Bar]) -> Tuple[Dict, Optional[Tuple[str, Signal]], str]:
+        """运行 combo_vote 策略画像（MA + RSI + BB 投票）"""
+        ma_fast = profile.get('ma_fast', 5)
+        ma_slow = profile.get('ma_slow', 20)
+        rsi_period = profile.get('rsi_period', 14)
+        rsi_oversold = profile.get('rsi_oversold', 30)
+        rsi_overbought = profile.get('rsi_overbought', 70)
+        bb_period = profile.get('bb_period', 20)
+        bb_std = profile.get('bb_std', 2.0)
+        vote_threshold = profile.get('vote_threshold', 2)
+
+        ma_strategy = MovingAverageCross(fast=ma_fast, slow=ma_slow)
+        rsi_strategy = RSI(period=rsi_period, oversold=rsi_oversold, overbought=rsi_overbought)
+        bb_strategy = BollingerBands(period=bb_period, std_dev=bb_std)
+
+        latest_bar = bars[-1]
+        strategies = {
+            'ma_cross': ma_strategy,
+            'rsi': rsi_strategy,
+            'bollinger': bb_strategy,
+        }
+        signals = {}
+        for strategy_name, strategy in strategies.items():
+            strategy.reset()
+            for bar in bars[:-1]:
+                strategy.on_bar(bar)
+            signals[strategy_name] = strategy.on_bar(latest_bar)
+
+        strongest_signal = None
+        max_strength = 0.0
+        for strategy_name, signal in signals.items():
+            if signal.side and signal.strength > max_strength:
+                strongest_signal = (strategy_name, signal)
+                max_strength = signal.strength
+
+        buy_count = sum(1 for s in signals.values() if s.side == Side.BUY)
+        sell_count = sum(1 for s in signals.values() if s.side == Side.SELL)
+        if buy_count >= vote_threshold:
+            recommendation = '🟢 买入'
+        elif sell_count >= vote_threshold:
+            recommendation = '🔴 卖出'
+        elif buy_count >= 1 or sell_count >= 1:
+            recommendation = f'🟡 观望 (信号冲突，需{vote_threshold}票)'
+        else:
+            recommendation = '⚪ 观望'
+
+        return signals, strongest_signal, recommendation
+
     def _run_grid_combo_profile(self, profile: dict, bars: List[Bar]) -> Tuple[Dict, Optional[Tuple[str, Signal]], str]:
         ma_cfg = profile.get('ma', {})
         rsi_cfg = profile.get('rsi', {})
@@ -697,10 +743,7 @@ class MarketMonitor:
 
 async def main():
     """主函数"""
-    # 确定配置文件路径
-    config_path = Path(__file__).parent / "config.yaml"
-    if not config_path.exists():
-        config_path = Path("config.yaml")
+    config_path = Path(os.getenv('TRADEPILOT_CONFIG', 'config.yaml'))
     
     if not config_path.exists():
         logger.error("配置文件不存在：config.yaml")

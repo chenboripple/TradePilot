@@ -1,0 +1,44 @@
+symbols:
+  - code: "002022.SZ"
+    name: "科华生物"
+    strategy_profile: "科华生物策略"
+  - code: "600309.SH"
+    name: "万华化学"
+    strategy_profile: "万华化学策略"
+
+strategy_profiles:
+  科华生物策略:
+    kind: combo_vote
+    ma_fast: 10
+    ma_slow: 30
+    rsi_period: 10
+    rsi_oversold: 35
+    rsi_overbought: 65
+    bb_period: 20
+    bb_std: 2.0
+  万华化学策略:
+    kind: combo_vote
+    ma_fast: 5
+    ma_slow: 15
+    rsi_period: 14
+    rsi_oversold: 30
+    rsi_overbought: 70
+    bb_period: 20
+    bb_std: 2.0
+
+tushare:
+  token: ""
+  rate_limit_delay: 1.5
+
+monitor:
+  interval_seconds: 300
+  bar_freq: "1min"
+  trading_hours:
+    start: "09:30"
+    end: "15:00"
+
+notifiers:
+  feishu:
+    enabled: false
+    webhook: ""
+    secret: ""

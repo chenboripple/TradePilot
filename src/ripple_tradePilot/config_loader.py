@@ -35,7 +35,8 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         FileNotFoundError: 配置文件不存在且未设置对应环境变量
     """
     # 1. 加载用户配置
-    target_path = Path(config_path) if config_path else USER_CONFIG_FILE
+    configured_path = config_path or os.getenv('TRADEPILOT_CONFIG')
+    target_path = Path(configured_path) if configured_path else USER_CONFIG_FILE
     config = {}
     if target_path.exists():
         with open(target_path, 'r', encoding='utf-8') as f:
@@ -58,13 +59,32 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     
     for env_var, key_path in env_mappings.items():
         value = os.getenv(env_var)
-        if value is not None:
+        if value:
             target = config
             for key in key_path[:-1]:
                 if key not in target:
                     target[key] = {}
                 target = target[key]
             target[key_path[-1]] = value
+
+    notifier_env_mappings = {
+        'FEISHU_WEBHOOK_URL': ['notifiers', 'feishu', 'webhook'],
+        'FEISHU_WEBHOOK_SECRET': ['notifiers', 'feishu', 'secret'],
+    }
+    for env_var, key_path in notifier_env_mappings.items():
+        value = os.getenv(env_var)
+        if value:
+            target = config
+            for key in key_path[:-1]:
+                target = target.setdefault(key, {})
+            target[key_path[-1]] = value
+
+    feishu_enabled = os.getenv('FEISHU_ENABLED')
+    if feishu_enabled:
+        enabled_values = {'1', 'true', 'yes', 'on'}
+        config.setdefault('notifiers', {}).setdefault('feishu', {})['enabled'] = (
+            feishu_enabled.strip().lower() in enabled_values
+        )
     
     return config
 

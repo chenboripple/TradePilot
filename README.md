@@ -133,6 +133,23 @@ TradePolot/
 python install.py --update
 ```
 
+## Docker 部署
+
+本地构建并启动 API 与监控服务：
+
+```bash
+cp .env.example .env
+./scripts/docker-deploy.sh local
+```
+
+生产环境支持通过 GHCR 发布镜像，并由 Watchtower 自动升级：
+
+```bash
+./scripts/docker-deploy.sh production
+```
+
+完整说明见 [Docker 部署与自动升级](docs/docker-deployment.md)，项目风险与优化优先级见 [项目分析](docs/project-analysis.md)。
+
 ## 卸载
 
 ```bash

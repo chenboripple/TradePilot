@@ -1,0 +1,9 @@
+services:
+  api:
+    image: tradepilot:local
+    build:
+      context: .
+  monitor:
+    image: tradepilot:local
+    build:
+      context: .

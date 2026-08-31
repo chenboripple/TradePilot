@@ -1,0 +1,64 @@
+x-tradepilot-common: &tradepilot-common
+  image: ${TRADEPILOT_IMAGE:-ghcr.io/chenboripple/tradepilot:release}
+  restart: unless-stopped
+  init: true
+  environment:
+    TZ: ${TZ:-Asia/Shanghai}
+    TRADEPILOT_CONFIG: /app/config.yaml
+    TUSHARE_TOKEN: ${TUSHARE_TOKEN:-}
+    MX_APIKEY: ${MX_APIKEY:-}
+    FEISHU_ENABLED: ${FEISHU_ENABLED:-}
+    FEISHU_WEBHOOK_URL: ${FEISHU_WEBHOOK_URL:-}
+    FEISHU_WEBHOOK_SECRET: ${FEISHU_WEBHOOK_SECRET:-}
+  volumes:
+    - ${TRADEPILOT_CONFIG_PATH:-./config.example.yaml}:/app/config.yaml:ro
+    - ./data:/app/data
+    - ./output:/app/output
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  labels:
+    com.centurylinklabs.watchtower.enable: "true"
+
+services:
+  api:
+    <<: *tradepilot-common
+    command: ["uvicorn", "ripple_tradePilot.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "${TRADEPILOT_API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  monitor:
+    <<: *tradepilot-common
+    command: ["python", "-m", "ripple_tradePilot.monitor.main"]
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pathlib; assert any(b'ripple_tradePilot.monitor.main' in path.read_bytes() for path in pathlib.Path('/proc').glob('[0-9]*/cmdline'))"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    profiles: ["auto-update"]
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      - --label-enable
+      - --cleanup
+      - --rolling-restart
+      - --interval
+      - ${WATCHTOWER_INTERVAL:-300}

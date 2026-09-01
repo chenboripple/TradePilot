@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -9,34 +10,70 @@ from ripple_tradePilot.data.stock_service import (
     InvalidStockSymbolError,
     StockDataService,
 )
-from ripple_tradePilot.storage.database import load_daily_bars
+from ripple_tradePilot.storage.database import (
+    load_daily_bars,
+    stock_catalog_name,
+    upsert_stock_catalog,
+)
 
 
 class FakeStockDataService(StockDataService):
     def _fetch_tushare(self, symbol, start_date, end_date):
         self.requested_range = (start_date, end_date)
-        return (
-            pd.DataFrame(
-                [
-                    {
-                        "trade_date": "20260831",
-                        "open": 10,
-                        "high": 11,
-                        "low": 9,
-                        "close": 10.5,
-                        "vol": 100,
-                    },
-                    {
-                        "trade_date": "20260901",
-                        "open": 10.5,
-                        "high": 12,
-                        "low": 10,
-                        "close": 11.8,
-                        "vol": 120,
-                    },
-                ]
-            ),
-            "测试银行",
+        return pd.DataFrame(
+            [
+                {
+                    "trade_date": "20260831",
+                    "open": 10,
+                    "high": 11,
+                    "low": 9,
+                    "close": 10.5,
+                    "vol": 100,
+                },
+                {
+                    "trade_date": "20260901",
+                    "open": 10.5,
+                    "high": 12,
+                    "low": 10,
+                    "close": 11.8,
+                    "vol": 120,
+                },
+            ]
+        )
+
+
+class FakeTushareLoader:
+    catalog_requests = 0
+
+    def __init__(self, token, rate_limit_delay=1.5):
+        self.token = token
+
+    def get_daily_bars(self, symbol, start_date, end_date):
+        return pd.DataFrame(
+            [
+                {
+                    "trade_date": "20260901",
+                    "open": 10,
+                    "high": 11,
+                    "low": 9,
+                    "close": 10.5,
+                    "vol": 100,
+                }
+            ]
+        )
+
+    def get_stock_list(self):
+        type(self).catalog_requests += 1
+        return pd.DataFrame(
+            [
+                {
+                    "ts_code": "600418.SH",
+                    "name": "江淮汽车",
+                    "market": "主板",
+                    "list_status": "L",
+                    "list_date": "20010930",
+                }
+            ]
         )
 
 
@@ -52,7 +89,10 @@ class StockDataServiceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config = root / "config.yaml"
-            config.write_text("symbols: []\n", encoding="utf-8")
+            config.write_text(
+                "symbols:\n  - code: 600000.SH\n    name: 测试银行\n",
+                encoding="utf-8",
+            )
             database = root / "market.db"
             service = FakeStockDataService(config_path=config, database=database)
 
@@ -66,3 +106,47 @@ class StockDataServiceTest(unittest.TestCase):
             self.assertEqual(result["total_rows"], 2)
             self.assertEqual(len(rows), 2)
             self.assertEqual(rows[-1]["close"], 11.8)
+
+    def test_catalog_refresh_persists_latest_names_and_basic_info(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = root / "config.yaml"
+            config.write_text("tushare:\n  token: test-token\nsymbols: []\n", encoding="utf-8")
+            service = StockDataService(config_path=config, database=root / "market.db")
+            FakeTushareLoader.catalog_requests = 0
+
+            with patch(
+                "ripple_tradePilot.data.stock_service.TushareDataLoader",
+                FakeTushareLoader,
+            ):
+                result = service.refresh_catalog()
+
+            self.assertEqual(result["count"], 1)
+            self.assertEqual(stock_catalog_name("600418.SH", root / "market.db"), "江淮汽车")
+            self.assertEqual(FakeTushareLoader.catalog_requests, 1)
+
+    def test_single_stock_refresh_uses_catalog_name_without_refreshing_catalog(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = root / "config.yaml"
+            config.write_text(
+                "tushare:\n  token: test-token\nsymbols: []\n",
+                encoding="utf-8",
+            )
+            database = root / "market.db"
+            upsert_stock_catalog(
+                [{"symbol": "600000.SH", "name": "ST测试"}],
+                "test",
+                database,
+            )
+            FakeTushareLoader.catalog_requests = 0
+            with patch(
+                "ripple_tradePilot.data.stock_service.TushareDataLoader",
+                FakeTushareLoader,
+            ):
+                result = StockDataService(
+                    config_path=config, database=database
+                ).refresh("600000.SH")
+
+        self.assertEqual(result["name"], "ST测试")
+        self.assertEqual(FakeTushareLoader.catalog_requests, 0)

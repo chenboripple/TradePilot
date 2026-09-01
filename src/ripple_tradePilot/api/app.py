@@ -1,6 +1,7 @@
 import os
 import re
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
@@ -15,7 +16,11 @@ from ripple_tradePilot.data.stock_service import (
     StockDataService,
     StockDataUnavailableError,
 )
-from ripple_tradePilot.storage.database import init_database
+from ripple_tradePilot.storage.database import (
+    init_database,
+    list_stock_catalog,
+    stock_catalog_names,
+)
 from ripple_tradePilot.storage.user_store import (
     SESSION_DAYS,
     StrategyNotFoundError,
@@ -111,18 +116,24 @@ def required_user(user: Optional[Dict] = Depends(optional_user)) -> Dict:
 
 
 def _dashboard_for_user(user: Optional[Dict]) -> DashboardService:
-    if user is None:
-        return DashboardService()
-    records = list_user_stocks(user["id"])
-    configured = set(DashboardService().configured_symbols())
+    base_service = DashboardService()
+    configured_items = {
+        item["code"]: item for item in base_service.configured_assets()
+    }
+    configured = set(configured_items)
+    catalog_names = stock_catalog_names()
+    records = list_user_stocks(user["id"]) if user is not None else []
     symbols = []
+    for code, item in configured_items.items():
+        if code in catalog_names:
+            symbols.append({**item, "name": catalog_names[code]})
     for item in records:
         if not item["is_watched"]:
             continue
         is_user_added = item["symbol"] not in configured
         symbol = {
             "code": item["symbol"],
-            "name": item["name"],
+            "name": catalog_names.get(item["symbol"], item["name"]),
             "asset_class": "stock",
             "user_added": is_user_added,
         }
@@ -151,54 +162,72 @@ def _stock_catalog(user: Optional[Dict]) -> Dict:
     configured = _configured_stock_map()
     records = _stock_records(user)
     symbols: Dict[str, Dict] = {
-        code: {
-            "code": code,
-            "name": item.get("name", code),
-            "asset_class": "stock",
-        }
-        for code, item in configured.items()
+        item["symbol"]: dict(item) for item in list_stock_catalog()
     }
+    empty_market = {
+        "market": "",
+        "list_status": "L",
+        "list_date": "",
+        "updated_at": None,
+        "latest_date": None,
+        "price": None,
+        "change": None,
+        "change_pct": None,
+    }
+    for code, item in configured.items():
+        symbols.setdefault(
+            code,
+            {
+                **empty_market,
+                "symbol": code,
+                "name": item.get("name", code),
+                "source": "config",
+            },
+        )
     for code, item in records.items():
-        symbols[code] = {
-            **symbols.get(code, {}),
-            "code": code,
-            "name": item["name"],
-            "asset_class": "stock",
-            "strategy_profile": "默认组合策略",
-            "user_added": code not in configured,
-        }
+        symbols.setdefault(
+            code,
+            {
+                **empty_market,
+                "symbol": code,
+                "name": item["name"],
+                "source": "watchlist",
+            },
+        )
 
-    service = DashboardService(extra_symbols=list(symbols.values()))
     items = []
-    for code, symbol in symbols.items():
+    for code in sorted(symbols):
+        symbol = symbols[code]
         record = records.get(code)
         watched = record["is_watched"] if record is not None else code in configured
+        latest_date = symbol.get("latest_date")
+        freshness = "unavailable"
+        if latest_date:
+            try:
+                parsed = datetime.strptime(str(latest_date)[:10], "%Y-%m-%d")
+            except ValueError:
+                parsed = datetime.strptime(str(latest_date)[:8], "%Y%m%d")
+            freshness = (
+                "fresh"
+                if max((datetime.now().date() - parsed.date()).days, 0) <= 4
+                else "stale"
+            )
         item = {
             "symbol": code,
             "name": symbol.get("name", code),
+            "market": symbol.get("market", ""),
+            "list_status": symbol.get("list_status", "L"),
+            "list_date": symbol.get("list_date", ""),
+            "catalog_updated_at": symbol.get("updated_at"),
             "is_watched": watched,
             "is_default": code in configured,
             "last_updated_at": record.get("last_updated_at") if record else None,
-            "price": None,
-            "change": None,
-            "change_pct": None,
-            "latest_date": None,
-            "freshness": "unavailable",
+            "price": symbol.get("price"),
+            "change": symbol.get("change"),
+            "change_pct": symbol.get("change_pct"),
+            "latest_date": latest_date,
+            "freshness": freshness,
         }
-        try:
-            detail = service.market_detail(code, limit=40)
-            item.update(
-                {
-                    "name": detail["name"],
-                    "price": detail["price"],
-                    "change": detail["change"],
-                    "change_pct": detail["change_pct"],
-                    "latest_date": detail["latest_date"],
-                    "freshness": detail["freshness"],
-                }
-            )
-        except DashboardDataError:
-            pass
         items.append(item)
     return {"items": items}
 
@@ -323,6 +352,14 @@ def stocks(user: Optional[Dict] = Depends(optional_user)):
     return _stock_catalog(user)
 
 
+@app.post("/api/stocks/refresh")
+def refresh_stocks(user: Dict = Depends(required_user)):
+    try:
+        return {"data": StockDataService().refresh_catalog()}
+    except StockDataUnavailableError as error:
+        raise _stock_error(error) from error
+
+
 @app.post("/api/watchlist", status_code=status.HTTP_201_CREATED)
 def add_to_watchlist(payload: WatchlistCreate, user: Dict = Depends(required_user)):
     service = StockDataService()
@@ -339,6 +376,10 @@ def add_to_watchlist(payload: WatchlistCreate, user: Dict = Depends(required_use
             refreshed = None
         else:
             refreshed = service.refresh(symbol, initial_days=365)
+            if refreshed["name"] == refreshed["symbol"]:
+                raise StockDataUnavailableError(
+                    f"已获取 {symbol} 的行情，但暂时无法解析股票名称，请稍后重试"
+                )
             item = upsert_watchlist_item(
                 user["id"],
                 refreshed["symbol"],
@@ -368,9 +409,11 @@ def refresh_watchlist_stock(symbol: str, user: Dict = Depends(required_user)):
         if not is_watched:
             raise WatchlistNotFoundError("只能更新当前观察池中的股票")
         refreshed = service.refresh(normalized, initial_days=365)
-        refreshed_name = refreshed["name"]
-        if refreshed_name == normalized and record is not None:
-            refreshed_name = record["name"]
+        refreshed_name = (
+            record["name"]
+            if record is not None
+            else _configured_stock_map()[normalized].get("name", normalized)
+        )
         upsert_watchlist_item(
             user["id"],
             normalized,

@@ -5,7 +5,7 @@ import re
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import akshare as ak
 import pandas as pd
@@ -15,11 +15,14 @@ from ripple_tradePilot.data.tushare_loader import TushareDataLoader
 from ripple_tradePilot.storage.database import (
     database_path,
     load_daily_bars,
+    stock_catalog_name,
     upsert_daily_bars,
+    upsert_stock_catalog,
 )
 
 
 _DATA_LOCK = threading.Lock()
+_CATALOG_LOCK = threading.Lock()
 
 
 class StockDataError(RuntimeError):
@@ -73,6 +76,56 @@ class StockDataService:
         return None
 
     @staticmethod
+    def _valid_name(value: Any, symbol: str) -> Optional[str]:
+        name = str(value or "").strip()
+        if not name or name.lower() in {"nan", symbol.lower(), symbol.split(".", 1)[0]}:
+            return None
+        return name
+
+    @staticmethod
+    def _catalog_records(frame: pd.DataFrame) -> list[Dict[str, str]]:
+        if not len(frame) or not {"ts_code", "name"}.issubset(frame.columns):
+            return []
+        records = []
+        for _, row in frame.iterrows():
+            symbol = str(row.get("ts_code") or "").upper().strip()
+            name = StockDataService._valid_name(row.get("name"), symbol)
+            if not symbol or not name:
+                continue
+            records.append(
+                {
+                    "symbol": symbol,
+                    "name": name,
+                    "market": str(row.get("market") or "").strip(),
+                    "list_status": str(row.get("list_status") or "L").strip(),
+                    "list_date": str(row.get("list_date") or "").strip(),
+                }
+            )
+        return records
+
+    def refresh_catalog(self) -> Dict[str, Any]:
+        config = load_config(str(self.config_path))
+        tushare = config.get("tushare", {})
+        token = tushare.get("token")
+        if not token:
+            raise StockDataUnavailableError("缺少 Tushare Token，无法同步股票清单")
+        loader = TushareDataLoader(
+            token,
+            rate_limit_delay=float(tushare.get("rate_limit_delay", 1.5)),
+        )
+        with _CATALOG_LOCK:
+            try:
+                records = self._catalog_records(loader.get_stock_list())
+            except Exception as error:
+                raise StockDataUnavailableError(
+                    "暂时无法获取股票清单，请稍后重试"
+                ) from error
+            if not records:
+                raise StockDataUnavailableError("未获取到有效的股票清单")
+            upsert_stock_catalog(records, "tushare", self.database)
+        return {"count": len(records), "source": "tushare"}
+
+    @staticmethod
     def _normalize_frame(frame: pd.DataFrame) -> pd.DataFrame:
         data = frame.copy().rename(
             columns={
@@ -121,29 +174,24 @@ class StockDataService:
 
     def _fetch_tushare(
         self, symbol: str, start_date: str, end_date: str
-    ) -> Tuple[pd.DataFrame, Optional[str]]:
+    ) -> pd.DataFrame:
         config = load_config(str(self.config_path))
         tushare = config.get("tushare", {})
         token = tushare.get("token")
         if not token:
-            return pd.DataFrame(), None
+            return pd.DataFrame()
         loader = TushareDataLoader(
             token,
             rate_limit_delay=float(tushare.get("rate_limit_delay", 1.5)),
         )
-        frame = loader.get_daily_bars(symbol, start_date=start_date, end_date=end_date)
-        basic = None
-        if len(frame):
-            try:
-                basic = loader.get_stock_basic(symbol)
-            except Exception:
-                basic = None
-        return frame, basic.get("name") if basic else None
+        return loader.get_daily_bars(
+            symbol, start_date=start_date, end_date=end_date
+        )
 
     @staticmethod
     def _fetch_akshare(
         symbol: str, start_date: str, end_date: str
-    ) -> Tuple[pd.DataFrame, Optional[str]]:
+    ) -> pd.DataFrame:
         code = symbol.split(".", 1)[0]
         frame = ak.stock_zh_a_hist(
             symbol=code,
@@ -152,16 +200,7 @@ class StockDataService:
             end_date=end_date,
             adjust="",
         )
-        name = None
-        try:
-            info = ak.stock_individual_info_em(symbol=code)
-            if info is not None and {"item", "value"}.issubset(info.columns):
-                rows = info[info["item"].astype(str).isin(("股票简称", "简称"))]
-                if len(rows):
-                    name = str(rows.iloc[0]["value"])
-        except Exception:
-            name = None
-        return frame, name
+        return frame
 
     def refresh(self, value: str, initial_days: int = 365) -> Dict[str, Any]:
         symbol = self.normalize_symbol(value)
@@ -179,20 +218,18 @@ class StockDataService:
             end_date = now.strftime("%Y%m%d")
 
             frame = pd.DataFrame()
-            name = self._configured_name(symbol)
+            name = stock_catalog_name(symbol, self.database) or self._configured_name(
+                symbol
+            )
             source = "tushare"
             try:
-                frame, fetched_name = self._fetch_tushare(symbol, start_date, end_date)
-                name = fetched_name or name
+                frame = self._fetch_tushare(symbol, start_date, end_date)
             except Exception:
                 frame = pd.DataFrame()
             if len(frame) == 0:
                 source = "akshare"
                 try:
-                    frame, fetched_name = self._fetch_akshare(
-                        symbol, start_date, end_date
-                    )
-                    name = fetched_name or name
+                    frame = self._fetch_akshare(symbol, start_date, end_date)
                 except Exception as error:
                     raise StockDataUnavailableError(
                         f"无法获取 {symbol} 的日线数据，请检查行情源配置"

@@ -6,7 +6,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from ripple_tradePilot.storage import database_path, init_database
-from ripple_tradePilot.storage.database import load_daily_bars, upsert_daily_bars
+from ripple_tradePilot.storage.database import (
+    list_stock_catalog,
+    load_daily_bars,
+    upsert_daily_bars,
+    upsert_stock_catalog,
+)
 
 
 class DatabaseInitializationTest(unittest.TestCase):
@@ -39,9 +44,9 @@ class DatabaseInitializationTest(unittest.TestCase):
             self.assertIn("strategy_id", columns)
             self.assertIn("idx_backtest_results_symbol_created", indexes)
             self.assertTrue(
-                {"users", "user_sessions", "strategies", "user_watchlist", "daily_bars"}.issubset(tables)
+                {"users", "user_sessions", "strategies", "user_watchlist", "stock_catalog", "daily_bars"}.issubset(tables)
             )
-            self.assertEqual(version, 6)
+            self.assertEqual(version, 7)
 
     def test_adds_columns_missing_from_legacy_database(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -133,6 +138,47 @@ class DatabaseInitializationTest(unittest.TestCase):
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0]["close"], 10.8)
             self.assertEqual(rows[0]["vol"], 120)
+
+    def test_stock_catalog_upsert_updates_watchlist_names(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "market.db"
+            init_database(target)
+            with sqlite3.connect(target) as connection:
+                connection.execute(
+                    "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+                    ("catalog-user", "hash"),
+                )
+                user_id = connection.execute(
+                    "SELECT id FROM users WHERE username = ?", ("catalog-user",)
+                ).fetchone()[0]
+                connection.execute(
+                    "INSERT INTO user_watchlist (user_id, symbol, name) VALUES (?, ?, ?)",
+                    (user_id, "600418.SH", "江淮汽车"),
+                )
+
+            upsert_stock_catalog(
+                [
+                    {
+                        "symbol": "600418.SH",
+                        "name": "ST江淮",
+                        "market": "主板",
+                        "list_status": "L",
+                        "list_date": "20010930",
+                    }
+                ],
+                "tushare",
+                target,
+            )
+
+            with sqlite3.connect(target) as connection:
+                name = connection.execute(
+                    "SELECT name FROM user_watchlist WHERE symbol = ?",
+                    ("600418.SH",),
+                ).fetchone()[0]
+            catalog = list_stock_catalog(target)
+
+            self.assertEqual(name, "ST江淮")
+            self.assertEqual(catalog[0]["market"], "主板")
 
 
 if __name__ == "__main__":

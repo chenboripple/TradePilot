@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=3">
+  <link rel="stylesheet" href="/assets/app.css?v=4">
 </head>
 <body>
   <header class="topbar">
@@ -138,14 +138,19 @@
       <section class="view" id="view-stocks">
         <header class="page-heading">
           <div><span>STOCK DATA CATALOG</span><h1>全部数据</h1></div>
-          <p>已移出观察池的股票保留缓存数据，不参与主动更新</p>
+          <div class="catalog-tools">
+            <label class="catalog-search"><span>搜索股票</span><input id="stock-search" type="search" placeholder="代码或名称"></label>
+            <span id="stock-catalog-status">尚未同步股票清单</span>
+            <button class="primary-button authenticated-content" id="sync-stocks-button" hidden>同步股票清单</button>
+          </div>
         </header>
         <div class="table-panel">
           <table class="stock-catalog-table">
-            <thead><tr><th>股票</th><th>最新价</th><th>涨跌</th><th>行情日期</th><th>数据状态</th><th>观察状态</th><th>操作</th></tr></thead>
+            <thead><tr><th>股票</th><th>市场 / 上市日期</th><th>最新价</th><th>涨跌</th><th>行情日期</th><th>数据状态</th><th>观察状态</th><th>操作</th></tr></thead>
             <tbody id="stock-table"></tbody>
           </table>
           <div class="table-empty" id="stock-empty" hidden>暂无股票数据</div>
+          <button class="catalog-more" id="stock-more" hidden>显示更多</button>
         </div>
       </section>
 

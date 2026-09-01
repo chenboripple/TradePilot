@@ -4,6 +4,8 @@ const state = {
   strategies: [],
   backtests: [],
   allStocks: null,
+  stockQuery: "",
+  stockLimit: 200,
   assetClass: "stock",
   selectedSymbol: null,
   currentMarket: null,
@@ -45,6 +47,10 @@ const elements = {
   addStockButton: document.querySelector("#add-stock-button"),
   stockTable: document.querySelector("#stock-table"),
   stockEmpty: document.querySelector("#stock-empty"),
+  stockSearch: document.querySelector("#stock-search"),
+  stockMore: document.querySelector("#stock-more"),
+  stockCatalogStatus: document.querySelector("#stock-catalog-status"),
+  syncStocks: document.querySelector("#sync-stocks-button"),
 };
 
 const recommendationLabels = { BUY: "偏多", SELL: "偏空", HOLD: "观望" };
@@ -300,8 +306,18 @@ async function removeStock(symbol) {
 
 function renderStockCatalog() {
   const stocks = state.allStocks ?? [];
-  elements.stockEmpty.hidden = stocks.length > 0;
-  elements.stockTable.innerHTML = stocks.map((item) => {
+  const query = state.stockQuery.trim().toLowerCase();
+  const filtered = query
+    ? stocks.filter((item) => `${item.symbol} ${item.name}`.toLowerCase().includes(query))
+    : stocks;
+  const visible = filtered.slice(0, state.stockLimit);
+  elements.stockEmpty.hidden = filtered.length > 0;
+  elements.stockMore.hidden = visible.length >= filtered.length;
+  elements.stockMore.textContent = `显示更多（${visible.length} / ${filtered.length}）`;
+  elements.stockCatalogStatus.textContent = stocks.length
+    ? `共 ${stocks.length.toLocaleString("zh-CN")} 只股票`
+    : "尚未同步股票清单";
+  elements.stockTable.innerHTML = visible.map((item) => {
     const hasChange = item.change_pct !== null && item.change_pct !== undefined;
     const changeClass = hasChange ? (Number(item.change_pct) >= 0 ? "rec-buy" : "rec-sell") : "";
     const changeText = hasChange
@@ -316,6 +332,7 @@ function renderStockCatalog() {
     }
     return `<tr>
       <td class="symbol-cell"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.symbol)}${item.is_default ? " · 默认" : ""}</span></td>
+      <td class="symbol-cell"><strong>${escapeHtml(item.market || "--")}</strong><span>${escapeHtml(item.list_date || "--")}</span></td>
       <td>${formatNumber(item.price)}</td>
       <td class="${changeClass}">${changeText}</td>
       <td>${escapeHtml(item.latest_date || "--")}</td>
@@ -347,6 +364,21 @@ async function addCatalogStock(button) {
     window.alert(error.message);
   } finally {
     button.disabled = false;
+  }
+}
+
+async function syncStockCatalog() {
+  elements.syncStocks.disabled = true;
+  elements.syncStocks.textContent = "正在同步...";
+  try {
+    const result = await apiRequest("/api/stocks/refresh", { method: "POST" });
+    await Promise.all([fetchStockCatalog(), fetchDashboard()]);
+    elements.stockCatalogStatus.textContent = `已同步 ${result.data.count.toLocaleString("zh-CN")} 只股票`;
+  } catch (error) {
+    window.alert(error.message);
+  } finally {
+    elements.syncStocks.disabled = false;
+    elements.syncStocks.textContent = "同步股票清单";
   }
 }
 
@@ -708,6 +740,16 @@ document.querySelectorAll("[data-indicator]").forEach((input) => {
 elements.refresh.addEventListener("click", async () => {
   await fetchDashboard();
   if (state.view === "stocks") await fetchStockCatalog();
+});
+elements.syncStocks.addEventListener("click", syncStockCatalog);
+elements.stockSearch.addEventListener("input", () => {
+  state.stockQuery = elements.stockSearch.value;
+  state.stockLimit = 200;
+  renderStockCatalog();
+});
+elements.stockMore.addEventListener("click", () => {
+  state.stockLimit += 200;
+  renderStockCatalog();
 });
 elements.accountButton.addEventListener("click", () => openAuth("login"));
 document.querySelector("#logout-button").addEventListener("click", async () => {

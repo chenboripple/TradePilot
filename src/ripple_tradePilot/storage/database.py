@@ -78,6 +78,16 @@ DAILY_BAR_COLUMNS = {
     "updated_at": "updated_at TIMESTAMP",
 }
 
+STOCK_CATALOG_COLUMNS = {
+    "symbol": "symbol TEXT DEFAULT ''",
+    "name": "name TEXT DEFAULT ''",
+    "market": "market TEXT DEFAULT ''",
+    "list_status": "list_status TEXT DEFAULT 'L'",
+    "list_date": "list_date TEXT DEFAULT ''",
+    "source": "source TEXT DEFAULT ''",
+    "updated_at": "updated_at TIMESTAMP",
+}
+
 
 def database_path() -> Path:
     configured = os.getenv("TRADEPILOT_BACKTEST_DB")
@@ -253,6 +263,24 @@ def init_database(path: Path | None = None) -> Path:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS stock_catalog (
+                symbol TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                market TEXT NOT NULL DEFAULT '',
+                list_status TEXT NOT NULL DEFAULT 'L',
+                list_date TEXT NOT NULL DEFAULT '',
+                source TEXT NOT NULL DEFAULT '',
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        _ensure_columns(connection, "stock_catalog", STOCK_CATALOG_COLUMNS)
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_stock_catalog_name "
+            "ON stock_catalog(name)"
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS daily_bars (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 symbol TEXT NOT NULL,
@@ -281,7 +309,7 @@ def init_database(path: Path | None = None) -> Path:
         integrity = connection.execute("PRAGMA integrity_check").fetchone()
         if not integrity or integrity[0] != "ok":
             raise RuntimeError(f"SQLite integrity check failed for {target}: {integrity}")
-        connection.execute("PRAGMA user_version=6")
+        connection.execute("PRAGMA user_version=7")
 
     return target
 
@@ -385,3 +413,128 @@ def upsert_daily_bars(
             ],
         )
     return len(records)
+
+
+def upsert_stock_catalog(
+    rows: Iterable[Mapping[str, Any]],
+    source: str,
+    path: Path | None = None,
+) -> int:
+    records = list(rows)
+    if not records:
+        return 0
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.executemany(
+            """
+            INSERT INTO stock_catalog (
+                symbol, name, market, list_status, list_date, source, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(symbol) DO UPDATE SET
+                name = excluded.name,
+                market = excluded.market,
+                list_status = excluded.list_status,
+                list_date = excluded.list_date,
+                source = excluded.source,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            [
+                (
+                    str(row["symbol"]).upper(),
+                    str(row["name"]).strip(),
+                    str(row.get("market") or "").strip(),
+                    str(row.get("list_status") or "L").strip(),
+                    str(row.get("list_date") or "").strip(),
+                    source,
+                )
+                for row in records
+            ],
+        )
+        connection.execute(
+            """
+            UPDATE user_watchlist
+            SET name = (
+                SELECT stock_catalog.name
+                FROM stock_catalog
+                WHERE stock_catalog.symbol = user_watchlist.symbol
+            )
+            WHERE EXISTS (
+                SELECT 1 FROM stock_catalog
+                WHERE stock_catalog.symbol = user_watchlist.symbol
+                  AND stock_catalog.name <> user_watchlist.name
+            )
+            """
+        )
+    return len(records)
+
+
+def stock_catalog_name(symbol: str, path: Path | None = None) -> str | None:
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        row = connection.execute(
+            "SELECT name FROM stock_catalog WHERE symbol = ?", (symbol,)
+        ).fetchone()
+    return str(row[0]) if row else None
+
+
+def stock_catalog_names(path: Path | None = None) -> Mapping[str, str]:
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        rows = connection.execute("SELECT symbol, name FROM stock_catalog").fetchall()
+    return {str(symbol): str(name) for symbol, name in rows}
+
+
+def list_stock_catalog(path: Path | None = None) -> List[Mapping[str, Any]]:
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            """
+            WITH ranked_bars AS (
+                SELECT
+                    symbol,
+                    trade_date,
+                    close,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY symbol ORDER BY trade_date DESC
+                    ) AS position
+                FROM daily_bars
+            )
+            SELECT
+                stock_catalog.symbol,
+                stock_catalog.name,
+                stock_catalog.market,
+                stock_catalog.list_status,
+                stock_catalog.list_date,
+                stock_catalog.source,
+                stock_catalog.updated_at,
+                latest.trade_date AS latest_date,
+                latest.close AS price,
+                previous.close AS previous_price
+            FROM stock_catalog
+            LEFT JOIN ranked_bars AS latest
+                ON latest.symbol = stock_catalog.symbol AND latest.position = 1
+            LEFT JOIN ranked_bars AS previous
+                ON previous.symbol = stock_catalog.symbol AND previous.position = 2
+            ORDER BY stock_catalog.symbol
+            """
+        ).fetchall()
+
+    items = []
+    for row in rows:
+        item = dict(row)
+        price = item.pop("price")
+        previous_price = item.pop("previous_price")
+        item["price"] = price
+        item["change"] = (
+            float(price) - float(previous_price)
+            if price is not None and previous_price is not None
+            else None
+        )
+        item["change_pct"] = (
+            (float(price) / float(previous_price) - 1) * 100
+            if price is not None and previous_price not in (None, 0)
+            else None
+        )
+        items.append(item)
+    return items

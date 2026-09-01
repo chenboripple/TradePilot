@@ -11,7 +11,11 @@ from fastapi.testclient import TestClient
 
 from ripple_tradePilot.api.app import app
 from ripple_tradePilot.data.stock_service import StockDataService
-from ripple_tradePilot.storage.database import database_path, upsert_daily_bars
+from ripple_tradePilot.storage.database import (
+    database_path,
+    upsert_daily_bars,
+    upsert_stock_catalog,
+)
 
 api_module = importlib.import_module("ripple_tradePilot.api.app")
 
@@ -45,6 +49,22 @@ class ApiStockDataService:
             "total_rows": len(rows),
             "latest_date": date.today().isoformat(),
         }
+
+    def refresh_catalog(self):
+        upsert_stock_catalog(
+            [
+                {
+                    "symbol": "600418.SH",
+                    "name": "ST江淮",
+                    "market": "主板",
+                    "list_status": "L",
+                    "list_date": "20010930",
+                }
+            ],
+            "test",
+            database_path(),
+        )
+        return {"count": 1, "source": "test"}
 
 
 class UserApiTest(unittest.TestCase):
@@ -181,7 +201,7 @@ class UserApiTest(unittest.TestCase):
             forbidden = self.client.post("/api/watchlist/600000.SH/refresh")
         self.assertEqual(forbidden.status_code, 404)
 
-    def test_refresh_updates_name_and_archived_stock_can_be_restored_without_refresh(self):
+    def test_refresh_keeps_name_and_archived_stock_can_be_restored_without_refresh(self):
         self.register("alice")
         with patch.object(api_module, "StockDataService", ApiStockDataService):
             added = self.client.post("/api/watchlist", json={"symbol": "600000"})
@@ -196,18 +216,18 @@ class UserApiTest(unittest.TestCase):
         self.assertEqual(refreshed.status_code, 200, refreshed.text)
         self.assertEqual(
             self.client.get("/api/watchlist").json()["items"][0]["name"],
-            "更新后的银行",
+            "测试银行",
         )
         self.assertEqual(
             self.client.get("/api/dashboard").json()["markets"][0]["name"],
-            "更新后的银行",
+            "测试银行",
         )
 
         removed = self.client.delete("/api/watchlist/600000.SH")
         self.assertEqual(removed.status_code, 204, removed.text)
         self.assertEqual(self.client.get("/api/dashboard").json()["markets"], [])
         archived = self.client.get("/api/stocks").json()["items"][0]
-        self.assertEqual(archived["name"], "更新后的银行")
+        self.assertEqual(archived["name"], "测试银行")
         self.assertFalse(archived["is_watched"])
 
         with patch.object(api_module, "StockDataService", ApiStockDataService):
@@ -226,8 +246,39 @@ class UserApiTest(unittest.TestCase):
         self.assertIsNone(restored.json()["data"])
         self.assertEqual(
             self.client.get("/api/dashboard").json()["markets"][0]["name"],
-            "更新后的银行",
+            "测试银行",
         )
+
+    def test_full_catalog_refresh_updates_names_and_lists_all_stocks(self):
+        self.register("alice")
+        upsert_stock_catalog(
+            [{"symbol": "600418.SH", "name": "江淮汽车"}],
+            "test",
+            self.database,
+        )
+        with patch.object(api_module, "StockDataService", ApiStockDataService):
+            response = self.client.post("/api/stocks/refresh")
+
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["data"]["count"], 1)
+        catalog = self.client.get("/api/stocks").json()["items"]
+        self.assertEqual(
+            [(item["symbol"], item["name"]) for item in catalog],
+            [("600418.SH", "ST江淮")],
+        )
+        self.assertEqual(catalog[0]["market"], "主板")
+
+    def test_new_stock_is_not_saved_when_name_cannot_be_resolved(self):
+        class UnnamedStockDataService(ApiStockDataService):
+            stock_name = "600000.SH"
+
+        self.register("alice")
+        with patch.object(api_module, "StockDataService", UnnamedStockDataService):
+            response = self.client.post("/api/watchlist", json={"symbol": "600000"})
+
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertIn("无法解析股票名称", response.json()["detail"])
+        self.assertEqual(self.client.get("/api/watchlist").json()["items"], [])
 
     def test_configured_stock_can_be_archived_and_restored(self):
         self.config.write_text(

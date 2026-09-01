@@ -1,5 +1,8 @@
 const state = {
   dashboard: null,
+  user: null,
+  strategies: [],
+  backtests: [],
   assetClass: "stock",
   selectedSymbol: null,
   currentMarket: null,
@@ -7,6 +10,8 @@ const state = {
   range: 120,
   indicators: { ma: true, bb: true, volume: true },
   hoverIndex: null,
+  authMode: "login",
+  pendingView: null,
 };
 
 const elements = {
@@ -23,6 +28,16 @@ const elements = {
   chart: document.querySelector("#market-chart"),
   chartTooltip: document.querySelector("#chart-tooltip"),
   chartEmpty: document.querySelector("#chart-empty"),
+  accountButton: document.querySelector("#account-button"),
+  accountMenu: document.querySelector("#account-menu"),
+  accountName: document.querySelector("#account-name"),
+  accountAvatar: document.querySelector("#account-avatar"),
+  authDialog: document.querySelector("#auth-dialog"),
+  authForm: document.querySelector("#auth-form"),
+  authError: document.querySelector("#auth-error"),
+  strategyDialog: document.querySelector("#strategy-dialog"),
+  strategyForm: document.querySelector("#strategy-form"),
+  strategyError: document.querySelector("#strategy-error"),
 };
 
 const recommendationLabels = { BUY: "偏多", SELL: "偏空", HOLD: "观望" };
@@ -51,6 +66,85 @@ function shortDate(value) {
   if (!value) return "--";
   const parts = String(value).split("-");
   return parts.length === 3 ? `${parts[1]}/${parts[2]}` : value;
+}
+
+async function apiRequest(url, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (options.body) headers["Content-Type"] = "application/json";
+  const response = await fetch(url, { ...options, headers, cache: "no-store" });
+  if (!response.ok) {
+    let message = `请求失败 (${response.status})`;
+    try {
+      const payload = await response.json();
+      message = typeof payload.detail === "string" ? payload.detail : message;
+    } catch (_) {}
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return response.status === 204 ? null : response.json();
+}
+
+async function fetchCurrentUser() {
+  const payload = await apiRequest("/api/auth/me");
+  state.user = payload.user;
+  renderAuthState();
+}
+
+async function loadProtectedData() {
+  if (!state.user) {
+    state.strategies = [];
+    state.backtests = [];
+    renderStrategies();
+    renderBacktests();
+    return;
+  }
+  try {
+    const [strategies, backtests] = await Promise.all([
+      apiRequest("/api/strategies"),
+      apiRequest("/api/backtests"),
+    ]);
+    state.strategies = strategies.items;
+    state.backtests = backtests.items;
+    renderStrategies();
+    renderBacktests();
+  } catch (error) {
+    if (error.status === 401) {
+      state.user = null;
+      renderAuthState();
+      return;
+    }
+    throw error;
+  }
+}
+
+function renderAuthState() {
+  const authenticated = Boolean(state.user);
+  elements.accountButton.hidden = authenticated;
+  elements.accountMenu.hidden = !authenticated;
+  elements.accountName.textContent = state.user
+    ? `${state.user.username} · ${state.user.role === "admin" ? "管理员" : "普通用户"}`
+    : "";
+  elements.accountAvatar.textContent = state.user?.role === "admin" ? "A" : "U";
+  document.querySelectorAll(".guest-content").forEach((element) => { element.hidden = authenticated; });
+  document.querySelectorAll(".authenticated-content").forEach((element) => { element.hidden = !authenticated; });
+}
+
+function setAuthMode(mode) {
+  state.authMode = mode;
+  document.querySelectorAll("[data-auth-tab]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.authTab === mode);
+  });
+  document.querySelector("#auth-submit").textContent = mode === "register" ? "注册并登录" : "登录";
+  document.querySelector("#auth-password").autocomplete = mode === "register" ? "new-password" : "current-password";
+  elements.authError.hidden = true;
+}
+
+function openAuth(mode = "login", pendingView = null) {
+  state.pendingView = pendingView;
+  setAuthMode(mode);
+  if (!elements.authDialog.open) elements.authDialog.showModal();
+  document.querySelector("#auth-username").focus();
 }
 
 async function fetchDashboard() {
@@ -83,6 +177,7 @@ function marketsForAsset() {
 }
 
 function renderAll() {
+  renderAuthState();
   renderAssetButtons();
   renderWatchlist();
   renderMetrics();
@@ -210,33 +305,48 @@ function renderSignals(signals) {
 }
 
 function renderStrategies() {
-  const strategies = (state.dashboard?.strategies ?? []).filter((item) => item.asset_class === state.assetClass);
+  const strategies = state.strategies.filter((item) => item.asset_class === state.assetClass);
   const body = document.querySelector("#strategy-table");
   const empty = document.querySelector("#strategy-empty");
-  document.querySelector("#strategy-subtitle").textContent = `${assetLabels[state.assetClass]}策略独立参数与当前倾向`;
+  if (!state.user) {
+    body.innerHTML = "";
+    return;
+  }
+  document.querySelector("#strategy-subtitle").textContent = `${assetLabels[state.assetClass]} · 我的策略与开放策略`;
   empty.hidden = strategies.length > 0;
   body.innerHTML = strategies.map((item) => {
-    const params = item.parameters;
-    const parameterText = `MA ${params.ma_fast}/${params.ma_slow} · RSI ${params.rsi_period}/${params.rsi_oversold}/${params.rsi_overbought} · BB ${params.bb_period}/${params.bb_std}`;
+    const params = item.parameters ?? {};
+    const parameterText = `MA ${params.ma_fast ?? "--"}/${params.ma_slow ?? "--"} · RSI ${params.rsi_period ?? "--"} · BB ${params.bb_period ?? "--"}/${params.bb_std ?? "--"}`;
+    const action = item.is_owner
+      ? `<button class="table-action" data-strategy-id="${item.id}" data-visibility="${item.visibility}">${item.visibility === "public" ? "设为私有" : "设为开放"}</button>`
+      : "--";
     return `<tr>
-      <td class="symbol-cell"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.symbol)}</span></td>
+      <td class="symbol-cell"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.profile)} · ${escapeHtml(item.symbol)}</span></td>
+      <td><span class="owner-label">${escapeHtml(item.owner)}</span></td>
       <td><span class="market-tag">${assetLabels[item.asset_class]}</span></td>
-      <td>${escapeHtml(item.profile)}</td>
       <td class="parameter-cell">${escapeHtml(parameterText)}</td>
-      <td class="${recClass(item.recommendation)}">${recommendationLabels[item.recommendation]}</td>
-      <td>${item.confidence}%</td>
+      <td><span class="visibility-badge ${item.visibility === "public" ? "is-public" : ""}">${item.visibility === "public" ? "开放" : "私有"}</span></td>
+      <td class="${recClass(item.recommendation)}">${recommendationLabels[item.recommendation] ?? "--"}</td>
+      <td>${action}</td>
     </tr>`;
   }).join("");
+  body.querySelectorAll("[data-strategy-id]").forEach((button) => {
+    button.addEventListener("click", () => toggleStrategyVisibility(button));
+  });
 }
 
 function renderBacktests() {
-  const backtests = (state.dashboard?.backtests ?? []).filter((item) => item.asset_class === state.assetClass);
+  const backtests = state.backtests.filter((item) => item.asset_class === state.assetClass);
   const body = document.querySelector("#backtest-table");
   const empty = document.querySelector("#backtest-empty");
+  if (!state.user) {
+    body.innerHTML = "";
+    return;
+  }
   empty.hidden = backtests.length > 0;
   body.innerHTML = backtests.map((item) => `
     <tr>
-      <td class="symbol-cell"><strong>${escapeHtml(item.name || item.symbol)}</strong><span>${escapeHtml(item.symbol)}</span></td>
+      <td class="symbol-cell"><strong>${escapeHtml(item.name || item.symbol)}</strong><span>${escapeHtml(item.strategy_name || "未关联策略")} · ${escapeHtml(item.symbol)}</span></td>
       <td>${escapeHtml(item.start_date || "--")} — ${escapeHtml(item.end_date || "--")}</td>
       <td class="${Number(item.total_return) >= 0 ? "rec-buy" : "rec-sell"}">${formatNumber(item.total_return)}%</td>
       <td>${formatNumber(item.max_drawdown)}%</td>
@@ -245,6 +355,22 @@ function renderBacktests() {
       <td>${escapeHtml(item.created_at || "--")}</td>
     </tr>
   `).join("");
+}
+
+async function toggleStrategyVisibility(button) {
+  button.disabled = true;
+  try {
+    const visibility = button.dataset.visibility === "public" ? "private" : "public";
+    await apiRequest(`/api/strategies/${button.dataset.strategyId}/visibility`, {
+      method: "PATCH",
+      body: JSON.stringify({ visibility }),
+    });
+    await loadProtectedData();
+  } catch (error) {
+    window.alert(error.message);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function renderSystem() {
@@ -434,15 +560,22 @@ function switchAsset(assetClass) {
   renderAll();
 }
 
-function switchView(view) {
+async function switchView(view) {
   state.view = view;
   document.querySelectorAll(".nav-button").forEach((button) => button.classList.toggle("is-active", button.dataset.view === view));
   document.querySelectorAll(".view").forEach((section) => section.classList.toggle("is-active", section.id === `view-${view}`));
   if (view === "overview") requestAnimationFrame(drawChart);
+  if (state.user && ["strategies", "backtests"].includes(view)) await loadProtectedData();
 }
 
 document.querySelectorAll(".asset-button").forEach((button) => button.addEventListener("click", () => switchAsset(button.dataset.asset)));
 document.querySelectorAll(".nav-button").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
+document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+  button.addEventListener("click", () => openAuth(button.dataset.authMode, state.view));
+});
+document.querySelectorAll("[data-auth-tab]").forEach((button) => {
+  button.addEventListener("click", () => setAuthMode(button.dataset.authTab));
+});
 document.querySelectorAll("[data-range]").forEach((button) => {
   button.addEventListener("click", async () => {
     state.range = Number(button.dataset.range);
@@ -463,6 +596,72 @@ document.querySelectorAll("[data-indicator]").forEach((input) => {
 });
 
 elements.refresh.addEventListener("click", fetchDashboard);
+elements.accountButton.addEventListener("click", () => openAuth("login"));
+document.querySelector("#logout-button").addEventListener("click", async () => {
+  await apiRequest("/api/auth/logout", { method: "POST" });
+  state.user = null;
+  state.strategies = [];
+  state.backtests = [];
+  renderAll();
+});
+document.querySelector("#new-strategy-button").addEventListener("click", () => {
+  elements.strategyError.hidden = true;
+  elements.strategyDialog.showModal();
+});
+elements.authForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  elements.authError.hidden = true;
+  const payload = {
+    username: elements.authForm.elements.username.value.trim(),
+    password: elements.authForm.elements.password.value,
+  };
+  try {
+    const result = await apiRequest(`/api/auth/${state.authMode}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    state.user = result.user;
+    elements.authDialog.close();
+    elements.authForm.reset();
+    renderAuthState();
+    await loadProtectedData();
+    if (state.pendingView) await switchView(state.pendingView);
+    state.pendingView = null;
+  } catch (error) {
+    elements.authError.textContent = error.message;
+    elements.authError.hidden = false;
+  }
+});
+elements.strategyForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  elements.strategyError.hidden = true;
+  const form = new FormData(elements.strategyForm);
+  const payload = {
+    name: form.get("name"),
+    asset_class: form.get("asset_class"),
+    symbol: form.get("symbol"),
+    profile: form.get("profile"),
+    visibility: form.get("visibility"),
+    parameters: {
+      ma_fast: Number(form.get("ma_fast")),
+      ma_slow: Number(form.get("ma_slow")),
+      rsi_period: Number(form.get("rsi_period")),
+      rsi_oversold: 30,
+      rsi_overbought: 70,
+      bb_period: Number(form.get("bb_period")),
+      bb_std: Number(form.get("bb_std")),
+    },
+  };
+  try {
+    await apiRequest("/api/strategies", { method: "POST", body: JSON.stringify(payload) });
+    elements.strategyDialog.close();
+    elements.strategyForm.reset();
+    await loadProtectedData();
+  } catch (error) {
+    elements.strategyError.textContent = error.message;
+    elements.strategyError.hidden = false;
+  }
+});
 elements.chart.addEventListener("mousemove", (event) => {
   const geometry = state.chartGeometry;
   if (!geometry) return;
@@ -487,4 +686,16 @@ new ResizeObserver(() => {
   if (state.view === "overview") drawChart();
 }).observe(elements.chart.parentElement);
 
-fetchDashboard();
+async function bootstrap() {
+  try {
+    await fetchCurrentUser();
+    await fetchDashboard();
+    if (state.user) await loadProtectedData();
+  } catch (error) {
+    elements.generatedAt.textContent = "连接失败";
+    elements.dataAlert.hidden = false;
+    elements.dataAlert.textContent = `应用初始化失败：${error.message}`;
+  }
+}
+
+bootstrap();

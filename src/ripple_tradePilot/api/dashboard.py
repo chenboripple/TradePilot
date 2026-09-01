@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 import os
-import sqlite3
 from datetime import datetime
 from math import sqrt
 from pathlib import Path
@@ -295,22 +294,31 @@ class DashboardService:
             "total_rows": len(bars),
         }
 
-    def _backtests(self) -> List[Dict[str, Any]]:
-        if not self.backtest_db.exists():
-            return []
-        query = """
-            SELECT symbol, name, start_date, end_date, total_return,
-                   max_drawdown, win_rate, total_trades, created_at
-            FROM backtest_results
-            ORDER BY id DESC
-            LIMIT 20
-        """
-        try:
-            with sqlite3.connect(self.backtest_db) as connection:
-                connection.row_factory = sqlite3.Row
-                return [dict(row) for row in connection.execute(query).fetchall()]
-        except sqlite3.Error:
-            return []
+    def strategy_catalog(self) -> List[Dict[str, Any]]:
+        strategies = []
+        for symbol in self._symbols():
+            try:
+                item = self.market_detail(symbol["code"])
+            except DashboardDataError:
+                continue
+            strategies.append(
+                {
+                    "id": f"system:{item['symbol']}",
+                    "symbol": item["symbol"],
+                    "name": item["name"],
+                    "asset_class": item["asset_class"],
+                    "profile": item["strategy_profile"],
+                    "kind": item["profile_kind"],
+                    "parameters": item["parameters"],
+                    "recommendation": item["recommendation"],
+                    "confidence": item["confidence"],
+                    "visibility": "public",
+                    "owner": "TradePilot",
+                    "is_owner": False,
+                    "is_system": True,
+                }
+            )
+        return strategies
 
     def dashboard(self) -> Dict[str, Any]:
         details = []
@@ -354,26 +362,6 @@ class DashboardService:
                 "by_asset": asset_counts,
             },
             "markets": details,
-            "strategies": [
-                {
-                    "symbol": item["symbol"],
-                    "name": item["name"],
-                    "asset_class": item["asset_class"],
-                    "profile": item["strategy_profile"],
-                    "kind": item["profile_kind"],
-                    "parameters": item["parameters"],
-                    "recommendation": item["recommendation"],
-                    "confidence": item["confidence"],
-                }
-                for item in details
-            ],
-            "backtests": [
-                {
-                    **result,
-                    "asset_class": "future" if str(result.get("symbol", "")).endswith((".CFFEX", ".SHFE", ".DCE", ".CZCE", ".INE", ".GFEX")) else "stock",
-                }
-                for result in self._backtests()
-            ],
             "system": {
                 "api": "online",
                 "data_source": "CSV compatibility layer",

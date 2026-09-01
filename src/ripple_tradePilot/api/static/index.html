@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=2">
+  <link rel="stylesheet" href="/assets/app.css?v=3">
 </head>
 <body>
   <header class="topbar">
@@ -26,6 +26,12 @@
       <span class="status-dot" id="system-dot"></span>
       <span id="generated-at">正在连接</span>
       <button class="icon-button" id="refresh-button" title="刷新数据" aria-label="刷新数据">↻</button>
+      <button class="account-button" id="account-button">登录 / 注册</button>
+      <div class="account-menu" id="account-menu" hidden>
+        <span class="account-avatar" id="account-avatar" aria-hidden="true">U</span>
+        <strong id="account-name"></strong>
+        <button class="icon-button" id="logout-button" title="退出登录" aria-label="退出登录">↪</button>
+      </div>
     </div>
   </header>
 
@@ -128,11 +134,23 @@
       <section class="view" id="view-strategies">
         <header class="page-heading">
           <div><span>STRATEGY REGISTRY</span><h1>策略配置</h1></div>
-          <p id="strategy-subtitle">股票与期货策略独立管理</p>
+          <div class="heading-actions authenticated-content" hidden>
+            <p id="strategy-subtitle">我的策略与社区开放策略</p>
+            <button class="primary-button" id="new-strategy-button">新建策略</button>
+          </div>
         </header>
-        <div class="table-panel">
+        <section class="access-gate guest-content">
+          <span class="gate-mark">02</span>
+          <h2>注册后管理策略</h2>
+          <p>创建私有策略，或开放给其他登录用户查看。</p>
+          <div class="gate-actions">
+            <button class="primary-button" data-auth-mode="register">注册账号</button>
+            <button class="secondary-button" data-auth-mode="login">登录</button>
+          </div>
+        </section>
+        <div class="table-panel authenticated-content" hidden>
           <table>
-            <thead><tr><th>标的</th><th>市场</th><th>策略画像</th><th>参数组合</th><th>当前倾向</th><th>置信度</th></tr></thead>
+            <thead><tr><th>策略 / 标的</th><th>所有者</th><th>市场</th><th>参数组合</th><th>可见性</th><th>当前倾向</th><th>操作</th></tr></thead>
             <tbody id="strategy-table"></tbody>
           </table>
           <div class="table-empty" id="strategy-empty" hidden>当前市场没有已配置策略</div>
@@ -144,9 +162,18 @@
           <div><span>BACKTEST LEDGER</span><h1>回测记录</h1></div>
           <p>按市场隔离历史结果</p>
         </header>
-        <div class="table-panel">
+        <section class="access-gate guest-content">
+          <span class="gate-mark">03</span>
+          <h2>注册后查看回测</h2>
+          <p>回测记录按账号隔离，仅当前用户可见。</p>
+          <div class="gate-actions">
+            <button class="primary-button" data-auth-mode="register">注册账号</button>
+            <button class="secondary-button" data-auth-mode="login">登录</button>
+          </div>
+        </section>
+        <div class="table-panel authenticated-content" hidden>
           <table>
-            <thead><tr><th>标的</th><th>区间</th><th>总收益</th><th>最大回撤</th><th>胜率</th><th>交易数</th><th>运行时间</th></tr></thead>
+            <thead><tr><th>标的 / 策略</th><th>区间</th><th>总收益</th><th>最大回撤</th><th>胜率</th><th>交易数</th><th>运行时间</th></tr></thead>
             <tbody id="backtest-table"></tbody>
           </table>
           <div class="table-empty" id="backtest-empty" hidden>当前市场没有回测记录</div>
@@ -167,6 +194,42 @@
     </main>
   </div>
 
-  <script src="/assets/app.js?v=2" defer></script>
+  <dialog class="app-dialog" id="auth-dialog">
+    <form method="dialog" class="dialog-close-form"><button class="icon-button" aria-label="关闭" title="关闭">×</button></form>
+    <div class="dialog-heading"><span>TRADEPILOT ACCOUNT</span><h2>账号访问</h2></div>
+    <div class="auth-tabs" role="tablist">
+      <button class="auth-tab is-active" data-auth-tab="login" type="button">登录</button>
+      <button class="auth-tab" data-auth-tab="register" type="button">注册</button>
+    </div>
+    <form id="auth-form">
+      <label class="field"><span>用户名</span><input id="auth-username" name="username" minlength="3" maxlength="32" autocomplete="username" required></label>
+      <label class="field"><span>密码</span><input id="auth-password" name="password" type="password" minlength="8" maxlength="128" autocomplete="current-password" required></label>
+      <p class="form-error" id="auth-error" hidden></p>
+      <button class="primary-button dialog-submit" id="auth-submit" type="submit">登录</button>
+    </form>
+  </dialog>
+
+  <dialog class="app-dialog strategy-dialog" id="strategy-dialog">
+    <form method="dialog" class="dialog-close-form"><button class="icon-button" aria-label="关闭" title="关闭">×</button></form>
+    <div class="dialog-heading"><span>NEW STRATEGY</span><h2>新建策略</h2></div>
+    <form id="strategy-form">
+      <div class="form-grid">
+        <label class="field field-wide"><span>策略名称</span><input name="name" maxlength="80" required></label>
+        <label class="field"><span>市场</span><select name="asset_class"><option value="stock">股票</option><option value="future">期货</option></select></label>
+        <label class="field"><span>标的代码</span><input name="symbol" maxlength="32" placeholder="600309.SH" required></label>
+        <label class="field"><span>策略画像</span><input name="profile" maxlength="80" value="组合投票" required></label>
+        <label class="field"><span>可见性</span><select name="visibility"><option value="private">私有</option><option value="public">开放</option></select></label>
+        <label class="field"><span>短期均线</span><input name="ma_fast" type="number" min="1" value="5" required></label>
+        <label class="field"><span>长期均线</span><input name="ma_slow" type="number" min="2" value="20" required></label>
+        <label class="field"><span>RSI 周期</span><input name="rsi_period" type="number" min="2" value="14" required></label>
+        <label class="field"><span>布林周期</span><input name="bb_period" type="number" min="2" value="20" required></label>
+        <label class="field"><span>布林倍数</span><input name="bb_std" type="number" min="0.1" step="0.1" value="2" required></label>
+      </div>
+      <p class="form-error" id="strategy-error" hidden></p>
+      <button class="primary-button dialog-submit" type="submit">保存策略</button>
+    </form>
+  </dialog>
+
+  <script src="/assets/app.js?v=3" defer></script>
 </body>
 </html>

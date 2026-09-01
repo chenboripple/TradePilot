@@ -21,6 +21,37 @@ BACKTEST_COLUMNS = {
     "total_trades": "total_trades INTEGER",
     "win_rate": "win_rate REAL",
     "created_at": "created_at TIMESTAMP",
+    "user_id": "user_id INTEGER",
+    "strategy_id": "strategy_id INTEGER",
+}
+
+USER_COLUMNS = {
+    "id": "id INTEGER",
+    "username": "username TEXT",
+    "password_hash": "password_hash TEXT",
+    "role": "role TEXT DEFAULT 'user'",
+    "created_at": "created_at TIMESTAMP",
+}
+
+SESSION_COLUMNS = {
+    "id": "id INTEGER",
+    "user_id": "user_id INTEGER",
+    "token_hash": "token_hash TEXT",
+    "expires_at": "expires_at TIMESTAMP",
+    "created_at": "created_at TIMESTAMP",
+}
+
+STRATEGY_COLUMNS = {
+    "id": "id INTEGER",
+    "user_id": "user_id INTEGER",
+    "name": "name TEXT",
+    "asset_class": "asset_class TEXT DEFAULT 'stock'",
+    "symbol": "symbol TEXT DEFAULT ''",
+    "profile": "profile TEXT DEFAULT ''",
+    "parameters_json": "parameters_json TEXT DEFAULT '{}'",
+    "visibility": "visibility TEXT DEFAULT 'private'",
+    "created_at": "created_at TIMESTAMP",
+    "updated_at": "updated_at TIMESTAMP",
 }
 
 
@@ -79,14 +110,106 @@ def init_database(path: Path | None = None) -> Path:
             "CREATE INDEX IF NOT EXISTS idx_backtest_results_symbol_created "
             "ON backtest_results(symbol, created_at DESC)"
         )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_backtest_results_user_created "
+            "ON backtest_results(user_id, created_at DESC)"
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL COLLATE NOCASE UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        _ensure_columns(connection, "users", USER_COLUMNS)
+        connection.execute(
+            "UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"
+        )
+        connection.execute("UPDATE users SET role = 'user' WHERE role IS NULL OR role = ''")
+        has_admin = connection.execute(
+            "SELECT 1 FROM users WHERE role = 'admin' LIMIT 1"
+        ).fetchone()
+        first_user = connection.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()
+        if not has_admin and first_user:
+            connection.execute(
+                "UPDATE users SET role = 'admin' WHERE id = ?", (first_user[0],)
+            )
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username "
+            "ON users(username COLLATE NOCASE)"
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                token_hash TEXT NOT NULL UNIQUE,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+            """
+        )
+        _ensure_columns(connection, "user_sessions", SESSION_COLUMNS)
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_user_sessions_user "
+            "ON user_sessions(user_id)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_user_sessions_expiry "
+            "ON user_sessions(expires_at)"
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS strategies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                asset_class TEXT NOT NULL CHECK(asset_class IN ('stock', 'future')),
+                symbol TEXT NOT NULL,
+                profile TEXT NOT NULL,
+                parameters_json TEXT NOT NULL,
+                visibility TEXT NOT NULL DEFAULT 'private'
+                    CHECK(visibility IN ('public', 'private')),
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+            """
+        )
+        _ensure_columns(connection, "strategies", STRATEGY_COLUMNS)
+        connection.execute(
+            "UPDATE strategies SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"
+        )
+        connection.execute(
+            "UPDATE strategies SET updated_at = created_at WHERE updated_at IS NULL"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_strategies_owner_updated "
+            "ON strategies(user_id, updated_at DESC)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_strategies_visibility_updated "
+            "ON strategies(visibility, updated_at DESC)"
+        )
         integrity = connection.execute("PRAGMA integrity_check").fetchone()
         if not integrity or integrity[0] != "ok":
             raise RuntimeError(f"SQLite integrity check failed for {target}: {integrity}")
+        connection.execute("PRAGMA user_version=3")
 
     return target
 
 
-def insert_backtest_result(result: Any, path: Path | None = None) -> Path:
+def insert_backtest_result(
+    result: Any,
+    path: Path | None = None,
+    user_id: int | None = None,
+    strategy_id: int | None = None,
+) -> Path:
     target = init_database(path)
     with sqlite3.connect(target, timeout=30) as connection:
         connection.execute(
@@ -94,8 +217,9 @@ def insert_backtest_result(result: Any, path: Path | None = None) -> Path:
             INSERT INTO backtest_results (
                 symbol, name, start_date, end_date,
                 initial_capital, final_capital, total_return, annual_return,
-                max_drawdown, sharpe_ratio, total_trades, win_rate
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                max_drawdown, sharpe_ratio, total_trades, win_rate,
+                user_id, strategy_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 result.symbol,
@@ -110,6 +234,8 @@ def insert_backtest_result(result: Any, path: Path | None = None) -> Path:
                 result.sharpe_ratio,
                 result.total_trades,
                 result.win_rate,
+                user_id,
+                strategy_id,
             ),
         )
     return target

@@ -25,9 +25,20 @@ class DatabaseInitializationTest(unittest.TestCase):
                     row[1]
                     for row in connection.execute("PRAGMA index_list(backtest_results)")
                 }
+                tables = {
+                    row[0]
+                    for row in connection.execute(
+                        "SELECT name FROM sqlite_master WHERE type = 'table'"
+                    )
+                }
+                version = connection.execute("PRAGMA user_version").fetchone()[0]
             self.assertIn("annual_return", columns)
             self.assertIn("created_at", columns)
+            self.assertIn("user_id", columns)
+            self.assertIn("strategy_id", columns)
             self.assertIn("idx_backtest_results_symbol_created", indexes)
+            self.assertTrue({"users", "user_sessions", "strategies"}.issubset(tables))
+            self.assertEqual(version, 3)
 
     def test_adds_columns_missing_from_legacy_database(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -50,6 +61,38 @@ class DatabaseInitializationTest(unittest.TestCase):
         configured = "/tmp/tradepilot-test.db"
         with patch.dict(os.environ, {"TRADEPILOT_BACKTEST_DB": configured}):
             self.assertEqual(database_path(), Path(configured))
+
+    def test_repairs_missing_columns_in_existing_user_tables(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "legacy-users.db"
+            with sqlite3.connect(target) as connection:
+                connection.execute("CREATE TABLE backtest_results (id INTEGER PRIMARY KEY)")
+                connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY)")
+                connection.execute("INSERT INTO users (id) VALUES (7)")
+                connection.execute("CREATE TABLE user_sessions (id INTEGER PRIMARY KEY)")
+                connection.execute("CREATE TABLE strategies (id INTEGER PRIMARY KEY)")
+
+            init_database(target)
+
+            with sqlite3.connect(target) as connection:
+                user_columns = {
+                    row[1] for row in connection.execute("PRAGMA table_info(users)")
+                }
+                session_columns = {
+                    row[1]
+                    for row in connection.execute("PRAGMA table_info(user_sessions)")
+                }
+                strategy_columns = {
+                    row[1]
+                    for row in connection.execute("PRAGMA table_info(strategies)")
+                }
+                migrated_role = connection.execute(
+                    "SELECT role FROM users WHERE id = 7"
+                ).fetchone()[0]
+            self.assertTrue({"username", "password_hash", "role", "created_at"}.issubset(user_columns))
+            self.assertTrue({"user_id", "token_hash", "expires_at"}.issubset(session_columns))
+            self.assertTrue({"user_id", "visibility", "parameters_json"}.issubset(strategy_columns))
+            self.assertEqual(migrated_role, "admin")
 
 
 if __name__ == "__main__":

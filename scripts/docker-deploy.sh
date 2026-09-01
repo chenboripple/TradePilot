@@ -21,15 +21,15 @@ fi
 mkdir -p data output
 
 case "$deployment_mode" in
-    local)
+    local|update)
         docker compose -f compose.yaml -f compose.local.yaml up -d --build --remove-orphans
         ;;
-    production|update)
-        docker compose --profile auto-update pull
-        docker compose --profile auto-update up -d --remove-orphans
+    production)
+        docker compose pull
+        docker compose up -d --remove-orphans
         ;;
     check)
-        docker compose run --rm --no-deps api python -m ripple_tradePilot.storage
+        docker compose -f compose.yaml -f compose.local.yaml run --rm --no-deps api python -m ripple_tradePilot.storage
         ;;
     *)
         echo "Usage: $0 [local|production|update|check]" >&2

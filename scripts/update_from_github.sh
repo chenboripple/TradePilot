@@ -68,13 +68,12 @@ done
 [[ -f "$TARGET_DIR/.env" ]] || fail "缺少 .env，请先从 .env.example 创建并填写配置"
 mkdir -p "$TARGET_DIR/data" "$TARGET_DIR/output"
 
-log "拉取镜像并重建服务"
+log "使用最新源码构建并重建服务"
 (
     cd "$TARGET_DIR"
-    docker compose pull api monitor
-    docker compose up -d --remove-orphans api monitor
-    docker compose run --rm --no-deps api python -m ripple_tradePilot.storage
-    docker compose ps
+    docker compose -f compose.yaml -f compose.local.yaml up -d --build --remove-orphans
+    docker compose -f compose.yaml -f compose.local.yaml run --rm --no-deps api python -m ripple_tradePilot.storage
+    docker compose -f compose.yaml -f compose.local.yaml ps
 )
 
 log "升级完成；SQLite 已完成建库、表结构补齐和完整性检查"

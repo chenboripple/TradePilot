@@ -133,7 +133,7 @@ TradePolot/
 ./scripts/update_from_github.sh release
 ```
 
-升级脚本会保留服务器上的 `.env`、`config.yaml`、`data/` 和 `output/`，更新部署文件、拉取镜像、重建服务，并自动检查及修复 SQLite 表结构。
+升级脚本会保留服务器上的 `.env`、`config.yaml`、`data/` 和 `output/`，从 GitHub 下载最新源码、在服务器本地构建镜像、重建服务，并自动检查及修复 SQLite 表结构。
 
 ## Docker 部署
 
@@ -152,7 +152,13 @@ cp .env.example .env
 
 部署时会自动创建 Docker SQLite 数据卷。每个应用容器启动前都会检查数据库文件、创建缺失表、补齐缺失字段并执行完整性检查。
 
-完整说明见 [Docker 部署与自动升级](docs/docker-deployment.md)，项目风险与优化优先级见 [项目分析](docs/project-analysis.md)。
+服务器不会后台轮询 GitHub 或 GHCR。后续版本升级由管理员手工执行：
+
+```bash
+./scripts/update_from_github.sh release
+```
+
+完整说明见 [Docker 部署与手工升级](docs/docker-deployment.md)，项目风险与优化优先级见 [项目分析](docs/project-analysis.md)。
 
 ## 交易监控台
 

@@ -51,22 +51,6 @@ services:
       retries: 3
       start_period: 20s
 
-  watchtower:
-    image: containrrr/watchtower:1.7.1
-    profiles: ["auto-update"]
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ:-Asia/Shanghai}
-      DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.40}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command:
-      - --label-enable
-      - --cleanup
-      - --rolling-restart
-      - --interval
-      - ${WATCHTOWER_INTERVAL:-300}
-
 volumes:
   tradepilot_db:
     name: ${TRADEPILOT_DB_VOLUME:-tradepilot_db}

@@ -5,7 +5,16 @@
 - `api`：FastAPI 服务，默认监听 `8000`。
 - `monitor`：A 股行情监控常驻进程。
 - `watchtower`：可选，只更新明确打了标签的 TradePilot 容器。
+- `tradepilot_db`：Docker named volume，持久化 SQLite 数据库。
 - GitHub Actions：向 `release` 或 `release-ripple` 推送后，自动构建 amd64/arm64 镜像并发布到 GHCR。
+
+API 根路径提供交易监控台，股票和期货使用独立观察池。行情文件格式统一为：
+
+```text
+trade_date,open,high,low,close,vol
+```
+
+股票配置在 `symbols`，期货配置在 `futures`；期货策略可单独放在 `futures_strategy_profiles`。
 
 ## 本地验证
 
@@ -52,6 +61,14 @@ docker compose ps
 ./scripts/docker-deploy.sh production
 ```
 
+首次启动不需要手工创建 SQLite 文件。容器入口会自动执行：
+
+1. 创建 `tradepilot_db` 数据卷和数据库目录。
+2. 数据库不存在时自动创建。
+3. 创建缺失的 `backtest_results` 表和索引。
+4. 使用 `PRAGMA table_info` 检查并补齐旧数据库缺失字段。
+5. 使用 `PRAGMA integrity_check` 检查 SQLite 完整性；检查失败时阻止服务启动。
+
 `release` 分支默认发布为：
 
 ```text
@@ -60,7 +77,29 @@ ghcr.io/chenboripple/tradepilot:release
 
 如仓库名称或所有者发生变化，修改 `.env` 中的 `TRADEPILOT_IMAGE`。
 
-## 自动升级流程
+## 一条命令升级
+
+在服务器的 TradePilot 部署目录执行：
+
+```bash
+./scripts/update_from_github.sh release
+```
+
+脚本会备份并保留 `.env`、`config.yaml`、`data/` 和 `output/`，从 GitHub 下载最新部署文件，然后拉取镜像、重建服务并再次执行 SQLite 自检。使用 `release-ripple` 分支时，应同时确保 `.env` 中的 `TRADEPILOT_IMAGE` 使用 `:release-ripple` 标签。
+
+只希望拉取当前 `.env` 指定的镜像而不更新部署文件时，可以执行：
+
+```bash
+./scripts/docker-deploy.sh update
+```
+
+单独运行数据库自检：
+
+```bash
+./scripts/docker-deploy.sh check
+```
+
+## Watchtower 自动升级流程
 
 1. 代码合并或推送到 `release`。
 2. GitHub Actions 构建并发布新的 `release` 镜像。
@@ -74,6 +113,7 @@ ghcr.io/chenboripple/tradepilot:release
 - `.env` 和 `config.yaml` 已被 Git 与 Docker 构建上下文排除。
 - 环境变量优先于 YAML 中的 Tushare 和飞书密钥。
 - `data/` 与 `output/` 挂载到宿主机，容器升级后不会丢失。
+- SQLite 位于 `tradepilot_db` named volume，容器重建和镜像更新后不会丢失。
 - 容器根文件系统只读，并移除了 Linux capabilities。
 
 Watchtower 需要挂载 Docker socket，这等价于较高的宿主机权限。生产环境应限制服务器登录权限，只使用固定版本的 Watchtower，并保持 `--label-enable`，不要让它管理无关容器。

@@ -19,13 +19,17 @@ COPY src ./src
 RUN pip install --no-cache-dir . \
     && addgroup --system tradepilot \
     && adduser --system --ingroup tradepilot --home /home/tradepilot tradepilot \
-    && mkdir -p /app/data /app/output \
-    && chown -R tradepilot:tradepilot /app /home/tradepilot
+    && mkdir -p /app/data /app/output /var/lib/tradepilot \
+    && chown -R tradepilot:tradepilot /app /home/tradepilot /var/lib/tradepilot
 
 COPY --chown=tradepilot:tradepilot heartbeat_tradepilot.py monitor_brief.py ./
+COPY --chown=tradepilot:tradepilot docker-entrypoint.sh /usr/local/bin/tradepilot-entrypoint
+
+RUN chmod +x /usr/local/bin/tradepilot-entrypoint
 
 USER tradepilot
 
 EXPOSE 8000
 
+ENTRYPOINT ["tradepilot-entrypoint"]
 CMD ["uvicorn", "ripple_tradePilot.api.app:app", "--host", "0.0.0.0", "--port", "8000"]

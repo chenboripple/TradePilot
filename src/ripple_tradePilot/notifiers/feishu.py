@@ -228,15 +228,10 @@ class FeishuWebhookNotifier:
         return base64.b64encode(hmac_code).decode("utf-8")
 
     def _post(self, payload: dict) -> bool:
-        """发送任意飞书 Webhook 消息。"""
+        """发送任意飞书 Webhook 消息（无签名校验版本）。"""
         try:
             body = dict(payload)
-            if self.secret:
-                # 飞书机器人使用 10 位秒级时间戳，timestamp/sign 放在 JSON body 中。
-                timestamp = str(int(time.time()))
-                body["timestamp"] = timestamp
-                body["sign"] = self._generate_signature(timestamp)
-
+            # 移除签名相关逻辑，直接发送
             response = httpx.post(
                 self.webhook_url,
                 json=body,

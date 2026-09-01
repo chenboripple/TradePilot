@@ -12,9 +12,11 @@ TradePilot 回测引擎
 from __future__ import annotations
 
 import json
-import sqlite3
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
+
+from ripple_tradePilot.storage import database_path, insert_backtest_result
 from typing import Dict, List, Optional
 
 import pandas as pd
@@ -290,7 +292,8 @@ class BacktestManager:
             self.feishu = None
         
         # 数据存储
-        self.data_dir = Path(__file__).parent.parent.parent / "data" / "backtest"
+        data_root = Path(os.getenv("TRADEPILOT_DATA_DIR", Path.cwd() / "data"))
+        self.data_dir = data_root / "backtest"
         self.data_dir.mkdir(parents=True, exist_ok=True)
     
     def run_backtest(
@@ -348,47 +351,7 @@ class BacktestManager:
             df.to_csv(csv_path, index=False)
             print(f"💾 交易记录已保存：{csv_path}")
         
-        # 保存到 SQLite
-        db_path = self.data_dir / "backtest_results.db"
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        
-        # 创建表
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS backtest_results (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                symbol TEXT,
-                name TEXT,
-                start_date TEXT,
-                end_date TEXT,
-                initial_capital REAL,
-                final_capital REAL,
-                total_return REAL,
-                annual_return REAL,
-                max_drawdown REAL,
-                sharpe_ratio REAL,
-                total_trades INTEGER,
-                win_rate REAL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # 插入数据
-        cursor.execute('''
-            INSERT INTO backtest_results (
-                symbol, name, start_date, end_date,
-                initial_capital, final_capital, total_return, annual_return,
-                max_drawdown, sharpe_ratio, total_trades, win_rate
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            result.symbol, result.name, result.start_date, result.end_date,
-            result.initial_capital, result.final_capital, result.total_return,
-            result.annual_return, result.max_drawdown, result.sharpe_ratio,
-            result.total_trades, result.win_rate
-        ))
-        
-        conn.commit()
-        conn.close()
+        db_path = insert_backtest_result(result, database_path())
         print(f"💾 数据库已更新：{db_path}")
     
     def _send_feishu_report(self, result: BacktestResult):

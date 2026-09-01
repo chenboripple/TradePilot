@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=4">
+  <link rel="stylesheet" href="/assets/app.css?v=5">
 </head>
 <body>
   <header class="topbar">
@@ -238,8 +238,9 @@
     <form id="strategy-form">
       <div class="form-grid">
         <label class="field field-wide"><span>策略名称</span><input name="name" maxlength="80" required></label>
-        <label class="field"><span>市场</span><select name="asset_class"><option value="stock">股票</option><option value="future">期货</option></select></label>
-        <label class="field"><span>标的代码</span><input name="symbol" maxlength="32" placeholder="600309.SH" required></label>
+        <label class="field"><span>市场</span><select name="asset_class" id="strategy-asset-class"><option value="stock">股票</option><option value="future">期货</option></select></label>
+        <label class="field" id="strategy-stock-field"><span>股票标的</span><select name="stock_symbol" id="strategy-stock-symbol" required><option value="">从全部数据池选择</option></select></label>
+        <label class="field" id="strategy-future-field" hidden><span>期货标的</span><input name="future_symbol" maxlength="32" placeholder="IF2609.CFFEX"></label>
         <label class="field"><span>策略画像</span><input name="profile" maxlength="80" value="组合投票" required></label>
         <label class="field"><span>可见性</span><select name="visibility"><option value="private">私有</option><option value="public">开放</option></select></label>
         <label class="field"><span>短期均线</span><input name="ma_fast" type="number" min="1" value="5" required></label>
@@ -263,6 +264,6 @@
     </form>
   </dialog>
 
-  <script src="/assets/app.js?v=4" defer></script>
+  <script src="/assets/app.js?v=5" defer></script>
 </body>
 </html>

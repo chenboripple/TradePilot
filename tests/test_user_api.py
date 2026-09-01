@@ -102,6 +102,11 @@ class UserApiTest(unittest.TestCase):
         return response.json()["user"]
 
     def create_strategy(self, name, visibility):
+        upsert_stock_catalog(
+            [{"symbol": "600309.SH", "name": "万华化学"}],
+            "test",
+            self.database,
+        )
         response = self.client.post(
             "/api/strategies",
             json={
@@ -115,6 +120,24 @@ class UserApiTest(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()["item"]
+
+    def test_stock_strategy_symbol_must_come_from_catalog(self):
+        self.register("alice")
+
+        response = self.client.post(
+            "/api/strategies",
+            json={
+                "name": "未知股票策略",
+                "asset_class": "stock",
+                "symbol": "600999.SH",
+                "profile": "组合投票",
+                "parameters": {"ma_fast": 5, "ma_slow": 20},
+                "visibility": "private",
+            },
+        )
+
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["detail"], "股票标的必须来自全部数据池")
 
     def test_guests_only_receive_public_dashboard_sections(self):
         dashboard = self.client.get("/api/dashboard")

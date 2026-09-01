@@ -19,6 +19,7 @@ from ripple_tradePilot.data.stock_service import (
 from ripple_tradePilot.storage.database import (
     init_database,
     list_stock_catalog,
+    stock_catalog_name,
     stock_catalog_names,
 )
 from ripple_tradePilot.storage.user_store import (
@@ -307,7 +308,18 @@ def strategies(user: Dict = Depends(required_user)):
 def add_strategy(payload: StrategyCreate, user: Dict = Depends(required_user)):
     strategy = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
     strategy["name"] = strategy["name"].strip()
-    strategy["symbol"] = strategy["symbol"].strip().upper()
+    if strategy["asset_class"] == "stock":
+        try:
+            strategy["symbol"] = StockDataService.normalize_symbol(strategy["symbol"])
+        except InvalidStockSymbolError as error:
+            raise _stock_error(error) from error
+        if (
+            not stock_catalog_name(strategy["symbol"])
+            and strategy["symbol"] not in _configured_stock_map()
+        ):
+            raise HTTPException(status_code=422, detail="股票标的必须来自全部数据池")
+    else:
+        strategy["symbol"] = strategy["symbol"].strip().upper()
     strategy["profile"] = strategy["profile"].strip()
     return {"item": create_strategy(user["id"], strategy)}
 

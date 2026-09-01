@@ -41,6 +41,11 @@ const elements = {
   strategyDialog: document.querySelector("#strategy-dialog"),
   strategyForm: document.querySelector("#strategy-form"),
   strategyError: document.querySelector("#strategy-error"),
+  strategyAssetClass: document.querySelector("#strategy-asset-class"),
+  strategyStockField: document.querySelector("#strategy-stock-field"),
+  strategyStockSymbol: document.querySelector("#strategy-stock-symbol"),
+  strategyFutureField: document.querySelector("#strategy-future-field"),
+  strategyFutureSymbol: document.querySelector("[name=future_symbol]"),
   stockDialog: document.querySelector("#stock-dialog"),
   stockForm: document.querySelector("#stock-form"),
   stockError: document.querySelector("#stock-error"),
@@ -134,7 +139,28 @@ async function loadProtectedData() {
 async function fetchStockCatalog() {
   const payload = await apiRequest("/api/stocks");
   state.allStocks = payload.items;
+  populateStrategyStocks();
   renderStockCatalog();
+}
+
+function populateStrategyStocks() {
+  const selected = elements.strategyStockSymbol.value;
+  const stocks = state.allStocks ?? [];
+  elements.strategyStockSymbol.innerHTML = [
+    '<option value="">从全部数据池选择</option>',
+    ...stocks.map((item) => `<option value="${escapeHtml(item.symbol)}">${escapeHtml(item.symbol)} · ${escapeHtml(item.name)}</option>`),
+  ].join("");
+  if (stocks.some((item) => item.symbol === selected)) {
+    elements.strategyStockSymbol.value = selected;
+  }
+}
+
+function updateStrategySymbolField() {
+  const isStock = elements.strategyAssetClass.value === "stock";
+  elements.strategyStockField.hidden = !isStock;
+  elements.strategyFutureField.hidden = isStock;
+  elements.strategyStockSymbol.required = isStock;
+  elements.strategyFutureSymbol.required = !isStock;
 }
 
 function renderAuthState() {
@@ -765,10 +791,18 @@ elements.addStockButton.addEventListener("click", () => {
   elements.stockDialog.showModal();
   elements.stockForm.elements.symbol.focus();
 });
-document.querySelector("#new-strategy-button").addEventListener("click", () => {
+document.querySelector("#new-strategy-button").addEventListener("click", async () => {
   elements.strategyError.hidden = true;
+  if (state.allStocks === null) await fetchStockCatalog();
+  populateStrategyStocks();
+  updateStrategySymbolField();
+  if (!state.allStocks.length) {
+    elements.strategyError.textContent = "请先到全部数据页面同步股票清单";
+    elements.strategyError.hidden = false;
+  }
   elements.strategyDialog.showModal();
 });
+elements.strategyAssetClass.addEventListener("change", updateStrategySymbolField);
 elements.authForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   elements.authError.hidden = true;
@@ -825,7 +859,9 @@ elements.strategyForm.addEventListener("submit", async (event) => {
   const payload = {
     name: form.get("name"),
     asset_class: form.get("asset_class"),
-    symbol: form.get("symbol"),
+    symbol: form.get("asset_class") === "stock"
+      ? form.get("stock_symbol")
+      : form.get("future_symbol"),
     profile: form.get("profile"),
     visibility: form.get("visibility"),
     parameters: {

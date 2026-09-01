@@ -120,6 +120,7 @@ class StockDataService:
                 "fields": "f12,f14",
             },
             timeout=20,
+            follow_redirects=True,
         )
         response.raise_for_status()
         rows = response.json().get("data", {}).get("diff", [])

@@ -2,9 +2,9 @@
 .venv/
 .env
 config.yaml
-output/
-data/
-src/data/
+/output/
+/data/
+/src/data/
 *.db
 *.db-shm
 *.db-wal

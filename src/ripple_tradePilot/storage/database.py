@@ -432,9 +432,15 @@ def upsert_stock_catalog(
             ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(symbol) DO UPDATE SET
                 name = excluded.name,
-                market = excluded.market,
+                market = CASE
+                    WHEN excluded.market <> '' THEN excluded.market
+                    ELSE stock_catalog.market
+                END,
                 list_status = excluded.list_status,
-                list_date = excluded.list_date,
+                list_date = CASE
+                    WHEN excluded.list_date <> '' THEN excluded.list_date
+                    ELSE stock_catalog.list_date
+                END,
                 source = excluded.source,
                 updated_at = CURRENT_TIMESTAMP
             """,

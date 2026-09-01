@@ -82,6 +82,7 @@ class StockDataServiceTest(unittest.TestCase):
         self.assertEqual(StockDataService.normalize_symbol("600000"), "600000.SH")
         self.assertEqual(StockDataService.normalize_symbol("000001"), "000001.SZ")
         self.assertEqual(StockDataService.normalize_symbol("830001"), "830001.BJ")
+        self.assertEqual(StockDataService.normalize_symbol("920855"), "920855.BJ")
         with self.assertRaises(InvalidStockSymbolError):
             StockDataService.normalize_symbol("abc")
 
@@ -124,6 +125,45 @@ class StockDataServiceTest(unittest.TestCase):
             self.assertEqual(result["count"], 1)
             self.assertEqual(stock_catalog_name("600418.SH", root / "market.db"), "江淮汽车")
             self.assertEqual(FakeTushareLoader.catalog_requests, 1)
+
+    def test_catalog_refresh_falls_back_to_full_eastmoney_list(self):
+        class LimitedTushareLoader(FakeTushareLoader):
+            def get_stock_list(self):
+                raise RuntimeError("stock_basic rate limited")
+
+        class FakeResponse:
+            @staticmethod
+            def raise_for_status():
+                return None
+
+            @staticmethod
+            def json():
+                return {
+                    "data": {
+                        "diff": [
+                            {"f12": "600418", "f14": "江淮汽车"},
+                            {"f12": "920855", "f14": "浙江大农"},
+                        ]
+                    }
+                }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = root / "config.yaml"
+            config.write_text("tushare:\n  token: test-token\n", encoding="utf-8")
+            service = StockDataService(config_path=config, database=root / "market.db")
+            with (
+                patch(
+                    "ripple_tradePilot.data.stock_service.TushareDataLoader",
+                    LimitedTushareLoader,
+                ),
+                patch("ripple_tradePilot.data.stock_service.httpx.get", return_value=FakeResponse()),
+            ):
+                result = service.refresh_catalog()
+
+            self.assertEqual(result, {"count": 2, "source": "eastmoney"})
+            self.assertEqual(stock_catalog_name("600418.SH", root / "market.db"), "江淮汽车")
+            self.assertEqual(stock_catalog_name("920855.BJ", root / "market.db"), "浙江大农")
 
     def test_single_stock_refresh_uses_catalog_name_without_refreshing_catalog(self):
         with tempfile.TemporaryDirectory() as temp_dir:

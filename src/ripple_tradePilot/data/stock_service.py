@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import akshare as ak
+import httpx
 import pandas as pd
 
 from ripple_tradePilot.config_loader import load_config
@@ -60,7 +61,7 @@ class StockDataService:
             raise InvalidStockSymbolError("请输入 6 位股票代码，如 600309 或 000001.SZ")
         code, exchange = match.groups()
         if exchange is None:
-            if code.startswith(("4", "8")):
+            if code.startswith(("4", "8", "92")):
                 exchange = "BJ"
             elif code.startswith(("5", "6", "9")):
                 exchange = "SH"
@@ -103,6 +104,53 @@ class StockDataService:
             )
         return records
 
+    @staticmethod
+    def _eastmoney_catalog_records() -> list[Dict[str, str]]:
+        response = httpx.get(
+            "https://82.push2.eastmoney.com/api/qt/clist/get",
+            params={
+                "pn": 1,
+                "pz": 10000,
+                "po": 1,
+                "np": 1,
+                "fltt": 2,
+                "invt": 2,
+                "fid": "f3",
+                "fs": "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048",
+                "fields": "f12,f14",
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        rows = response.json().get("data", {}).get("diff", [])
+        records = []
+        for row in rows:
+            code = str(row.get("f12") or "").strip()
+            if not re.fullmatch(r"\d{6}", code):
+                continue
+            symbol = StockDataService.normalize_symbol(code)
+            name = StockDataService._valid_name(row.get("f14"), symbol)
+            if not name:
+                continue
+            if symbol.endswith(".BJ"):
+                market = "北交所"
+            elif code.startswith(("688", "689")):
+                market = "科创板"
+            elif code.startswith(("300", "301")):
+                market = "创业板"
+            else:
+                market = "主板"
+            records.append(
+                {
+                    "symbol": symbol,
+                    "name": name,
+                    "market": market,
+                    "list_status": "L",
+                    "list_date": "",
+                }
+            )
+        return records
+
     def refresh_catalog(self) -> Dict[str, Any]:
         config = load_config(str(self.config_path))
         tushare = config.get("tushare", {})
@@ -116,14 +164,19 @@ class StockDataService:
         with _CATALOG_LOCK:
             try:
                 records = self._catalog_records(loader.get_stock_list())
-            except Exception as error:
-                raise StockDataUnavailableError(
-                    "暂时无法获取股票清单，请稍后重试"
-                ) from error
+                source = "tushare"
+            except Exception:
+                try:
+                    records = self._eastmoney_catalog_records()
+                    source = "eastmoney"
+                except Exception as error:
+                    raise StockDataUnavailableError(
+                        "暂时无法获取股票清单，请稍后重试"
+                    ) from error
             if not records:
                 raise StockDataUnavailableError("未获取到有效的股票清单")
-            upsert_stock_catalog(records, "tushare", self.database)
-        return {"count": len(records), "source": "tushare"}
+            upsert_stock_catalog(records, source, self.database)
+        return {"count": len(records), "source": source}
 
     @staticmethod
     def _normalize_frame(frame: pd.DataFrame) -> pd.DataFrame:

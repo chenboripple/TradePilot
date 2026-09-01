@@ -3,9 +3,9 @@
 .venv
 .env
 config.yaml
-data
-output
-reports
+/data
+/output
+/reports
 *.egg-info
 __pycache__
 *.py[cod]

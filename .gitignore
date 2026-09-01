@@ -3,6 +3,11 @@
 .env
 config.yaml
 output/
+data/
+src/data/
+*.db
+*.db-shm
+*.db-wal
 __pycache__/
 *.py[cod]
 .pytest_cache/

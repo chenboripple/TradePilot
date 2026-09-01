@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6f8">
+  <title>TradePilot 交易监控台</title>
+  <link rel="stylesheet" href="/assets/app.css?v=2">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" aria-label="TradePilot">
+      <span class="brand-mark">TP</span>
+      <span>
+        <strong>TradePilot</strong>
+        <small>交易监控台</small>
+      </span>
+    </div>
+
+    <div class="asset-switch" role="group" aria-label="市场类型">
+      <button class="asset-button is-active" data-asset="stock">股票</button>
+      <button class="asset-button" data-asset="future">期货</button>
+    </div>
+
+    <div class="topbar-status">
+      <span class="status-dot" id="system-dot"></span>
+      <span id="generated-at">正在连接</span>
+      <button class="icon-button" id="refresh-button" title="刷新数据" aria-label="刷新数据">↻</button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <nav class="primary-nav" aria-label="主导航">
+        <button class="nav-button is-active" data-view="overview"><span>01</span>市场总览</button>
+        <button class="nav-button" data-view="strategies"><span>02</span>策略配置</button>
+        <button class="nav-button" data-view="backtests"><span>03</span>回测记录</button>
+        <button class="nav-button" data-view="system"><span>04</span>系统状态</button>
+      </nav>
+
+      <section class="watchlist-section">
+        <div class="section-label">
+          <span id="watchlist-title">股票观察池</span>
+          <span id="watchlist-count">0</span>
+        </div>
+        <div class="watchlist" id="watchlist"></div>
+      </section>
+
+      <footer class="sidebar-footer">
+        <span>只读信号</span>
+        <span>不执行交易</span>
+      </footer>
+    </aside>
+
+    <main class="main-content">
+      <section class="view is-active" id="view-overview">
+        <div class="metrics-band" id="metrics-band"></div>
+        <div class="data-alert" id="data-alert" hidden></div>
+
+        <section class="market-workspace" id="market-workspace">
+          <header class="instrument-header">
+            <div>
+              <div class="instrument-kicker">
+                <span id="instrument-class">股票</span>
+                <span id="instrument-exchange">--</span>
+                <span id="freshness-badge" class="freshness-badge">--</span>
+              </div>
+              <h1><span id="instrument-name">选择标的</span> <small id="instrument-symbol">--</small></h1>
+            </div>
+            <div class="price-block">
+              <strong id="instrument-price">--</strong>
+              <span id="instrument-change">--</span>
+            </div>
+            <div class="recommendation-block">
+              <span>当前倾向</span>
+              <strong id="recommendation">--</strong>
+              <small id="confidence">--</small>
+            </div>
+          </header>
+
+          <div class="chart-toolbar">
+            <div class="range-switch" role="group" aria-label="图表周期">
+              <button data-range="60">60日</button>
+              <button class="is-active" data-range="120">120日</button>
+              <button data-range="240">240日</button>
+            </div>
+            <div class="indicator-switches">
+              <label><input type="checkbox" data-indicator="ma" checked> 均线</label>
+              <label><input type="checkbox" data-indicator="bb" checked> 布林带</label>
+              <label><input type="checkbox" data-indicator="volume" checked> 成交量</label>
+            </div>
+          </div>
+
+          <div class="chart-frame">
+            <canvas id="market-chart" aria-label="行情 K 线图"></canvas>
+            <div class="chart-tooltip" id="chart-tooltip" hidden></div>
+            <div class="chart-empty" id="chart-empty" hidden></div>
+          </div>
+
+          <div class="detail-grid">
+            <section class="analysis-panel">
+              <div class="panel-heading">
+                <h2>策略判断</h2>
+                <span id="strategy-profile">--</span>
+              </div>
+              <p class="decision-reason" id="decision-reason">--</p>
+              <div class="vote-grid" id="vote-grid"></div>
+              <div class="indicator-row" id="indicator-row"></div>
+            </section>
+
+            <section class="signal-panel">
+              <div class="panel-heading">
+                <h2>近期方向变化</h2>
+                <span id="signal-count">0 条</span>
+              </div>
+              <div class="signal-list" id="signal-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="empty-market" id="empty-market" hidden>
+          <span class="empty-code">FUT</span>
+          <h2>期货市场尚未接入数据</h2>
+          <p>资产分类和策略结构已就绪，等待配置期货合约与行情源。</p>
+        </section>
+      </section>
+
+      <section class="view" id="view-strategies">
+        <header class="page-heading">
+          <div><span>STRATEGY REGISTRY</span><h1>策略配置</h1></div>
+          <p id="strategy-subtitle">股票与期货策略独立管理</p>
+        </header>
+        <div class="table-panel">
+          <table>
+            <thead><tr><th>标的</th><th>市场</th><th>策略画像</th><th>参数组合</th><th>当前倾向</th><th>置信度</th></tr></thead>
+            <tbody id="strategy-table"></tbody>
+          </table>
+          <div class="table-empty" id="strategy-empty" hidden>当前市场没有已配置策略</div>
+        </div>
+      </section>
+
+      <section class="view" id="view-backtests">
+        <header class="page-heading">
+          <div><span>BACKTEST LEDGER</span><h1>回测记录</h1></div>
+          <p>按市场隔离历史结果</p>
+        </header>
+        <div class="table-panel">
+          <table>
+            <thead><tr><th>标的</th><th>区间</th><th>总收益</th><th>最大回撤</th><th>胜率</th><th>交易数</th><th>运行时间</th></tr></thead>
+            <tbody id="backtest-table"></tbody>
+          </table>
+          <div class="table-empty" id="backtest-empty" hidden>当前市场没有回测记录</div>
+        </div>
+      </section>
+
+      <section class="view" id="view-system">
+        <header class="page-heading">
+          <div><span>RUNTIME STATUS</span><h1>系统状态</h1></div>
+          <p>服务、数据与存储状态</p>
+        </header>
+        <div class="system-grid" id="system-grid"></div>
+        <section class="error-panel">
+          <div class="panel-heading"><h2>数据异常</h2><span id="error-count">0 项</span></div>
+          <div id="error-list" class="error-list"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="/assets/app.js?v=2" defer></script>
+</body>
+</html>

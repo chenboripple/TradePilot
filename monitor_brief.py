@@ -47,6 +47,8 @@ def build_reason(item: dict) -> str:
 def _run_profile(monitor: MarketMonitor, profile: dict, bars: list):
     if profile.get('kind') == 'grid_combo':
         return monitor._run_grid_combo_profile(profile, bars)
+    if profile.get('kind') == 'combo_vote':
+        return monitor._run_combo_vote_profile(profile, bars)
     if profile.get('kind') == 'rsi':
         return monitor._run_rsi_profile(profile, bars)
     if profile.get('kind') == 'breakout':
@@ -99,6 +101,32 @@ def apply_daily_plan(result: dict, monitor: MarketMonitor, mode: str = 'preopen'
             # 拉取预热+目标总共 (warmup_days + days) 天的数据
             total_days = warmup_days + days
             daily = monitor.data_loader.get_daily_bars(symbol, start_date=(datetime.now() - timedelta(days=total_days)).strftime('%Y%m%d'))
+            # 如果 Tushare 失败，尝试从 akshare 获取
+            if daily is None or len(daily) == 0:
+                try:
+                    import akshare as ak
+                    code = symbol.split('.')[0]
+                    ak_df = ak.stock_zh_a_hist(symbol=code, period='daily',
+                        start_date=(datetime.now() - timedelta(days=total_days)).strftime('%Y%m%d'),
+                        end_date=datetime.now().strftime('%Y%m%d'), adjust='qfq')
+                    if ak_df is not None and len(ak_df) > 0:
+                        # 转换 akshare 数据格式为 Tushare 格式
+                        import pandas as pd
+                        daily = ak_df.rename(columns={
+                            '日期': 'trade_date',
+                            '开盘': 'open',
+                            '收盘': 'close',
+                            '最高': 'high',
+                            '最低': 'low',
+                            '成交量': 'vol',
+                            '成交额': 'amount'
+                        })
+                        # 转换日期格式
+                        daily['trade_date'] = pd.to_datetime(daily['trade_date']).dt.strftime('%Y%m%d')
+                        daily = daily.sort_values('trade_date', ascending=True).reset_index(drop=True)
+                except Exception as e:
+                    print(f"akshare 备用数据获取失败: {e}")
+
             if daily is None or len(daily) == 0:
                 continue
 

@@ -130,8 +130,10 @@ TradePolot/
 ## 更新
 
 ```bash
-python install.py --update
+./scripts/update_from_github.sh release
 ```
+
+升级脚本会保留服务器上的 `.env`、`config.yaml`、`data/` 和 `output/`，更新部署文件、拉取镜像、重建服务，并自动检查及修复 SQLite 表结构。
 
 ## Docker 部署
 
@@ -142,13 +144,26 @@ cp .env.example .env
 ./scripts/docker-deploy.sh local
 ```
 
-生产环境支持通过 GHCR 发布镜像，并由 Watchtower 自动升级：
+生产环境首次启动：
 
 ```bash
 ./scripts/docker-deploy.sh production
 ```
 
+部署时会自动创建 Docker SQLite 数据卷。每个应用容器启动前都会检查数据库文件、创建缺失表、补齐缺失字段并执行完整性检查。
+
 完整说明见 [Docker 部署与自动升级](docs/docker-deployment.md)，项目风险与优化优先级见 [项目分析](docs/project-analysis.md)。
+
+## 交易监控台
+
+API 服务启动后访问 `http://localhost:8000`。监控台提供：
+
+- 股票与期货独立观察池和市场统计
+- K 线、均线、布林带、成交量及方向变化
+- 策略参数、当前倾向和回测记录
+- 数据新鲜度、存储与读取异常状态
+
+现阶段股票读取 `data/<代码>.csv`。期货已完成页面和数据结构支持，在 `config.yaml` 的 `futures` 中配置合约，并提供同格式行情文件后即可独立展示。
 
 ## 卸载
 

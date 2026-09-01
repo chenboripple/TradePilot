@@ -24,12 +24,15 @@ case "$deployment_mode" in
     local)
         docker compose -f compose.yaml -f compose.local.yaml up -d --build --remove-orphans
         ;;
-    production)
+    production|update)
         docker compose --profile auto-update pull
         docker compose --profile auto-update up -d --remove-orphans
         ;;
+    check)
+        docker compose run --rm --no-deps api python -m ripple_tradePilot.storage
+        ;;
     *)
-        echo "Usage: $0 [local|production]" >&2
+        echo "Usage: $0 [local|production|update|check]" >&2
         exit 1
         ;;
 esac

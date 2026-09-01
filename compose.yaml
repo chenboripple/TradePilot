@@ -5,6 +5,8 @@ x-tradepilot-common: &tradepilot-common
   environment:
     TZ: ${TZ:-Asia/Shanghai}
     TRADEPILOT_CONFIG: /app/config.yaml
+    TRADEPILOT_DATA_DIR: /app/data
+    TRADEPILOT_BACKTEST_DB: /var/lib/tradepilot/backtest_results.db
     TUSHARE_TOKEN: ${TUSHARE_TOKEN:-}
     MX_APIKEY: ${MX_APIKEY:-}
     FEISHU_ENABLED: ${FEISHU_ENABLED:-}
@@ -14,6 +16,7 @@ x-tradepilot-common: &tradepilot-common
     - ${TRADEPILOT_CONFIG_PATH:-./config.example.yaml}:/app/config.yaml:ro
     - ./data:/app/data
     - ./output:/app/output
+    - tradepilot_db:/var/lib/tradepilot
   read_only: true
   tmpfs:
     - /tmp:size=64m,mode=1777
@@ -29,7 +32,7 @@ services:
     <<: *tradepilot-common
     command: ["uvicorn", "ripple_tradePilot.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
-      - "${TRADEPILOT_API_PORT:-8000}:8000"
+      - "127.0.0.1:${TRADEPILOT_API_PORT:-8000}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
       interval: 30s
@@ -62,3 +65,7 @@ services:
       - --rolling-restart
       - --interval
       - ${WATCHTOWER_INTERVAL:-300}
+
+volumes:
+  tradepilot_db:
+    name: ${TRADEPILOT_DB_VOLUME:-tradepilot_db}

@@ -43,8 +43,8 @@ if command -v rsync >/dev/null 2>&1; then
     rsync -a --delete \
         --exclude='.env' \
         --exclude='config.yaml' \
-        --exclude='data/' \
-        --exclude='output/' \
+        --exclude='/data/' \
+        --exclude='/output/' \
         --exclude='.git/' \
         --exclude='*.bak.*' \
         "$SOURCE_DIR/" "$TARGET_DIR/"

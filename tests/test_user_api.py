@@ -106,6 +106,21 @@ class UserApiTest(unittest.TestCase):
 
         self.assertEqual([item["name"] for item in items], ["Bob record"])
 
+    def test_email_can_be_used_as_case_insensitive_account_name(self):
+        user = self.register("Pilot.User+cn@Example.COM")
+
+        self.assertEqual(user["username"], "pilot.user+cn@example.com")
+        self.client.post("/api/auth/logout")
+        login = self.client.post(
+            "/api/auth/login",
+            json={
+                "username": "PILOT.USER+CN@EXAMPLE.COM",
+                "password": "strong-pass-123",
+            },
+        )
+        self.assertEqual(login.status_code, 200, login.text)
+        self.assertEqual(login.json()["user"]["username"], "pilot.user+cn@example.com")
+
 
 if __name__ == "__main__":
     unittest.main()

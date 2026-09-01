@@ -1,4 +1,5 @@
 import os
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict, Literal, Optional
@@ -40,7 +41,7 @@ app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")
 
 
 class Credentials(BaseModel):
-    username: str = Field(min_length=3, max_length=32)
+    username: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=8, max_length=128)
 
 
@@ -59,10 +60,16 @@ class StrategyVisibilityUpdate(BaseModel):
 
 def _normalize_username(username: str) -> str:
     normalized = username.strip()
+    if "@" in normalized:
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", normalized):
+            raise HTTPException(status_code=422, detail="邮箱格式不正确")
+        return normalized.lower()
+    if len(normalized) > 32:
+        raise HTTPException(status_code=422, detail="用户名不能超过 32 个字符")
     if not all(character.isalnum() or character in "_.-" for character in normalized):
         raise HTTPException(
             status_code=422,
-            detail="用户名只能包含字母、数字、点、下划线和连字符",
+            detail="用户名只能包含字母、数字、点、下划线和连字符，或使用邮箱",
         )
     return normalized
 

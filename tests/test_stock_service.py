@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
+import httpx
 import pandas as pd
 
 from ripple_tradePilot.data.stock_service import (
@@ -164,6 +165,25 @@ class StockDataServiceTest(unittest.TestCase):
             self.assertEqual(result, {"count": 2, "source": "eastmoney"})
             self.assertEqual(stock_catalog_name("600418.SH", root / "market.db"), "江淮汽车")
             self.assertEqual(stock_catalog_name("920855.BJ", root / "market.db"), "浙江大农")
+
+    def test_eastmoney_catalog_retries_an_alternate_endpoint_after_disconnect(self):
+        class FakeResponse:
+            @staticmethod
+            def raise_for_status():
+                return None
+
+            @staticmethod
+            def json():
+                return {"data": {"diff": [{"f12": "600418", "f14": "江淮汽车"}]}}
+
+        with patch(
+            "ripple_tradePilot.data.stock_service.httpx.get",
+            side_effect=[httpx.RemoteProtocolError("disconnected"), FakeResponse()],
+        ) as get:
+            records = StockDataService._eastmoney_catalog_records()
+
+        self.assertEqual(records[0]["name"], "江淮汽车")
+        self.assertEqual(get.call_count, 2)
 
     def test_single_stock_refresh_uses_catalog_name_without_refreshing_catalog(self):
         with tempfile.TemporaryDirectory() as temp_dir:

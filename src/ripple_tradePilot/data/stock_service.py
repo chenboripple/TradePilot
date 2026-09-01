@@ -106,24 +106,50 @@ class StockDataService:
 
     @staticmethod
     def _eastmoney_catalog_records() -> list[Dict[str, str]]:
-        response = httpx.get(
+        params = {
+            "pn": 1,
+            "pz": 10000,
+            "po": 1,
+            "np": 1,
+            "fltt": 2,
+            "invt": 2,
+            "fid": "f3",
+            "fs": "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048",
+            "fields": "f12,f14",
+        }
+        headers = {
+            "Accept": "application/json, text/plain, */*",
+            "Referer": "https://quote.eastmoney.com/",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36"
+            ),
+        }
+        endpoints = (
             "https://82.push2.eastmoney.com/api/qt/clist/get",
-            params={
-                "pn": 1,
-                "pz": 10000,
-                "po": 1,
-                "np": 1,
-                "fltt": 2,
-                "invt": 2,
-                "fid": "f3",
-                "fs": "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048",
-                "fields": "f12,f14",
-            },
-            timeout=20,
-            follow_redirects=True,
+            "https://push2.eastmoney.com/api/qt/clist/get",
+            "https://88.push2.eastmoney.com/api/qt/clist/get",
         )
-        response.raise_for_status()
-        rows = response.json().get("data", {}).get("diff", [])
+        last_error: Optional[Exception] = None
+        rows = []
+        for endpoint in endpoints:
+            try:
+                response = httpx.get(
+                    endpoint,
+                    params=params,
+                    headers=headers,
+                    timeout=30,
+                    follow_redirects=True,
+                )
+                response.raise_for_status()
+                rows = (response.json().get("data") or {}).get("diff") or []
+                if rows:
+                    break
+                last_error = StockDataUnavailableError("东方财富返回了空股票清单")
+            except Exception as error:
+                last_error = error
+        if not rows:
+            raise StockDataUnavailableError("东方财富股票清单请求失败") from last_error
         records = []
         for row in rows:
             code = str(row.get("f12") or "").strip()

@@ -1,13 +1,49 @@
+import importlib
 import os
 import sqlite3
 import tempfile
 import unittest
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from ripple_tradePilot.api.app import app
+from ripple_tradePilot.data.stock_service import StockDataService
+from ripple_tradePilot.storage.database import database_path, upsert_daily_bars
+
+api_module = importlib.import_module("ripple_tradePilot.api.app")
+
+
+class ApiStockDataService:
+    normalize_symbol = staticmethod(StockDataService.normalize_symbol)
+
+    def refresh(self, value, initial_days=365):
+        symbol = self.normalize_symbol(value)
+        first_day = date.today() - timedelta(days=59)
+        rows = []
+        for index in range(60):
+            close = 10 + index * 0.1
+            rows.append(
+                {
+                    "trade_date": (first_day + timedelta(days=index)).strftime("%Y%m%d"),
+                    "open": close - 0.1,
+                    "high": close + 0.2,
+                    "low": close - 0.2,
+                    "close": close,
+                    "vol": 1000 + index,
+                }
+            )
+        upsert_daily_bars(symbol, rows, "test", database_path())
+        return {
+            "symbol": symbol,
+            "name": "测试银行",
+            "source": "test",
+            "fetched_rows": len(rows),
+            "total_rows": len(rows),
+            "latest_date": date.today().isoformat(),
+        }
 
 
 class UserApiTest(unittest.TestCase):
@@ -120,6 +156,29 @@ class UserApiTest(unittest.TestCase):
         )
         self.assertEqual(login.status_code, 200, login.text)
         self.assertEqual(login.json()["user"]["username"], "pilot.user+cn@example.com")
+
+    def test_watchlist_is_user_scoped_and_daily_bars_are_visible(self):
+        self.assertEqual(self.client.post("/api/watchlist", json={"symbol": "600000"}).status_code, 401)
+        self.register("alice")
+        with patch.object(api_module, "StockDataService", ApiStockDataService):
+            added = self.client.post("/api/watchlist", json={"symbol": "600000"})
+            self.assertEqual(added.status_code, 201, added.text)
+            refreshed = self.client.post("/api/watchlist/600000.SH/refresh")
+            self.assertEqual(refreshed.status_code, 200, refreshed.text)
+
+        items = self.client.get("/api/watchlist").json()["items"]
+        dashboard = self.client.get("/api/dashboard").json()
+        self.assertEqual([item["symbol"] for item in items], ["600000.SH"])
+        self.assertEqual([item["symbol"] for item in dashboard["markets"]], ["600000.SH"])
+        self.assertTrue(dashboard["markets"][0]["user_added"])
+
+        self.client.post("/api/auth/logout")
+        self.register("bob")
+        self.assertEqual(self.client.get("/api/watchlist").json()["items"], [])
+        self.assertEqual(self.client.get("/api/dashboard").json()["markets"], [])
+        with patch.object(api_module, "StockDataService", ApiStockDataService):
+            forbidden = self.client.post("/api/watchlist/600000.SH/refresh")
+        self.assertEqual(forbidden.status_code, 404)
 
 
 if __name__ == "__main__":

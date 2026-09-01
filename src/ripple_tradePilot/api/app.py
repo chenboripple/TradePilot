@@ -10,20 +10,32 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from ripple_tradePilot.api.dashboard import DashboardDataError, DashboardService
+from ripple_tradePilot.data.stock_service import (
+    InvalidStockSymbolError,
+    StockDataService,
+    StockDataUnavailableError,
+)
 from ripple_tradePilot.storage.database import init_database
 from ripple_tradePilot.storage.user_store import (
     SESSION_DAYS,
     StrategyNotFoundError,
     UsernameTakenError,
+    WatchlistExistsError,
+    WatchlistNotFoundError,
+    add_watchlist_item,
     authenticate_user,
     create_session,
     create_strategy,
     create_user,
     delete_session,
+    delete_watchlist_item,
     list_user_backtests,
     list_visible_strategies,
+    list_user_watchlist,
+    mark_watchlist_updated,
     update_strategy_visibility,
     user_for_session,
+    watchlist_contains,
 )
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -36,7 +48,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="TradePilot API", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="TradePilot API", version="0.4.0", lifespan=lifespan)
 app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")
 
 
@@ -56,6 +68,10 @@ class StrategyCreate(BaseModel):
 
 class StrategyVisibilityUpdate(BaseModel):
     visibility: Literal["public", "private"]
+
+
+class WatchlistCreate(BaseModel):
+    symbol: str = Field(min_length=6, max_length=16)
 
 
 def _normalize_username(username: str) -> str:
@@ -94,6 +110,27 @@ def required_user(user: Optional[Dict] = Depends(optional_user)) -> Dict:
     if user is None:
         raise HTTPException(status_code=401, detail="请先注册或登录")
     return user
+
+
+def _dashboard_for_user(user: Optional[Dict]) -> DashboardService:
+    if user is None:
+        return DashboardService()
+    symbols = [
+        {
+            "code": item["symbol"],
+            "name": item["name"],
+            "asset_class": "stock",
+            "strategy_profile": "默认组合策略",
+            "user_added": True,
+        }
+        for item in list_user_watchlist(user["id"])
+    ]
+    return DashboardService(extra_symbols=symbols)
+
+
+def _stock_error(error: RuntimeError) -> HTTPException:
+    status_code = 422 if isinstance(error, InvalidStockSymbolError) else 503
+    return HTTPException(status_code=status_code, detail=str(error))
 
 
 @app.get("/", include_in_schema=False)
@@ -139,14 +176,18 @@ def auth_me(user: Optional[Dict] = Depends(optional_user)):
 
 
 @app.get("/api/dashboard")
-def dashboard():
-    return DashboardService().dashboard()
+def dashboard(user: Optional[Dict] = Depends(optional_user)):
+    return _dashboard_for_user(user).dashboard()
 
 
 @app.get("/api/markets/{symbol}")
-def market_detail(symbol: str, limit: int = Query(default=160, ge=40, le=260)):
+def market_detail(
+    symbol: str,
+    limit: int = Query(default=160, ge=40, le=260),
+    user: Optional[Dict] = Depends(optional_user),
+):
     try:
-        return DashboardService().market_detail(symbol, limit=limit)
+        return _dashboard_for_user(user).market_detail(symbol, limit=limit)
     except DashboardDataError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
@@ -195,3 +236,58 @@ def backtests(user: Dict = Depends(required_user)):
         for result in list_user_backtests(user["id"])
     ]
     return {"items": items}
+
+
+@app.get("/api/watchlist")
+def watchlist(user: Dict = Depends(required_user)):
+    return {"items": list_user_watchlist(user["id"])}
+
+
+@app.post("/api/watchlist", status_code=status.HTTP_201_CREATED)
+def add_to_watchlist(payload: WatchlistCreate, user: Dict = Depends(required_user)):
+    service = StockDataService()
+    try:
+        symbol = service.normalize_symbol(payload.symbol)
+        if symbol in DashboardService().configured_symbols():
+            raise WatchlistExistsError("该股票已在默认观察池中")
+        if watchlist_contains(user["id"], symbol):
+            raise WatchlistExistsError("该股票已在观察池中")
+        refreshed = service.refresh(symbol, initial_days=365)
+        item = add_watchlist_item(
+            user["id"], refreshed["symbol"], refreshed["name"]
+        )
+    except WatchlistExistsError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except (InvalidStockSymbolError, StockDataUnavailableError) as error:
+        raise _stock_error(error) from error
+    return {"item": item, "data": refreshed}
+
+
+@app.post("/api/watchlist/{symbol}/refresh")
+def refresh_watchlist_stock(symbol: str, user: Dict = Depends(required_user)):
+    service = StockDataService()
+    try:
+        normalized = service.normalize_symbol(symbol)
+        is_personal = watchlist_contains(user["id"], normalized)
+        is_default = normalized in DashboardService().configured_symbols()
+        if not is_personal and not is_default:
+            raise WatchlistNotFoundError("只能更新当前观察池中的股票")
+        refreshed = service.refresh(normalized, initial_days=365)
+        if is_personal:
+            mark_watchlist_updated(user["id"], normalized)
+    except WatchlistNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (InvalidStockSymbolError, StockDataUnavailableError) as error:
+        raise _stock_error(error) from error
+    return {"data": refreshed}
+
+
+@app.delete("/api/watchlist/{symbol}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_from_watchlist(symbol: str, user: Dict = Depends(required_user)):
+    try:
+        normalized = StockDataService.normalize_symbol(symbol)
+        delete_watchlist_item(user["id"], normalized)
+    except InvalidStockSymbolError as error:
+        raise _stock_error(error) from error
+    except WatchlistNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error

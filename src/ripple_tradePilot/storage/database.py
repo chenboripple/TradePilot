@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sqlite3
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Iterable, List, Mapping
 
 
 BACKTEST_COLUMNS = {
@@ -51,6 +51,29 @@ STRATEGY_COLUMNS = {
     "parameters_json": "parameters_json TEXT DEFAULT '{}'",
     "visibility": "visibility TEXT DEFAULT 'private'",
     "created_at": "created_at TIMESTAMP",
+    "updated_at": "updated_at TIMESTAMP",
+}
+
+WATCHLIST_COLUMNS = {
+    "id": "id INTEGER",
+    "user_id": "user_id INTEGER",
+    "symbol": "symbol TEXT DEFAULT ''",
+    "name": "name TEXT DEFAULT ''",
+    "created_at": "created_at TIMESTAMP",
+    "last_updated_at": "last_updated_at TIMESTAMP",
+}
+
+DAILY_BAR_COLUMNS = {
+    "id": "id INTEGER",
+    "symbol": "symbol TEXT DEFAULT ''",
+    "trade_date": "trade_date TEXT DEFAULT ''",
+    "open": "open REAL",
+    "high": "high REAL",
+    "low": "low REAL",
+    "close": "close REAL",
+    "volume": "volume REAL DEFAULT 0",
+    "amount": "amount REAL",
+    "source": "source TEXT DEFAULT ''",
     "updated_at": "updated_at TIMESTAMP",
 }
 
@@ -196,10 +219,64 @@ def init_database(path: Path | None = None) -> Path:
             "CREATE INDEX IF NOT EXISTS idx_strategies_visibility_updated "
             "ON strategies(visibility, updated_at DESC)"
         )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_watchlist (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                symbol TEXT NOT NULL,
+                name TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_updated_at TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(user_id, symbol)
+            )
+            """
+        )
+        _ensure_columns(connection, "user_watchlist", WATCHLIST_COLUMNS)
+        connection.execute(
+            "UPDATE user_watchlist SET created_at = CURRENT_TIMESTAMP "
+            "WHERE created_at IS NULL"
+        )
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_user_watchlist_owner_symbol "
+            "ON user_watchlist(user_id, symbol)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_user_watchlist_owner_created "
+            "ON user_watchlist(user_id, created_at DESC)"
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daily_bars (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT NOT NULL,
+                trade_date TEXT NOT NULL,
+                open REAL NOT NULL,
+                high REAL NOT NULL,
+                low REAL NOT NULL,
+                close REAL NOT NULL,
+                volume REAL NOT NULL DEFAULT 0,
+                amount REAL,
+                source TEXT NOT NULL DEFAULT '',
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(symbol, trade_date)
+            )
+            """
+        )
+        _ensure_columns(connection, "daily_bars", DAILY_BAR_COLUMNS)
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_bars_symbol_date "
+            "ON daily_bars(symbol, trade_date)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_daily_bars_date "
+            "ON daily_bars(trade_date DESC)"
+        )
         integrity = connection.execute("PRAGMA integrity_check").fetchone()
         if not integrity or integrity[0] != "ok":
             raise RuntimeError(f"SQLite integrity check failed for {target}: {integrity}")
-        connection.execute("PRAGMA user_version=3")
+        connection.execute("PRAGMA user_version=5")
 
     return target
 
@@ -239,3 +316,67 @@ def insert_backtest_result(
             ),
         )
     return target
+
+
+def load_daily_bars(
+    symbol: str, path: Path | None = None
+) -> List[Mapping[str, Any]]:
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            """
+            SELECT trade_date, open, high, low, close,
+                   volume AS vol, amount, source
+            FROM daily_bars
+            WHERE symbol = ?
+            ORDER BY trade_date
+            """,
+            (symbol,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def upsert_daily_bars(
+    symbol: str,
+    rows: Iterable[Mapping[str, Any]],
+    source: str,
+    path: Path | None = None,
+) -> int:
+    records = list(rows)
+    if not records:
+        return 0
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.executemany(
+            """
+            INSERT INTO daily_bars (
+                symbol, trade_date, open, high, low, close,
+                volume, amount, source, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(symbol, trade_date) DO UPDATE SET
+                open = excluded.open,
+                high = excluded.high,
+                low = excluded.low,
+                close = excluded.close,
+                volume = excluded.volume,
+                amount = excluded.amount,
+                source = excluded.source,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            [
+                (
+                    symbol,
+                    row["trade_date"],
+                    row["open"],
+                    row["high"],
+                    row["low"],
+                    row["close"],
+                    row.get("vol", 0),
+                    row.get("amount"),
+                    source,
+                )
+                for row in records
+            ],
+        )
+    return len(records)

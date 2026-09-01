@@ -38,6 +38,10 @@ const elements = {
   strategyDialog: document.querySelector("#strategy-dialog"),
   strategyForm: document.querySelector("#strategy-form"),
   strategyError: document.querySelector("#strategy-error"),
+  stockDialog: document.querySelector("#stock-dialog"),
+  stockForm: document.querySelector("#stock-form"),
+  stockError: document.querySelector("#stock-error"),
+  addStockButton: document.querySelector("#add-stock-button"),
 };
 
 const recommendationLabels = { BUY: "偏多", SELL: "偏空", HOLD: "观望" };
@@ -192,6 +196,7 @@ function renderAssetButtons() {
     button.classList.toggle("is-active", button.dataset.asset === state.assetClass);
   });
   elements.watchlistTitle.textContent = `${assetLabels[state.assetClass]}观察池`;
+  elements.addStockButton.hidden = !state.user || state.assetClass !== "stock";
 }
 
 function renderWatchlist() {
@@ -203,21 +208,35 @@ function renderWatchlist() {
     return;
   }
 
-  elements.watchlist.innerHTML = markets.map((item) => `
-    <button class="watch-item ${item.symbol === state.selectedSymbol ? "is-active" : ""}" data-symbol="${escapeHtml(item.symbol)}">
-      <span class="watch-item-top">
-        <strong>${escapeHtml(item.name)}</strong>
-        <span>${formatNumber(item.price)}</span>
-      </span>
-      <span class="watch-item-bottom">
-        <span>${escapeHtml(item.symbol)}</span>
-        <span class="side-${item.recommendation.toLowerCase()}">${recommendationLabels[item.recommendation]}</span>
-      </span>
-    </button>
-  `).join("");
+  elements.watchlist.innerHTML = markets.map((item) => {
+    const canManage = Boolean(state.user && item.asset_class === "stock");
+    const actions = canManage ? `<span class="watch-actions">
+      <button class="watch-action" data-refresh-symbol="${escapeHtml(item.symbol)}" title="更新日线" aria-label="更新 ${escapeHtml(item.name)} 日线">↻</button>
+      ${item.user_added ? `<button class="watch-action" data-remove-symbol="${escapeHtml(item.symbol)}" title="移出观察池" aria-label="移除 ${escapeHtml(item.name)}">×</button>` : ""}
+    </span>` : "";
+    return `<div class="watch-row ${canManage ? "has-actions" : ""}">
+      <button class="watch-item ${item.symbol === state.selectedSymbol ? "is-active" : ""}" data-symbol="${escapeHtml(item.symbol)}">
+        <span class="watch-item-top">
+          <strong>${escapeHtml(item.name)}</strong>
+          <span>${formatNumber(item.price)}</span>
+        </span>
+        <span class="watch-item-bottom">
+          <span>${escapeHtml(item.symbol)}</span>
+          <span class="side-${item.recommendation.toLowerCase()}">${recommendationLabels[item.recommendation]}</span>
+        </span>
+      </button>
+      ${actions}
+    </div>`;
+  }).join("");
 
   elements.watchlist.querySelectorAll("[data-symbol]").forEach((button) => {
     button.addEventListener("click", () => selectSymbol(button.dataset.symbol));
+  });
+  elements.watchlist.querySelectorAll("[data-refresh-symbol]").forEach((button) => {
+    button.addEventListener("click", () => refreshStock(button));
+  });
+  elements.watchlist.querySelectorAll("[data-remove-symbol]").forEach((button) => {
+    button.addEventListener("click", () => removeStock(button.dataset.removeSymbol));
   });
 }
 
@@ -237,7 +256,33 @@ function renderMetrics() {
 
   elements.dataAlert.hidden = stale === 0;
   if (stale) {
-    elements.dataAlert.textContent = `${assetLabels[state.assetClass]}行情缓存存在滞后，页面展示的是最近一次落盘数据，请勿按实时行情使用。`;
+    elements.dataAlert.textContent = `${assetLabels[state.assetClass]}行情存在滞后，页面展示的是数据库中最近一次更新数据，请勿按实时行情使用。`;
+  }
+}
+
+async function refreshStock(button) {
+  button.disabled = true;
+  button.classList.add("is-loading");
+  try {
+    await apiRequest(`/api/watchlist/${encodeURIComponent(button.dataset.refreshSymbol)}/refresh`, { method: "POST" });
+    state.selectedSymbol = button.dataset.refreshSymbol;
+    await fetchDashboard();
+  } catch (error) {
+    window.alert(error.message);
+  } finally {
+    button.disabled = false;
+    button.classList.remove("is-loading");
+  }
+}
+
+async function removeStock(symbol) {
+  if (!window.confirm(`确认将 ${symbol} 移出观察池？`)) return;
+  try {
+    await apiRequest(`/api/watchlist/${encodeURIComponent(symbol)}`, { method: "DELETE" });
+    if (state.selectedSymbol === symbol) state.selectedSymbol = null;
+    await fetchDashboard();
+  } catch (error) {
+    window.alert(error.message);
   }
 }
 
@@ -379,7 +424,7 @@ function renderSystem() {
   document.querySelector("#system-grid").innerHTML = [
     ["API 服务", system.api === "online" ? "运行中" : "异常", "FastAPI dashboard"],
     ["行情存储", system.data_source || "--", `${assetSummary.available ?? 0} 个标的可用`],
-    ["数据库", system.database || "--", "PostgreSQL 待迁移"],
+    ["数据库", system.database || "--", "行情、用户、策略与回测"],
     ["当前市场", assetLabels[state.assetClass], `${assetSummary.configured ?? 0} 个已配置`],
   ].map(([label, value, note]) => `
     <div class="system-item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(note)}</small></div>
@@ -602,7 +647,12 @@ document.querySelector("#logout-button").addEventListener("click", async () => {
   state.user = null;
   state.strategies = [];
   state.backtests = [];
-  renderAll();
+  await fetchDashboard();
+});
+elements.addStockButton.addEventListener("click", () => {
+  elements.stockError.hidden = true;
+  elements.stockDialog.showModal();
+  elements.stockForm.elements.symbol.focus();
 });
 document.querySelector("#new-strategy-button").addEventListener("click", () => {
   elements.strategyError.hidden = true;
@@ -624,12 +674,35 @@ elements.authForm.addEventListener("submit", async (event) => {
     elements.authDialog.close();
     elements.authForm.reset();
     renderAuthState();
+    await fetchDashboard();
     await loadProtectedData();
     if (state.pendingView) await switchView(state.pendingView);
     state.pendingView = null;
   } catch (error) {
     elements.authError.textContent = error.message;
     elements.authError.hidden = false;
+  }
+});
+elements.stockForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  elements.stockError.hidden = true;
+  const submit = elements.stockForm.querySelector("[type=submit]");
+  submit.disabled = true;
+  try {
+    const result = await apiRequest("/api/watchlist", {
+      method: "POST",
+      body: JSON.stringify({ symbol: elements.stockForm.elements.symbol.value.trim() }),
+    });
+    state.selectedSymbol = result.item.symbol;
+    state.assetClass = "stock";
+    elements.stockDialog.close();
+    elements.stockForm.reset();
+    await fetchDashboard();
+  } catch (error) {
+    elements.stockError.textContent = error.message;
+    elements.stockError.hidden = false;
+  } finally {
+    submit.disabled = false;
   }
 });
 elements.strategyForm.addEventListener("submit", async (event) => {

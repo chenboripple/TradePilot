@@ -29,6 +29,14 @@ class StrategyNotFoundError(UserStoreError):
     pass
 
 
+class WatchlistExistsError(UserStoreError):
+    pass
+
+
+class WatchlistNotFoundError(UserStoreError):
+    pass
+
+
 def _target(path: Path | None) -> Path:
     return init_database(path or database_path())
 
@@ -274,3 +282,100 @@ def list_user_backtests(
             (user_id, limit),
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def _watchlist_dict(row: sqlite3.Row) -> Dict[str, Any]:
+    return {
+        "id": row["id"],
+        "symbol": row["symbol"],
+        "name": row["name"],
+        "created_at": row["created_at"],
+        "last_updated_at": row["last_updated_at"],
+        "user_added": True,
+    }
+
+
+def list_user_watchlist(
+    user_id: int, path: Path | None = None
+) -> List[Dict[str, Any]]:
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            """
+            SELECT id, symbol, name, created_at, last_updated_at
+            FROM user_watchlist
+            WHERE user_id = ?
+            ORDER BY created_at, id
+            """,
+            (user_id,),
+        ).fetchall()
+    return [_watchlist_dict(row) for row in rows]
+
+
+def add_watchlist_item(
+    user_id: int,
+    symbol: str,
+    name: str,
+    path: Path | None = None,
+) -> Dict[str, Any]:
+    target = _target(path)
+    try:
+        with sqlite3.connect(target, timeout=30) as connection:
+            connection.row_factory = sqlite3.Row
+            cursor = connection.execute(
+                """
+                INSERT INTO user_watchlist (user_id, symbol, name, last_updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                """,
+                (user_id, symbol, name),
+            )
+            row = connection.execute(
+                """
+                SELECT id, symbol, name, created_at, last_updated_at
+                FROM user_watchlist WHERE id = ?
+                """,
+                (cursor.lastrowid,),
+            ).fetchone()
+    except sqlite3.IntegrityError as error:
+        raise WatchlistExistsError("该股票已在观察池中") from error
+    return _watchlist_dict(row)
+
+
+def watchlist_contains(
+    user_id: int, symbol: str, path: Path | None = None
+) -> bool:
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        row = connection.execute(
+            "SELECT 1 FROM user_watchlist WHERE user_id = ? AND symbol = ?",
+            (user_id, symbol),
+        ).fetchone()
+    return row is not None
+
+
+def mark_watchlist_updated(
+    user_id: int, symbol: str, path: Path | None = None
+) -> None:
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.execute(
+            """
+            UPDATE user_watchlist SET last_updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ? AND symbol = ?
+            """,
+            (user_id, symbol),
+        )
+
+
+def delete_watchlist_item(
+    user_id: int, symbol: str, path: Path | None = None
+) -> None:
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        cursor = connection.execute(
+            "DELETE FROM user_watchlist WHERE user_id = ? AND symbol = ?",
+            (user_id, symbol),
+        )
+        if cursor.rowcount == 0:
+            raise WatchlistNotFoundError("观察池中不存在该股票")

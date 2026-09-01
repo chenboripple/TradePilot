@@ -47,7 +47,10 @@
       <section class="watchlist-section">
         <div class="section-label">
           <span id="watchlist-title">股票观察池</span>
-          <span id="watchlist-count">0</span>
+          <span class="section-tools">
+            <span id="watchlist-count">0</span>
+            <button class="watch-add authenticated-content" id="add-stock-button" title="添加股票" aria-label="添加股票" hidden>+</button>
+          </span>
         </div>
         <div class="watchlist" id="watchlist"></div>
       </section>
@@ -230,6 +233,16 @@
     </form>
   </dialog>
 
-  <script src="/assets/app.js?v=3" defer></script>
+  <dialog class="app-dialog" id="stock-dialog">
+    <form method="dialog" class="dialog-close-form"><button class="icon-button" aria-label="关闭" title="关闭">×</button></form>
+    <div class="dialog-heading"><span>WATCHLIST</span><h2>添加股票</h2></div>
+    <form id="stock-form">
+      <label class="field"><span>股票代码</span><input name="symbol" minlength="6" maxlength="16" placeholder="600309 或 000001.SZ" autocomplete="off" required></label>
+      <p class="form-error" id="stock-error" hidden></p>
+      <button class="primary-button dialog-submit" type="submit">添加并加载日线</button>
+    </form>
+  </dialog>
+
+  <script src="/assets/app.js?v=4" defer></script>
 </body>
 </html>

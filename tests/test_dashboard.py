@@ -7,6 +7,7 @@ from pathlib import Path
 import yaml
 
 from ripple_tradePilot.api.dashboard import DashboardService
+from ripple_tradePilot.storage.database import upsert_daily_bars
 
 
 class DashboardServiceTest(unittest.TestCase):
@@ -101,6 +102,33 @@ class DashboardServiceTest(unittest.TestCase):
         self.assertEqual(len(detail["bars"]), 40)
         self.assertIn(detail["recommendation"], {"BUY", "SELL", "HOLD"})
         self.assertIsNotNone(detail["indicators"]["ma_slow"])
+
+    def test_market_detail_prefers_database_daily_bars(self):
+        database = self.root / "market.db"
+        first_day = date.today() - timedelta(days=59)
+        rows = []
+        for index in range(60):
+            close = 50 + index
+            rows.append(
+                {
+                    "trade_date": (first_day + timedelta(days=index)).strftime("%Y%m%d"),
+                    "open": close - 1,
+                    "high": close + 1,
+                    "low": close - 2,
+                    "close": close,
+                    "vol": 2000 + index,
+                }
+            )
+        upsert_daily_bars("000001.SZ", rows, "test", database)
+
+        detail = DashboardService(
+            data_dir=self.data_dir,
+            config_path=self.config_path,
+            backtest_db=database,
+        ).market_detail("000001.SZ")
+
+        self.assertEqual(detail["price"], 109)
+        self.assertEqual(detail["total_rows"], 60)
 
 
 if __name__ == "__main__":

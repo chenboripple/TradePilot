@@ -93,6 +93,18 @@ class TushareDataLoader:
             fields='ts_code,symbol,name,area,industry,market,list_date'
         )
         return df
+
+    def get_stock_basic(self, ts_code: str) -> Optional[dict]:
+        """获取单只股票的基础信息。"""
+        self._rate_limit()
+        df = self.pro.stock_basic(
+            ts_code=ts_code,
+            list_status="L",
+            fields="ts_code,symbol,name,market,list_date",
+        )
+        if df is None or len(df) == 0:
+            return None
+        return df.iloc[0].to_dict()
     
     def get_daily_bars(
         self,

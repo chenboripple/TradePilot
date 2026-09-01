@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import csv
 import os
+import sqlite3
 from datetime import datetime
 from math import sqrt
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from ripple_tradePilot.config_loader import load_config
 
@@ -20,10 +21,12 @@ class DashboardService:
         data_dir: Optional[Path] = None,
         config_path: Optional[Path] = None,
         backtest_db: Optional[Path] = None,
+        extra_symbols: Optional[Sequence[Dict[str, Any]]] = None,
     ):
         self.data_dir = data_dir or Path(os.getenv("TRADEPILOT_DATA_DIR", Path.cwd() / "data"))
         self.config_path = config_path or Path(os.getenv("TRADEPILOT_CONFIG", Path.cwd() / "config.yaml"))
         self.backtest_db = backtest_db or self._resolve_backtest_db()
+        self.extra_symbols = list(extra_symbols or [])
 
     def _resolve_backtest_db(self) -> Path:
         configured = os.getenv("TRADEPILOT_BACKTEST_DB")
@@ -46,7 +49,21 @@ class DashboardService:
             assets.append({**symbol, "asset_class": symbol.get("asset_class", "stock")})
         for future in config.get("futures", []):
             assets.append({**future, "asset_class": "future"})
-        return [asset for asset in assets if asset.get("code")]
+        assets.extend(self.extra_symbols)
+        unique = {}
+        for asset in assets:
+            code = str(asset.get("code", "")).upper()
+            if code and code not in unique:
+                unique[code] = {**asset, "code": code}
+        return list(unique.values())
+
+    def configured_symbols(self) -> List[str]:
+        config = self._config()
+        return [
+            str(symbol.get("code", "")).upper()
+            for symbol in config.get("symbols", [])
+            if symbol.get("code")
+        ]
 
     def _profile(self, symbol: Dict[str, Any]) -> Dict[str, Any]:
         config = self._config()
@@ -57,6 +74,10 @@ class DashboardService:
         return profiles.get(symbol.get("strategy_profile", ""), {})
 
     def _read_bars(self, symbol: str) -> List[Dict[str, Any]]:
+        database_bars = self._read_database_bars(symbol)
+        if database_bars:
+            return database_bars
+
         path = self.data_dir / f"{symbol}.csv"
         if not path.exists():
             raise DashboardDataError(f"行情文件不存在: {path.name}")
@@ -90,6 +111,43 @@ class DashboardService:
         bars.sort(key=lambda item: item["timestamp"])
         if not bars:
             raise DashboardDataError(f"行情文件无有效数据: {path.name}")
+        return bars
+
+    def _read_database_bars(self, symbol: str) -> List[Dict[str, Any]]:
+        if not self.backtest_db.exists():
+            return []
+        try:
+            with sqlite3.connect(self.backtest_db) as connection:
+                rows = connection.execute(
+                    """
+                    SELECT trade_date, open, high, low, close, volume
+                    FROM daily_bars
+                    WHERE symbol = ?
+                    ORDER BY trade_date
+                    """,
+                    (symbol,),
+                ).fetchall()
+        except sqlite3.Error:
+            return []
+        bars = []
+        for trade_date, open_price, high, low, close, volume in rows:
+            try:
+                timestamp = datetime.strptime(str(trade_date)[:10], "%Y-%m-%d")
+            except ValueError:
+                try:
+                    timestamp = datetime.strptime(str(trade_date)[:8], "%Y%m%d")
+                except ValueError:
+                    continue
+            bars.append(
+                {
+                    "timestamp": timestamp,
+                    "open": float(open_price),
+                    "high": float(high),
+                    "low": float(low),
+                    "close": float(close),
+                    "volume": float(volume or 0),
+                }
+            )
         return bars
 
     @staticmethod
@@ -292,6 +350,7 @@ class DashboardService:
             "bars": chart_bars,
             "signals": signals[-8:][::-1],
             "total_rows": len(bars),
+            "user_added": bool(symbol.get("user_added")),
         }
 
     def strategy_catalog(self) -> List[Dict[str, Any]]:
@@ -364,8 +423,8 @@ class DashboardService:
             "markets": details,
             "system": {
                 "api": "online",
-                "data_source": "CSV compatibility layer",
-                "database": "SQLite backtest only",
+                "data_source": "SQLite daily bars + CSV legacy fallback",
+                "database": "SQLite unified storage",
                 "config_path": str(self.config_path),
                 "data_dir": str(self.data_dir),
                 "errors": errors,

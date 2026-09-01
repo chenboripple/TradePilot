@@ -73,6 +73,10 @@ log "使用最新源码构建并重建服务"
     cd "$TARGET_DIR"
     docker compose -f compose.yaml -f compose.local.yaml up -d --build --remove-orphans
     docker compose -f compose.yaml -f compose.local.yaml run --rm --no-deps api python -m ripple_tradePilot.storage
+    if docker ps --format '{{.Names}}' | grep -qx nginx; then
+        docker exec nginx nginx -t
+        docker exec nginx nginx -s reload
+    fi
     docker compose -f compose.yaml -f compose.local.yaml ps
 )
 

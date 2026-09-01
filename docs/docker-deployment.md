@@ -104,7 +104,7 @@ ghcr.io/chenboripple/tradepilot:release
 2. 管理员登录服务器并进入 TradePilot 部署目录。
 3. 执行 `./scripts/update_from_github.sh release`。
 4. 脚本更新源码并使用 `compose.local.yaml` 在服务器本地构建。
-5. 服务重建后自动执行 SQLite 自检。
+5. 服务重建后自动执行 SQLite 自检；存在名为 `nginx` 的容器时自动校验并重载代理配置。
 
 服务器不会后台轮询 GitHub 或 GHCR，也不会无人值守地重启服务。
 

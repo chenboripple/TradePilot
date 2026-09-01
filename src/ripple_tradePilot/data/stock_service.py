@@ -178,6 +178,77 @@ class StockDataService:
             )
         return records
 
+    @staticmethod
+    def _sina_catalog_records() -> list[Dict[str, str]]:
+        count_url = (
+            "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
+            "Market_Center.getHQNodeStockCount"
+        )
+        data_url = (
+            "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
+            "Market_Center.getHQNodeData"
+        )
+        headers = {
+            "Accept": "application/json, text/plain, */*",
+            "Referer": "https://finance.sina.com.cn/stock/",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36"
+            ),
+        }
+        rows = []
+        with httpx.Client(headers=headers, timeout=30, follow_redirects=True) as client:
+            count_response = client.get(count_url, params={"node": "hs_a"})
+            count_response.raise_for_status()
+            total = int(count_response.json())
+            for page in range(1, (total + 99) // 100 + 1):
+                response = client.get(
+                    data_url,
+                    params={
+                        "page": page,
+                        "num": 100,
+                        "sort": "symbol",
+                        "asc": 1,
+                        "node": "hs_a",
+                    },
+                )
+                response.raise_for_status()
+                page_rows = response.json()
+                if not isinstance(page_rows, list):
+                    raise StockDataUnavailableError("新浪返回了无效的股票清单")
+                rows.extend(page_rows)
+
+        records = []
+        exchange_names = {"sh": "SH", "sz": "SZ", "bj": "BJ"}
+        for row in rows:
+            code = str(row.get("code") or "").strip()
+            raw_symbol = str(row.get("symbol") or "").lower().strip()
+            exchange = exchange_names.get(raw_symbol[:2])
+            if not re.fullmatch(r"\d{6}", code) or not exchange:
+                continue
+            symbol = f"{code}.{exchange}"
+            name = StockDataService._valid_name(row.get("name"), symbol)
+            if not name:
+                continue
+            if exchange == "BJ":
+                market = "北交所"
+            elif code.startswith(("688", "689")):
+                market = "科创板"
+            elif code.startswith(("300", "301")):
+                market = "创业板"
+            else:
+                market = "主板"
+            records.append(
+                {
+                    "symbol": symbol,
+                    "name": name,
+                    "market": market,
+                    "list_status": "L",
+                    "list_date": "",
+                }
+            )
+        return records
+
     def refresh_catalog(self) -> Dict[str, Any]:
         config = load_config(str(self.config_path))
         tushare = config.get("tushare", {})
@@ -196,10 +267,14 @@ class StockDataService:
                 try:
                     records = self._eastmoney_catalog_records()
                     source = "eastmoney"
-                except Exception as error:
-                    raise StockDataUnavailableError(
-                        "暂时无法获取股票清单，请稍后重试"
-                    ) from error
+                except Exception:
+                    try:
+                        records = self._sina_catalog_records()
+                        source = "sina"
+                    except Exception as error:
+                        raise StockDataUnavailableError(
+                            "暂时无法获取股票清单，请稍后重试"
+                        ) from error
             if not records:
                 raise StockDataUnavailableError("未获取到有效的股票清单")
             upsert_stock_catalog(records, source, self.database)

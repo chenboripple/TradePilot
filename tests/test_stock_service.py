@@ -185,6 +185,78 @@ class StockDataServiceTest(unittest.TestCase):
         self.assertEqual(records[0]["name"], "江淮汽车")
         self.assertEqual(get.call_count, 2)
 
+    def test_sina_catalog_reads_all_exchange_names(self):
+        class FakeResponse:
+            def __init__(self, data):
+                self.data = data
+
+            @staticmethod
+            def raise_for_status():
+                return None
+
+            def json(self):
+                return self.data
+
+        class FakeClient:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return None
+
+            def get(self, url, params):
+                if "StockCount" in url:
+                    return FakeResponse("3")
+                return FakeResponse(
+                    [
+                        {"symbol": "sh600418", "code": "600418", "name": "江淮汽车"},
+                        {"symbol": "sz300750", "code": "300750", "name": "宁德时代"},
+                        {"symbol": "bj920855", "code": "920855", "name": "浙江大农"},
+                    ]
+                )
+
+        with patch("ripple_tradePilot.data.stock_service.httpx.Client", return_value=FakeClient()):
+            records = StockDataService._sina_catalog_records()
+
+        self.assertEqual(
+            [(item["symbol"], item["name"]) for item in records],
+            [
+                ("600418.SH", "江淮汽车"),
+                ("300750.SZ", "宁德时代"),
+                ("920855.BJ", "浙江大农"),
+            ],
+        )
+
+    def test_catalog_refresh_falls_back_to_sina_when_eastmoney_is_unavailable(self):
+        class LimitedTushareLoader(FakeTushareLoader):
+            def get_stock_list(self):
+                raise RuntimeError("stock_basic rate limited")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = root / "config.yaml"
+            config.write_text("tushare:\n  token: test-token\n", encoding="utf-8")
+            service = StockDataService(config_path=config, database=root / "market.db")
+            with (
+                patch(
+                    "ripple_tradePilot.data.stock_service.TushareDataLoader",
+                    LimitedTushareLoader,
+                ),
+                patch.object(
+                    StockDataService,
+                    "_eastmoney_catalog_records",
+                    side_effect=RuntimeError("unavailable"),
+                ),
+                patch.object(
+                    StockDataService,
+                    "_sina_catalog_records",
+                    return_value=[{"symbol": "600418.SH", "name": "江淮汽车"}],
+                ),
+            ):
+                result = service.refresh_catalog()
+
+        self.assertEqual(result, {"count": 1, "source": "sina"})
+
     def test_single_stock_refresh_uses_catalog_name_without_refreshing_catalog(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

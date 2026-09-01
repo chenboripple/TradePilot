@@ -59,6 +59,7 @@ WATCHLIST_COLUMNS = {
     "user_id": "user_id INTEGER",
     "symbol": "symbol TEXT DEFAULT ''",
     "name": "name TEXT DEFAULT ''",
+    "is_watched": "is_watched INTEGER NOT NULL DEFAULT 1",
     "created_at": "created_at TIMESTAMP",
     "last_updated_at": "last_updated_at TIMESTAMP",
 }
@@ -226,6 +227,7 @@ def init_database(path: Path | None = None) -> Path:
                 user_id INTEGER NOT NULL,
                 symbol TEXT NOT NULL,
                 name TEXT NOT NULL,
+                is_watched INTEGER NOT NULL DEFAULT 1 CHECK(is_watched IN (0, 1)),
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_updated_at TIMESTAMP,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -237,6 +239,9 @@ def init_database(path: Path | None = None) -> Path:
         connection.execute(
             "UPDATE user_watchlist SET created_at = CURRENT_TIMESTAMP "
             "WHERE created_at IS NULL"
+        )
+        connection.execute(
+            "UPDATE user_watchlist SET is_watched = 1 WHERE is_watched IS NULL"
         )
         connection.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_user_watchlist_owner_symbol "
@@ -276,7 +281,7 @@ def init_database(path: Path | None = None) -> Path:
         integrity = connection.execute("PRAGMA integrity_check").fetchone()
         if not integrity or integrity[0] != "ok":
             raise RuntimeError(f"SQLite integrity check failed for {target}: {integrity}")
-        connection.execute("PRAGMA user_version=5")
+        connection.execute("PRAGMA user_version=6")
 
     return target
 

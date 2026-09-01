@@ -289,6 +289,7 @@ def _watchlist_dict(row: sqlite3.Row) -> Dict[str, Any]:
         "id": row["id"],
         "symbol": row["symbol"],
         "name": row["name"],
+        "is_watched": bool(row["is_watched"]),
         "created_at": row["created_at"],
         "last_updated_at": row["last_updated_at"],
         "user_added": True,
@@ -303,7 +304,25 @@ def list_user_watchlist(
         connection.row_factory = sqlite3.Row
         rows = connection.execute(
             """
-            SELECT id, symbol, name, created_at, last_updated_at
+            SELECT id, symbol, name, is_watched, created_at, last_updated_at
+            FROM user_watchlist
+            WHERE user_id = ? AND is_watched = 1
+            ORDER BY created_at, id
+            """,
+            (user_id,),
+        ).fetchall()
+    return [_watchlist_dict(row) for row in rows]
+
+
+def list_user_stocks(
+    user_id: int, path: Path | None = None
+) -> List[Dict[str, Any]]:
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            """
+            SELECT id, symbol, name, is_watched, created_at, last_updated_at
             FROM user_watchlist
             WHERE user_id = ?
             ORDER BY created_at, id
@@ -325,14 +344,15 @@ def add_watchlist_item(
             connection.row_factory = sqlite3.Row
             cursor = connection.execute(
                 """
-                INSERT INTO user_watchlist (user_id, symbol, name, last_updated_at)
-                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                INSERT INTO user_watchlist (
+                    user_id, symbol, name, is_watched, last_updated_at
+                ) VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
                 """,
                 (user_id, symbol, name),
             )
             row = connection.execute(
                 """
-                SELECT id, symbol, name, created_at, last_updated_at
+                SELECT id, symbol, name, is_watched, created_at, last_updated_at
                 FROM user_watchlist WHERE id = ?
                 """,
                 (cursor.lastrowid,),
@@ -342,29 +362,78 @@ def add_watchlist_item(
     return _watchlist_dict(row)
 
 
+def upsert_watchlist_item(
+    user_id: int,
+    symbol: str,
+    name: str,
+    is_watched: bool,
+    *,
+    mark_updated: bool = False,
+    path: Path | None = None,
+) -> Dict[str, Any]:
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute(
+            """
+            INSERT INTO user_watchlist (
+                user_id, symbol, name, is_watched, last_updated_at
+            ) VALUES (?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP END)
+            ON CONFLICT(user_id, symbol) DO UPDATE SET
+                name = excluded.name,
+                is_watched = excluded.is_watched,
+                last_updated_at = CASE
+                    WHEN ? THEN CURRENT_TIMESTAMP
+                    ELSE user_watchlist.last_updated_at
+                END
+            """,
+            (
+                user_id,
+                symbol,
+                name,
+                int(is_watched),
+                int(mark_updated),
+                int(mark_updated),
+            ),
+        )
+        row = connection.execute(
+            """
+            SELECT id, symbol, name, is_watched, created_at, last_updated_at
+            FROM user_watchlist
+            WHERE user_id = ? AND symbol = ?
+            """,
+            (user_id, symbol),
+        ).fetchone()
+    return _watchlist_dict(row)
+
+
 def watchlist_contains(
     user_id: int, symbol: str, path: Path | None = None
 ) -> bool:
     target = _target(path)
     with sqlite3.connect(target, timeout=30) as connection:
         row = connection.execute(
-            "SELECT 1 FROM user_watchlist WHERE user_id = ? AND symbol = ?",
+            """
+            SELECT 1 FROM user_watchlist
+            WHERE user_id = ? AND symbol = ? AND is_watched = 1
+            """,
             (user_id, symbol),
         ).fetchone()
     return row is not None
 
 
 def mark_watchlist_updated(
-    user_id: int, symbol: str, path: Path | None = None
+    user_id: int, symbol: str, name: str, path: Path | None = None
 ) -> None:
     target = _target(path)
     with sqlite3.connect(target, timeout=30) as connection:
         connection.execute(
             """
-            UPDATE user_watchlist SET last_updated_at = CURRENT_TIMESTAMP
+            UPDATE user_watchlist
+            SET name = ?, last_updated_at = CURRENT_TIMESTAMP
             WHERE user_id = ? AND symbol = ?
             """,
-            (user_id, symbol),
+            (name, user_id, symbol),
         )
 
 
@@ -374,7 +443,10 @@ def delete_watchlist_item(
     target = _target(path)
     with sqlite3.connect(target, timeout=30) as connection:
         cursor = connection.execute(
-            "DELETE FROM user_watchlist WHERE user_id = ? AND symbol = ?",
+            """
+            UPDATE user_watchlist SET is_watched = 0
+            WHERE user_id = ? AND symbol = ? AND is_watched = 1
+            """,
             (user_id, symbol),
         )
         if cursor.rowcount == 0:

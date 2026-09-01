@@ -22,11 +22,15 @@ class DashboardService:
         config_path: Optional[Path] = None,
         backtest_db: Optional[Path] = None,
         extra_symbols: Optional[Sequence[Dict[str, Any]]] = None,
+        excluded_symbols: Optional[Sequence[str]] = None,
     ):
         self.data_dir = data_dir or Path(os.getenv("TRADEPILOT_DATA_DIR", Path.cwd() / "data"))
         self.config_path = config_path or Path(os.getenv("TRADEPILOT_CONFIG", Path.cwd() / "config.yaml"))
         self.backtest_db = backtest_db or self._resolve_backtest_db()
         self.extra_symbols = list(extra_symbols or [])
+        self.excluded_symbols = {
+            str(symbol).upper() for symbol in (excluded_symbols or [])
+        }
 
     def _resolve_backtest_db(self) -> Path:
         configured = os.getenv("TRADEPILOT_BACKTEST_DB")
@@ -50,12 +54,24 @@ class DashboardService:
         for future in config.get("futures", []):
             assets.append({**future, "asset_class": "future"})
         assets.extend(self.extra_symbols)
-        unique = {}
+        unique: Dict[str, Dict[str, Any]] = {}
         for asset in assets:
             code = str(asset.get("code", "")).upper()
-            if code and code not in unique:
-                unique[code] = {**asset, "code": code}
+            if code and code not in self.excluded_symbols:
+                unique[code] = {**unique.get(code, {}), **asset, "code": code}
         return list(unique.values())
+
+    def configured_assets(self) -> List[Dict[str, Any]]:
+        config = self._config()
+        return [
+            {
+                **symbol,
+                "code": str(symbol.get("code", "")).upper(),
+                "asset_class": symbol.get("asset_class", "stock"),
+            }
+            for symbol in config.get("symbols", [])
+            if symbol.get("code")
+        ]
 
     def configured_symbols(self) -> List[str]:
         config = self._config()

@@ -22,20 +22,18 @@ from ripple_tradePilot.storage.user_store import (
     UsernameTakenError,
     WatchlistExistsError,
     WatchlistNotFoundError,
-    add_watchlist_item,
     authenticate_user,
     create_session,
     create_strategy,
     create_user,
     delete_session,
-    delete_watchlist_item,
     list_user_backtests,
+    list_user_stocks,
     list_visible_strategies,
     list_user_watchlist,
-    mark_watchlist_updated,
+    upsert_watchlist_item,
     update_strategy_visibility,
     user_for_session,
-    watchlist_contains,
 )
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -115,17 +113,94 @@ def required_user(user: Optional[Dict] = Depends(optional_user)) -> Dict:
 def _dashboard_for_user(user: Optional[Dict]) -> DashboardService:
     if user is None:
         return DashboardService()
-    symbols = [
-        {
+    records = list_user_stocks(user["id"])
+    configured = set(DashboardService().configured_symbols())
+    symbols = []
+    for item in records:
+        if not item["is_watched"]:
+            continue
+        is_user_added = item["symbol"] not in configured
+        symbol = {
             "code": item["symbol"],
             "name": item["name"],
             "asset_class": "stock",
-            "strategy_profile": "默认组合策略",
-            "user_added": True,
+            "user_added": is_user_added,
         }
-        for item in list_user_watchlist(user["id"])
-    ]
-    return DashboardService(extra_symbols=symbols)
+        if is_user_added:
+            symbol["strategy_profile"] = "默认组合策略"
+        symbols.append(symbol)
+    excluded = [item["symbol"] for item in records if not item["is_watched"]]
+    return DashboardService(extra_symbols=symbols, excluded_symbols=excluded)
+
+
+def _configured_stock_map() -> Dict[str, Dict]:
+    return {
+        item["code"]: item
+        for item in DashboardService().configured_assets()
+        if item.get("asset_class") == "stock"
+    }
+
+
+def _stock_records(user: Optional[Dict]) -> Dict[str, Dict]:
+    if user is None:
+        return {}
+    return {item["symbol"]: item for item in list_user_stocks(user["id"])}
+
+
+def _stock_catalog(user: Optional[Dict]) -> Dict:
+    configured = _configured_stock_map()
+    records = _stock_records(user)
+    symbols: Dict[str, Dict] = {
+        code: {
+            "code": code,
+            "name": item.get("name", code),
+            "asset_class": "stock",
+        }
+        for code, item in configured.items()
+    }
+    for code, item in records.items():
+        symbols[code] = {
+            **symbols.get(code, {}),
+            "code": code,
+            "name": item["name"],
+            "asset_class": "stock",
+            "strategy_profile": "默认组合策略",
+            "user_added": code not in configured,
+        }
+
+    service = DashboardService(extra_symbols=list(symbols.values()))
+    items = []
+    for code, symbol in symbols.items():
+        record = records.get(code)
+        watched = record["is_watched"] if record is not None else code in configured
+        item = {
+            "symbol": code,
+            "name": symbol.get("name", code),
+            "is_watched": watched,
+            "is_default": code in configured,
+            "last_updated_at": record.get("last_updated_at") if record else None,
+            "price": None,
+            "change": None,
+            "change_pct": None,
+            "latest_date": None,
+            "freshness": "unavailable",
+        }
+        try:
+            detail = service.market_detail(code, limit=40)
+            item.update(
+                {
+                    "name": detail["name"],
+                    "price": detail["price"],
+                    "change": detail["change"],
+                    "change_pct": detail["change_pct"],
+                    "latest_date": detail["latest_date"],
+                    "freshness": detail["freshness"],
+                }
+            )
+        except DashboardDataError:
+            pass
+        items.append(item)
+    return {"items": items}
 
 
 def _stock_error(error: RuntimeError) -> HTTPException:
@@ -243,19 +318,34 @@ def watchlist(user: Dict = Depends(required_user)):
     return {"items": list_user_watchlist(user["id"])}
 
 
+@app.get("/api/stocks")
+def stocks(user: Optional[Dict] = Depends(optional_user)):
+    return _stock_catalog(user)
+
+
 @app.post("/api/watchlist", status_code=status.HTTP_201_CREATED)
 def add_to_watchlist(payload: WatchlistCreate, user: Dict = Depends(required_user)):
     service = StockDataService()
     try:
         symbol = service.normalize_symbol(payload.symbol)
-        if symbol in DashboardService().configured_symbols():
-            raise WatchlistExistsError("该股票已在默认观察池中")
-        if watchlist_contains(user["id"], symbol):
+        configured = _configured_stock_map()
+        records = _stock_records(user)
+        record = records.get(symbol)
+        if (record and record["is_watched"]) or (record is None and symbol in configured):
             raise WatchlistExistsError("该股票已在观察池中")
-        refreshed = service.refresh(symbol, initial_days=365)
-        item = add_watchlist_item(
-            user["id"], refreshed["symbol"], refreshed["name"]
-        )
+        if record is not None or symbol in configured:
+            name = record["name"] if record else configured[symbol].get("name", symbol)
+            item = upsert_watchlist_item(user["id"], symbol, name, True)
+            refreshed = None
+        else:
+            refreshed = service.refresh(symbol, initial_days=365)
+            item = upsert_watchlist_item(
+                user["id"],
+                refreshed["symbol"],
+                refreshed["name"],
+                True,
+                mark_updated=True,
+            )
     except WatchlistExistsError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except (InvalidStockSymbolError, StockDataUnavailableError) as error:
@@ -268,13 +358,26 @@ def refresh_watchlist_stock(symbol: str, user: Dict = Depends(required_user)):
     service = StockDataService()
     try:
         normalized = service.normalize_symbol(symbol)
-        is_personal = watchlist_contains(user["id"], normalized)
-        is_default = normalized in DashboardService().configured_symbols()
-        if not is_personal and not is_default:
+        records = _stock_records(user)
+        record = records.get(normalized)
+        is_watched = (
+            record["is_watched"]
+            if record is not None
+            else normalized in _configured_stock_map()
+        )
+        if not is_watched:
             raise WatchlistNotFoundError("只能更新当前观察池中的股票")
         refreshed = service.refresh(normalized, initial_days=365)
-        if is_personal:
-            mark_watchlist_updated(user["id"], normalized)
+        refreshed_name = refreshed["name"]
+        if refreshed_name == normalized and record is not None:
+            refreshed_name = record["name"]
+        upsert_watchlist_item(
+            user["id"],
+            normalized,
+            refreshed_name,
+            True,
+            mark_updated=True,
+        )
     except WatchlistNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except (InvalidStockSymbolError, StockDataUnavailableError) as error:
@@ -286,7 +389,20 @@ def refresh_watchlist_stock(symbol: str, user: Dict = Depends(required_user)):
 def remove_from_watchlist(symbol: str, user: Dict = Depends(required_user)):
     try:
         normalized = StockDataService.normalize_symbol(symbol)
-        delete_watchlist_item(user["id"], normalized)
+        configured = _configured_stock_map()
+        records = _stock_records(user)
+        record = records.get(normalized)
+        is_watched = (
+            record["is_watched"] if record is not None else normalized in configured
+        )
+        if not is_watched:
+            raise WatchlistNotFoundError("观察池中不存在该股票")
+        name = (
+            record["name"]
+            if record is not None
+            else configured[normalized].get("name", normalized)
+        )
+        upsert_watchlist_item(user["id"], normalized, name, False)
     except InvalidStockSymbolError as error:
         raise _stock_error(error) from error
     except WatchlistNotFoundError as error:

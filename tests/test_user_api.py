@@ -17,6 +17,7 @@ api_module = importlib.import_module("ripple_tradePilot.api.app")
 
 
 class ApiStockDataService:
+    stock_name = "测试银行"
     normalize_symbol = staticmethod(StockDataService.normalize_symbol)
 
     def refresh(self, value, initial_days=365):
@@ -38,7 +39,7 @@ class ApiStockDataService:
         upsert_daily_bars(symbol, rows, "test", database_path())
         return {
             "symbol": symbol,
-            "name": "测试银行",
+            "name": self.stock_name,
             "source": "test",
             "fetched_rows": len(rows),
             "total_rows": len(rows),
@@ -179,6 +180,90 @@ class UserApiTest(unittest.TestCase):
         with patch.object(api_module, "StockDataService", ApiStockDataService):
             forbidden = self.client.post("/api/watchlist/600000.SH/refresh")
         self.assertEqual(forbidden.status_code, 404)
+
+    def test_refresh_updates_name_and_archived_stock_can_be_restored_without_refresh(self):
+        self.register("alice")
+        with patch.object(api_module, "StockDataService", ApiStockDataService):
+            added = self.client.post("/api/watchlist", json={"symbol": "600000"})
+        self.assertEqual(added.status_code, 201, added.text)
+
+        ApiStockDataService.stock_name = "更新后的银行"
+        try:
+            with patch.object(api_module, "StockDataService", ApiStockDataService):
+                refreshed = self.client.post("/api/watchlist/600000.SH/refresh")
+        finally:
+            ApiStockDataService.stock_name = "测试银行"
+        self.assertEqual(refreshed.status_code, 200, refreshed.text)
+        self.assertEqual(
+            self.client.get("/api/watchlist").json()["items"][0]["name"],
+            "更新后的银行",
+        )
+        self.assertEqual(
+            self.client.get("/api/dashboard").json()["markets"][0]["name"],
+            "更新后的银行",
+        )
+
+        removed = self.client.delete("/api/watchlist/600000.SH")
+        self.assertEqual(removed.status_code, 204, removed.text)
+        self.assertEqual(self.client.get("/api/dashboard").json()["markets"], [])
+        archived = self.client.get("/api/stocks").json()["items"][0]
+        self.assertEqual(archived["name"], "更新后的银行")
+        self.assertFalse(archived["is_watched"])
+
+        with patch.object(api_module, "StockDataService", ApiStockDataService):
+            forbidden = self.client.post("/api/watchlist/600000.SH/refresh")
+        self.assertEqual(forbidden.status_code, 404, forbidden.text)
+
+        class CachedOnlyStockDataService(ApiStockDataService):
+            def refresh(self, value, initial_days=365):
+                raise AssertionError("restoring an archived stock must not refresh data")
+
+        with patch.object(api_module, "StockDataService", CachedOnlyStockDataService):
+            restored = self.client.post(
+                "/api/watchlist", json={"symbol": "600000.SH"}
+            )
+        self.assertEqual(restored.status_code, 201, restored.text)
+        self.assertIsNone(restored.json()["data"])
+        self.assertEqual(
+            self.client.get("/api/dashboard").json()["markets"][0]["name"],
+            "更新后的银行",
+        )
+
+    def test_configured_stock_can_be_archived_and_restored(self):
+        self.config.write_text(
+            "symbols:\n"
+            "  - code: 600001.SH\n"
+            "    name: 默认银行\n"
+            "    asset_class: stock\n"
+            "futures: []\n",
+            encoding="utf-8",
+        )
+        ApiStockDataService().refresh("600001")
+        self.register("alice")
+
+        before = self.client.get("/api/dashboard").json()["markets"]
+        self.assertEqual([item["symbol"] for item in before], ["600001.SH"])
+        removed = self.client.delete("/api/watchlist/600001.SH")
+        self.assertEqual(removed.status_code, 204, removed.text)
+        self.assertEqual(self.client.get("/api/dashboard").json()["markets"], [])
+        catalog = self.client.get("/api/stocks").json()["items"]
+        self.assertEqual(len(catalog), 1)
+        self.assertTrue(catalog[0]["is_default"])
+        self.assertFalse(catalog[0]["is_watched"])
+
+        class CachedOnlyStockDataService(ApiStockDataService):
+            def refresh(self, value, initial_days=365):
+                raise AssertionError("restoring a configured stock must not refresh data")
+
+        with patch.object(api_module, "StockDataService", CachedOnlyStockDataService):
+            restored = self.client.post(
+                "/api/watchlist", json={"symbol": "600001.SH"}
+            )
+        self.assertEqual(restored.status_code, 201, restored.text)
+        self.assertEqual(
+            [item["symbol"] for item in self.client.get("/api/dashboard").json()["markets"]],
+            ["600001.SH"],
+        )
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ const state = {
   user: null,
   strategies: [],
   backtests: [],
+  allStocks: null,
   assetClass: "stock",
   selectedSymbol: null,
   currentMarket: null,
@@ -42,6 +43,8 @@ const elements = {
   stockForm: document.querySelector("#stock-form"),
   stockError: document.querySelector("#stock-error"),
   addStockButton: document.querySelector("#add-stock-button"),
+  stockTable: document.querySelector("#stock-table"),
+  stockEmpty: document.querySelector("#stock-empty"),
 };
 
 const recommendationLabels = { BUY: "偏多", SELL: "偏空", HOLD: "观望" };
@@ -122,6 +125,12 @@ async function loadProtectedData() {
   }
 }
 
+async function fetchStockCatalog() {
+  const payload = await apiRequest("/api/stocks");
+  state.allStocks = payload.items;
+  renderStockCatalog();
+}
+
 function renderAuthState() {
   const authenticated = Boolean(state.user);
   elements.accountButton.hidden = authenticated;
@@ -188,6 +197,7 @@ function renderAll() {
   renderMarket();
   renderStrategies();
   renderBacktests();
+  if (state.allStocks !== null) renderStockCatalog();
   renderSystem();
 }
 
@@ -212,7 +222,7 @@ function renderWatchlist() {
     const canManage = Boolean(state.user && item.asset_class === "stock");
     const actions = canManage ? `<span class="watch-actions">
       <button class="watch-action" data-refresh-symbol="${escapeHtml(item.symbol)}" title="更新日线" aria-label="更新 ${escapeHtml(item.name)} 日线">↻</button>
-      ${item.user_added ? `<button class="watch-action" data-remove-symbol="${escapeHtml(item.symbol)}" title="移出观察池" aria-label="移除 ${escapeHtml(item.name)}">×</button>` : ""}
+      <button class="watch-action" data-remove-symbol="${escapeHtml(item.symbol)}" title="移出观察池" aria-label="移除 ${escapeHtml(item.name)}">×</button>
     </span>` : "";
     return `<div class="watch-row ${canManage ? "has-actions" : ""}">
       <button class="watch-item ${item.symbol === state.selectedSymbol ? "is-active" : ""}" data-symbol="${escapeHtml(item.symbol)}">
@@ -267,6 +277,7 @@ async function refreshStock(button) {
     await apiRequest(`/api/watchlist/${encodeURIComponent(button.dataset.refreshSymbol)}/refresh`, { method: "POST" });
     state.selectedSymbol = button.dataset.refreshSymbol;
     await fetchDashboard();
+    if (state.allStocks !== null) await fetchStockCatalog();
   } catch (error) {
     window.alert(error.message);
   } finally {
@@ -281,8 +292,61 @@ async function removeStock(symbol) {
     await apiRequest(`/api/watchlist/${encodeURIComponent(symbol)}`, { method: "DELETE" });
     if (state.selectedSymbol === symbol) state.selectedSymbol = null;
     await fetchDashboard();
+    if (state.allStocks !== null) await fetchStockCatalog();
   } catch (error) {
     window.alert(error.message);
+  }
+}
+
+function renderStockCatalog() {
+  const stocks = state.allStocks ?? [];
+  elements.stockEmpty.hidden = stocks.length > 0;
+  elements.stockTable.innerHTML = stocks.map((item) => {
+    const hasChange = item.change_pct !== null && item.change_pct !== undefined;
+    const changeClass = hasChange ? (Number(item.change_pct) >= 0 ? "rec-buy" : "rec-sell") : "";
+    const changeText = hasChange
+      ? `${Number(item.change_pct) >= 0 ? "+" : ""}${formatNumber(item.change_pct)}%`
+      : "--";
+    const freshness = item.freshness === "fresh" ? "正常" : item.freshness === "stale" ? "滞后" : "暂无行情";
+    let action = '<span class="owner-label">登录后管理</span>';
+    if (state.user) {
+      action = item.is_watched
+        ? `<button class="table-action stock-action is-remove" data-catalog-remove="${escapeHtml(item.symbol)}">移出观察池</button>`
+        : `<button class="primary-button stock-action" data-catalog-add="${escapeHtml(item.symbol)}">加入观察池</button>`;
+    }
+    return `<tr>
+      <td class="symbol-cell"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.symbol)}${item.is_default ? " · 默认" : ""}</span></td>
+      <td>${formatNumber(item.price)}</td>
+      <td class="${changeClass}">${changeText}</td>
+      <td>${escapeHtml(item.latest_date || "--")}</td>
+      <td><span class="visibility-badge">${freshness}</span></td>
+      <td><span class="visibility-badge ${item.is_watched ? "is-watched" : ""}">${item.is_watched ? "观察中" : "已归档"}</span></td>
+      <td>${action}</td>
+    </tr>`;
+  }).join("");
+  elements.stockTable.querySelectorAll("[data-catalog-add]").forEach((button) => {
+    button.addEventListener("click", () => addCatalogStock(button));
+  });
+  elements.stockTable.querySelectorAll("[data-catalog-remove]").forEach((button) => {
+    button.addEventListener("click", () => removeStock(button.dataset.catalogRemove));
+  });
+}
+
+async function addCatalogStock(button) {
+  button.disabled = true;
+  try {
+    const result = await apiRequest("/api/watchlist", {
+      method: "POST",
+      body: JSON.stringify({ symbol: button.dataset.catalogAdd }),
+    });
+    state.assetClass = "stock";
+    state.selectedSymbol = result.item.symbol;
+    await fetchDashboard();
+    await fetchStockCatalog();
+  } catch (error) {
+    window.alert(error.message);
+  } finally {
+    button.disabled = false;
   }
 }
 
@@ -610,6 +674,7 @@ async function switchView(view) {
   document.querySelectorAll(".nav-button").forEach((button) => button.classList.toggle("is-active", button.dataset.view === view));
   document.querySelectorAll(".view").forEach((section) => section.classList.toggle("is-active", section.id === `view-${view}`));
   if (view === "overview") requestAnimationFrame(drawChart);
+  if (view === "stocks") await fetchStockCatalog();
   if (state.user && ["strategies", "backtests"].includes(view)) await loadProtectedData();
 }
 
@@ -640,13 +705,17 @@ document.querySelectorAll("[data-indicator]").forEach((input) => {
   });
 });
 
-elements.refresh.addEventListener("click", fetchDashboard);
+elements.refresh.addEventListener("click", async () => {
+  await fetchDashboard();
+  if (state.view === "stocks") await fetchStockCatalog();
+});
 elements.accountButton.addEventListener("click", () => openAuth("login"));
 document.querySelector("#logout-button").addEventListener("click", async () => {
   await apiRequest("/api/auth/logout", { method: "POST" });
   state.user = null;
   state.strategies = [];
   state.backtests = [];
+  state.allStocks = null;
   await fetchDashboard();
 });
 elements.addStockButton.addEventListener("click", () => {
@@ -675,6 +744,7 @@ elements.authForm.addEventListener("submit", async (event) => {
     elements.authForm.reset();
     renderAuthState();
     await fetchDashboard();
+    if (state.allStocks !== null) await fetchStockCatalog();
     await loadProtectedData();
     if (state.pendingView) await switchView(state.pendingView);
     state.pendingView = null;
@@ -698,6 +768,7 @@ elements.stockForm.addEventListener("submit", async (event) => {
     elements.stockDialog.close();
     elements.stockForm.reset();
     await fetchDashboard();
+    if (state.allStocks !== null) await fetchStockCatalog();
   } catch (error) {
     elements.stockError.textContent = error.message;
     elements.stockError.hidden = false;

@@ -304,7 +304,11 @@ tbody tr:hover { background: #fafcfd; }
 .table-empty { padding: 44px 20px; color: var(--muted); text-align: center; }
 .visibility-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 0 7px; border-radius: 3px; background: var(--surface-soft); color: var(--muted); font-size: 10px; }
 .visibility-badge.is-public { background: var(--sell-soft); color: var(--sell); }
+.visibility-badge.is-watched { background: var(--info-soft); color: var(--info); }
 .owner-label { color: var(--muted); font-size: 11px; }
+.stock-catalog-table { min-width: 760px; }
+.stock-action { min-width: 72px; }
+.stock-action.is-remove { color: var(--buy); }
 
 .app-dialog { width: min(430px, calc(100vw - 28px)); padding: 22px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--text); box-shadow: 0 18px 55px rgba(18, 29, 38, .22); }
 .app-dialog::backdrop { background: rgba(20, 29, 36, .48); }
@@ -355,7 +359,7 @@ tbody tr:hover { background: #fafcfd; }
   .account-menu strong { display: none; }
   .app-shell { display: block; }
   .sidebar { position: static; height: auto; }
-  .primary-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px; overflow-x: auto; }
+  .primary-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 8px; overflow-x: auto; }
   .nav-button { justify-content: center; min-width: 98px; padding: 0 8px; gap: 6px; }
   .watchlist-section { display: block; }
   .section-label { padding: 10px 12px 7px; }
@@ -383,7 +387,7 @@ tbody tr:hover { background: #fafcfd; }
 
 @media (max-width: 480px) {
   .brand small { display: none; }
-  .primary-nav { grid-template-columns: repeat(4, 104px); }
+  .primary-nav { grid-template-columns: repeat(5, 104px); }
   .metrics-band { grid-template-columns: 1fr 1fr; }
   .metric { padding: 13px; }
   .instrument-header { gap: 10px; }

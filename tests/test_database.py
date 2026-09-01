@@ -41,7 +41,7 @@ class DatabaseInitializationTest(unittest.TestCase):
             self.assertTrue(
                 {"users", "user_sessions", "strategies", "user_watchlist", "daily_bars"}.issubset(tables)
             )
-            self.assertEqual(version, 5)
+            self.assertEqual(version, 6)
 
     def test_adds_columns_missing_from_legacy_database(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -105,7 +105,11 @@ class DatabaseInitializationTest(unittest.TestCase):
             self.assertTrue({"user_id", "token_hash", "expires_at"}.issubset(session_columns))
             self.assertTrue({"user_id", "visibility", "parameters_json"}.issubset(strategy_columns))
             self.assertEqual(migrated_role, "admin")
-            self.assertTrue({"user_id", "symbol", "last_updated_at"}.issubset(watchlist_columns))
+            self.assertTrue(
+                {"user_id", "symbol", "is_watched", "last_updated_at"}.issubset(
+                    watchlist_columns
+                )
+            )
             self.assertTrue({"symbol", "trade_date", "close", "source"}.issubset(daily_bar_columns))
 
     def test_daily_bars_are_upserted_by_symbol_and_date(self):

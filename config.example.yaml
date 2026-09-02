@@ -10,6 +10,8 @@ symbols:
 
 futures: []
 
+strategy_owner: "chenboripple@gmail.com"
+
 strategy_profiles:
   科华生物策略:
     kind: combo_vote

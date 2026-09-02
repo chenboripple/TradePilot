@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable, List, Mapping
 
 
-DATABASE_SCHEMA_VERSION = 8
+DATABASE_SCHEMA_VERSION = 9
 
 
 BACKTEST_COLUMNS = {
@@ -65,6 +65,7 @@ WATCHLIST_COLUMNS = {
     "is_watched": "is_watched INTEGER NOT NULL DEFAULT 1",
     "created_at": "created_at TIMESTAMP",
     "last_updated_at": "last_updated_at TIMESTAMP",
+    "default_strategy_id": "default_strategy_id INTEGER",
 }
 
 DAILY_BAR_COLUMNS = {
@@ -267,7 +268,9 @@ def init_database(path: Path | None = None) -> Path:
                 is_watched INTEGER NOT NULL DEFAULT 1 CHECK(is_watched IN (0, 1)),
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_updated_at TIMESTAMP,
+                default_strategy_id INTEGER,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY(default_strategy_id) REFERENCES strategies(id) ON DELETE SET NULL,
                 UNIQUE(user_id, symbol)
             )
             """

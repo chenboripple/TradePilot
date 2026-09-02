@@ -292,6 +292,7 @@ def _watchlist_dict(row: sqlite3.Row) -> Dict[str, Any]:
         "is_watched": bool(row["is_watched"]),
         "created_at": row["created_at"],
         "last_updated_at": row["last_updated_at"],
+        "default_strategy_id": row["default_strategy_id"],
         "user_added": True,
     }
 
@@ -304,7 +305,8 @@ def list_user_watchlist(
         connection.row_factory = sqlite3.Row
         rows = connection.execute(
             """
-            SELECT id, symbol, name, is_watched, created_at, last_updated_at
+            SELECT id, symbol, name, is_watched, created_at, last_updated_at,
+                   default_strategy_id
             FROM user_watchlist
             WHERE user_id = ? AND is_watched = 1
             ORDER BY created_at, id
@@ -322,7 +324,8 @@ def list_user_stocks(
         connection.row_factory = sqlite3.Row
         rows = connection.execute(
             """
-            SELECT id, symbol, name, is_watched, created_at, last_updated_at
+            SELECT id, symbol, name, is_watched, created_at, last_updated_at,
+                   default_strategy_id
             FROM user_watchlist
             WHERE user_id = ?
             ORDER BY created_at, id
@@ -352,7 +355,8 @@ def add_watchlist_item(
             )
             row = connection.execute(
                 """
-                SELECT id, symbol, name, is_watched, created_at, last_updated_at
+                SELECT id, symbol, name, is_watched, created_at, last_updated_at,
+                       default_strategy_id
                 FROM user_watchlist WHERE id = ?
                 """,
                 (cursor.lastrowid,),
@@ -398,7 +402,39 @@ def upsert_watchlist_item(
         )
         row = connection.execute(
             """
-            SELECT id, symbol, name, is_watched, created_at, last_updated_at
+            SELECT id, symbol, name, is_watched, created_at, last_updated_at,
+                   default_strategy_id
+            FROM user_watchlist
+            WHERE user_id = ? AND symbol = ?
+            """,
+            (user_id, symbol),
+        ).fetchone()
+    return _watchlist_dict(row)
+
+
+def set_watchlist_default_strategy(
+    user_id: int,
+    symbol: str,
+    strategy_id: Optional[int],
+    path: Path | None = None,
+) -> Dict[str, Any]:
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        cursor = connection.execute(
+            """
+            UPDATE user_watchlist
+            SET default_strategy_id = ?
+            WHERE user_id = ? AND symbol = ? AND is_watched = 1
+            """,
+            (strategy_id, user_id, symbol),
+        )
+        if cursor.rowcount == 0:
+            raise WatchlistNotFoundError("观察池中不存在该股票")
+        row = connection.execute(
+            """
+            SELECT id, symbol, name, is_watched, created_at, last_updated_at,
+                   default_strategy_id
             FROM user_watchlist
             WHERE user_id = ? AND symbol = ?
             """,

@@ -268,6 +268,7 @@ button:disabled { cursor: default; opacity: .55; }
 .detail-strategy-control label { color: var(--muted); font-size: 10px; }
 .detail-strategy-control select { min-width: 180px; max-width: 320px; height: 34px; padding: 0 30px 0 10px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--text); font-size: 11px; outline: none; }
 .detail-strategy-control select:focus { border-color: var(--info); box-shadow: 0 0 0 2px var(--info-soft); }
+.detail-default-strategy { min-width: 72px; height: 34px; white-space: nowrap; }
 .decision-reason { min-height: 20px; margin: 13px 0 15px; color: #3b4853; line-height: 1.55; }
 .vote-grid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .vote-item { padding: 11px 12px; border-right: 1px solid var(--line); background: var(--surface-soft); }

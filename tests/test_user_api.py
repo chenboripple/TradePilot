@@ -200,6 +200,79 @@ class UserApiTest(unittest.TestCase):
         )
         self.assertEqual(guest.status_code, 401, guest.text)
 
+    def test_watchlist_default_strategy_drives_dashboard_and_can_be_reset(self):
+        self.register("alice")
+        with patch.object(api_module, "StockDataService", ApiStockDataService):
+            added = self.client.post("/api/watchlist", json={"symbol": "600000"})
+        self.assertEqual(added.status_code, 201, added.text)
+        upsert_stock_catalog(
+            [
+                {"symbol": "600000.SH", "name": "测试银行"},
+                {"symbol": "600309.SH", "name": "万华化学"},
+            ],
+            "test",
+            self.database,
+        )
+        selected = self.client.post(
+            "/api/strategies",
+            json={
+                "name": "观察池默认趋势",
+                "asset_class": "stock",
+                "symbol": "600000.SH",
+                "profile": "组合投票",
+                "parameters": {
+                    "ma_fast": 2,
+                    "ma_slow": 8,
+                    "rsi_period": 6,
+                    "rsi_oversold": 20,
+                    "rsi_overbought": 101,
+                    "bb_period": 10,
+                    "bb_std": 2,
+                    "vote_threshold": 1,
+                },
+                "visibility": "private",
+            },
+        ).json()["item"]
+        other = self.create_strategy("其他股票策略", "private")
+
+        mismatch = self.client.patch(
+            "/api/watchlist/600000.SH/default-strategy",
+            json={"strategy_id": other["id"]},
+        )
+        self.assertEqual(mismatch.status_code, 404, mismatch.text)
+
+        changed = self.client.patch(
+            "/api/watchlist/600000.SH/default-strategy",
+            json={"strategy_id": selected["id"]},
+        )
+        self.assertEqual(changed.status_code, 200, changed.text)
+        self.assertEqual(
+            changed.json()["item"]["default_strategy_id"], selected["id"]
+        )
+        watchlist = self.client.get("/api/watchlist").json()["items"]
+        self.assertEqual(watchlist[0]["default_strategy_id"], selected["id"])
+        market = self.client.get("/api/dashboard").json()["markets"][0]
+        self.assertEqual(market["default_strategy_id"], selected["id"])
+        self.assertEqual(market["strategy_profile"], "观察池默认趋势")
+        self.assertEqual(market["parameters"]["ma_fast"], 2)
+        self.assertEqual(market["recommendation"], "BUY")
+        system_preview = self.client.get(
+            "/api/markets/600000.SH?system_strategy=true"
+        ).json()
+        self.assertEqual(system_preview["default_strategy_id"], selected["id"])
+        self.assertEqual(system_preview["strategy_profile"], "默认组合策略")
+        self.assertEqual(system_preview["parameters"]["ma_fast"], 5)
+
+        reset = self.client.patch(
+            "/api/watchlist/600000.SH/default-strategy",
+            json={"strategy_id": None},
+        )
+        self.assertEqual(reset.status_code, 200, reset.text)
+        self.assertIsNone(reset.json()["item"]["default_strategy_id"])
+        reset_market = self.client.get("/api/dashboard").json()["markets"][0]
+        self.assertIsNone(reset_market["default_strategy_id"])
+        self.assertEqual(reset_market["strategy_profile"], "默认组合策略")
+
     def test_guests_only_receive_public_dashboard_sections(self):
         dashboard = self.client.get("/api/dashboard")
 

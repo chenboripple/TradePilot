@@ -95,6 +95,10 @@ class DatabaseInitializationTest(unittest.TestCase):
                     "SELECT 1 FROM sqlite_master "
                     "WHERE type = 'table' AND name = 'stock_quotes'"
                 ).fetchone()
+                watchlist_columns = {
+                    row[1]
+                    for row in connection.execute("PRAGMA table_info(user_watchlist)")
+                }
                 version = connection.execute("PRAGMA user_version").fetchone()[0]
 
             self.assertTrue(
@@ -106,6 +110,7 @@ class DatabaseInitializationTest(unittest.TestCase):
                 {"pre_close", "change", "pct_chg"}.issubset(daily_columns)
             )
             self.assertIsNotNone(quote_table)
+            self.assertIn("default_strategy_id", watchlist_columns)
             self.assertEqual(version, DATABASE_SCHEMA_VERSION)
             self.assertIn(
                 f"SQLite schema v{DATABASE_SCHEMA_VERSION} ready", output.getvalue()
@@ -174,7 +179,13 @@ class DatabaseInitializationTest(unittest.TestCase):
             self.assertTrue({"user_id", "visibility", "parameters_json"}.issubset(strategy_columns))
             self.assertEqual(migrated_role, "admin")
             self.assertTrue(
-                {"user_id", "symbol", "is_watched", "last_updated_at"}.issubset(
+                {
+                    "user_id",
+                    "symbol",
+                    "is_watched",
+                    "last_updated_at",
+                    "default_strategy_id",
+                }.issubset(
                     watchlist_columns
                 )
             )

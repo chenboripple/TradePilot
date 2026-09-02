@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=9">
+  <link rel="stylesheet" href="/assets/app.css?v=10">
 </head>
 <body>
   <header class="topbar">
@@ -115,6 +115,7 @@
                 <div class="detail-strategy-control">
                   <label for="detail-strategy">策略</label>
                   <select id="detail-strategy" aria-label="切换分析策略"></select>
+                  <button class="table-action detail-default-strategy authenticated-content" id="detail-default-strategy" type="button" hidden>设为默认</button>
                   <span id="strategy-calculating" hidden>计算中</span>
                 </div>
               </div>
@@ -279,6 +280,6 @@
     </form>
   </dialog>
 
-  <script src="/assets/app.js?v=9" defer></script>
+  <script src="/assets/app.js?v=10" defer></script>
 </body>
 </html>

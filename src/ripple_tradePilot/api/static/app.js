@@ -42,6 +42,7 @@ const elements = {
   chartTooltip: document.querySelector("#chart-tooltip"),
   chartEmpty: document.querySelector("#chart-empty"),
   detailStrategy: document.querySelector("#detail-strategy"),
+  detailDefaultStrategy: document.querySelector("#detail-default-strategy"),
   strategyCalculating: document.querySelector("#strategy-calculating"),
   accountButton: document.querySelector("#account-button"),
   accountMenu: document.querySelector("#account-menu"),
@@ -526,19 +527,52 @@ function renderDetailStrategy() {
     elements.detailStrategy.innerHTML = "";
     return;
   }
-  const defaultMarket = marketsForAsset().find((item) => item.symbol === market.symbol);
   const strategies = strategiesForCurrentMarket();
   if (state.selectedStrategyId && !strategies.some((item) => String(item.id) === state.selectedStrategyId)) {
     state.selectedStrategyId = "";
   }
+  const defaultStrategyId = market.default_strategy_id === null
+    || market.default_strategy_id === undefined
+    ? ""
+    : String(market.default_strategy_id);
+  const systemStrategy = state.strategies.find(
+    (item) => item.is_system && item.symbol === market.symbol
+  );
+  const systemLabel = systemStrategy
+    ? `${systemStrategy.profile} · ${systemStrategy.owner}`
+    : `${market.system_strategy_profile || "系统策略"} · 系统`;
   elements.detailStrategy.innerHTML = [
-    `<option value="">${escapeHtml(defaultMarket?.strategy_profile || "默认策略")}</option>`,
+    `<option value="">${escapeHtml(systemLabel)}${defaultStrategyId === "" ? " · 默认" : ""}</option>`,
     ...strategies.map((item) => {
       const owner = item.is_owner ? "我的" : item.owner;
-      return `<option value="${item.id}">${escapeHtml(item.name)} · ${escapeHtml(owner)}</option>`;
+      const defaultLabel = String(item.id) === defaultStrategyId ? " · 默认" : "";
+      return `<option value="${item.id}">${escapeHtml(item.name)} · ${escapeHtml(owner)}${defaultLabel}</option>`;
     }),
   ].join("");
   elements.detailStrategy.value = state.selectedStrategyId;
+  const isCurrentDefault = state.selectedStrategyId === defaultStrategyId;
+  elements.detailDefaultStrategy.hidden = !state.user;
+  elements.detailDefaultStrategy.disabled = isCurrentDefault;
+  elements.detailDefaultStrategy.textContent = isCurrentDefault ? "当前默认" : "设为默认";
+}
+
+async function setDefaultStrategy() {
+  const symbol = state.selectedSymbol;
+  if (!symbol || !state.user) return;
+  elements.detailDefaultStrategy.disabled = true;
+  elements.detailDefaultStrategy.textContent = "保存中...";
+  try {
+    await apiRequest(`/api/watchlist/${encodeURIComponent(symbol)}/default-strategy`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        strategy_id: state.selectedStrategyId ? Number(state.selectedStrategyId) : null,
+      }),
+    });
+    await fetchDashboard();
+  } catch (error) {
+    window.alert(error.message);
+    renderDetailStrategy();
+  }
 }
 
 async function loadMarketDetail() {
@@ -547,6 +581,7 @@ async function loadMarketDetail() {
   const request = ++state.detailRequest;
   const query = new URLSearchParams({ limit: String(state.range) });
   if (state.selectedStrategyId) query.set("strategy_id", state.selectedStrategyId);
+  else query.set("system_strategy", "true");
   elements.detailStrategy.disabled = true;
   elements.strategyCalculating.hidden = false;
   try {
@@ -879,11 +914,15 @@ function drawChart() {
 }
 
 async function selectSymbol(symbol) {
+  const market = marketsForAsset().find((item) => item.symbol === symbol) ?? null;
   state.selectedSymbol = symbol;
-  state.selectedStrategyId = "";
-  state.appliedStrategyId = "";
+  state.selectedStrategyId = market?.default_strategy_id === null
+    || market?.default_strategy_id === undefined
+    ? ""
+    : String(market.default_strategy_id);
+  state.appliedStrategyId = state.selectedStrategyId;
   state.hoverIndex = null;
-  state.currentMarket = marketsForAsset().find((item) => item.symbol === symbol) ?? null;
+  state.currentMarket = market;
   renderWatchlist();
   renderMarket();
   await switchView("detail");
@@ -931,6 +970,7 @@ elements.detailStrategy.addEventListener("change", async () => {
   state.selectedStrategyId = elements.detailStrategy.value;
   await loadMarketDetail();
 });
+elements.detailDefaultStrategy.addEventListener("click", setDefaultStrategy);
 document.querySelectorAll("[data-indicator]").forEach((input) => {
   input.addEventListener("change", () => {
     state.indicators[input.dataset.indicator] = input.checked;

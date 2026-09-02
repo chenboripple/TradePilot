@@ -277,13 +277,35 @@ class DashboardService:
         limit: int = 160,
         profile_override: Optional[Dict[str, Any]] = None,
         strategy_profile: Optional[str] = None,
+        use_default_strategy: bool = True,
     ) -> Dict[str, Any]:
         symbol = next((item for item in self._symbols() if item["code"] == symbol_code), None)
         if symbol is None:
             raise DashboardDataError(f"未配置标的: {symbol_code}")
 
         bars = self._read_bars(symbol_code)
-        profile = profile_override if profile_override is not None else self._profile(symbol)
+        default_parameters = (
+            symbol.get("default_strategy_parameters")
+            if use_default_strategy
+            else None
+        )
+        effective_override = (
+            profile_override if profile_override is not None else default_parameters
+        )
+        profile = (
+            effective_override
+            if effective_override is not None
+            else self._profile(symbol)
+        )
+        effective_strategy_profile = (
+            strategy_profile
+            or (
+                symbol.get("default_strategy_name")
+                if use_default_strategy
+                else None
+            )
+            or symbol.get("strategy_profile", "未配置")
+        )
         parameters = self._profile_parameters(profile)
         closes = [bar["close"] for bar in bars]
         fast_ma = self._rolling_mean(closes, parameters["ma_fast"])
@@ -346,8 +368,12 @@ class DashboardService:
             "name": symbol.get("name", symbol_code),
             "asset_class": symbol.get("asset_class", "stock"),
             "exchange": symbol.get("exchange", symbol_code.rsplit(".", 1)[-1] if "." in symbol_code else ""),
-            "strategy_profile": strategy_profile or symbol.get("strategy_profile", "未配置"),
-            "profile_kind": profile.get("kind", "combo_vote" if profile_override is not None else "unknown"),
+            "strategy_profile": effective_strategy_profile,
+            "system_strategy_profile": symbol.get("strategy_profile", "未配置"),
+            "default_strategy_id": symbol.get("default_strategy_id"),
+            "profile_kind": profile.get(
+                "kind", "combo_vote" if effective_override is not None else "unknown"
+            ),
             "parameters": parameters,
             "price": latest["close"],
             "change": latest["close"] - previous["close"],
@@ -376,6 +402,9 @@ class DashboardService:
         }
 
     def strategy_catalog(self) -> List[Dict[str, Any]]:
+        configured_owner = str(
+            self._config().get("strategy_owner") or "TradePilot"
+        ).strip()
         strategies = []
         for symbol in self._symbols():
             try:
@@ -394,7 +423,9 @@ class DashboardService:
                     "recommendation": item["recommendation"],
                     "confidence": item["confidence"],
                     "visibility": "public",
-                    "owner": "TradePilot",
+                    "owner": str(
+                        symbol.get("strategy_owner") or configured_owner
+                    ).strip(),
                     "is_owner": False,
                     "is_system": True,
                 }

@@ -37,6 +37,7 @@ from ripple_tradePilot.storage.user_store import (
     list_user_stocks,
     list_visible_strategies,
     list_user_watchlist,
+    set_watchlist_default_strategy,
     upsert_watchlist_item,
     update_strategy_visibility,
     user_for_session,
@@ -72,6 +73,10 @@ class StrategyCreate(BaseModel):
 
 class StrategyVisibilityUpdate(BaseModel):
     visibility: Literal["public", "private"]
+
+
+class DefaultStrategyUpdate(BaseModel):
+    strategy_id: Optional[int] = Field(default=None, ge=1)
 
 
 class WatchlistCreate(BaseModel):
@@ -124,6 +129,11 @@ def _dashboard_for_user(user: Optional[Dict]) -> DashboardService:
     configured = set(configured_items)
     catalog_names = stock_catalog_names()
     records = list_user_stocks(user["id"]) if user is not None else []
+    visible_strategies = (
+        {item["id"]: item for item in list_visible_strategies(user["id"])}
+        if user is not None
+        else {}
+    )
     symbols = []
     for code, item in configured_items.items():
         if code in catalog_names:
@@ -140,6 +150,19 @@ def _dashboard_for_user(user: Optional[Dict]) -> DashboardService:
         }
         if is_user_added:
             symbol["strategy_profile"] = "默认组合策略"
+        default_strategy = visible_strategies.get(item.get("default_strategy_id"))
+        if (
+            default_strategy is not None
+            and default_strategy["asset_class"] == "stock"
+            and default_strategy["symbol"] == item["symbol"]
+        ):
+            symbol.update(
+                {
+                    "default_strategy_id": default_strategy["id"],
+                    "default_strategy_name": default_strategy["name"],
+                    "default_strategy_parameters": default_strategy["parameters"],
+                }
+            )
         symbols.append(symbol)
     excluded = [item["symbol"] for item in records if not item["is_watched"]]
     return DashboardService(extra_symbols=symbols, excluded_symbols=excluded)
@@ -315,6 +338,7 @@ def market_detail(
     symbol: str,
     limit: int = Query(default=160, ge=40, le=260),
     strategy_id: Optional[int] = Query(default=None, ge=1),
+    system_strategy: bool = Query(default=False),
     user: Optional[Dict] = Depends(optional_user),
 ):
     try:
@@ -338,6 +362,7 @@ def market_detail(
             limit=limit,
             profile_override=strategy["parameters"] if strategy else None,
             strategy_profile=strategy["name"] if strategy else None,
+            use_default_strategy=not system_strategy,
         )
         if strategy is not None and strategy["asset_class"] != detail["asset_class"]:
             raise HTTPException(status_code=404, detail="策略不存在、不可见或不适用于当前标的")
@@ -406,6 +431,60 @@ def backtests(user: Dict = Depends(required_user)):
 @app.get("/api/watchlist")
 def watchlist(user: Dict = Depends(required_user)):
     return {"items": list_user_watchlist(user["id"])}
+
+
+@app.patch("/api/watchlist/{symbol}/default-strategy")
+def change_watchlist_default_strategy(
+    symbol: str,
+    payload: DefaultStrategyUpdate,
+    user: Dict = Depends(required_user),
+):
+    try:
+        normalized = StockDataService.normalize_symbol(symbol)
+    except InvalidStockSymbolError as error:
+        raise _stock_error(error) from error
+
+    configured = _configured_stock_map()
+    records = _stock_records(user)
+    record = records.get(normalized)
+    is_watched = (
+        record["is_watched"] if record is not None else normalized in configured
+    )
+    if not is_watched:
+        raise HTTPException(status_code=404, detail="只能设置当前观察池股票的默认策略")
+
+    if payload.strategy_id is not None:
+        strategy = next(
+            (
+                item
+                for item in list_visible_strategies(user["id"])
+                if item["id"] == payload.strategy_id
+                and item["asset_class"] == "stock"
+                and item["symbol"] == normalized
+            ),
+            None,
+        )
+        if strategy is None:
+            raise HTTPException(
+                status_code=404,
+                detail="策略不存在、不可见或不适用于当前标的",
+            )
+
+    if record is None:
+        configured_item = configured[normalized]
+        upsert_watchlist_item(
+            user["id"],
+            normalized,
+            configured_item.get("name", normalized),
+            True,
+        )
+    try:
+        item = set_watchlist_default_strategy(
+            user["id"], normalized, payload.strategy_id
+        )
+    except WatchlistNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    return {"item": item}
 
 
 @app.get("/api/stocks")

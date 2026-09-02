@@ -94,6 +94,20 @@ class DashboardServiceTest(unittest.TestCase):
         self.assertEqual(dashboard["summary"]["by_asset"]["future"]["configured"], 1)
         self.assertEqual({item["asset_class"] for item in dashboard["markets"]}, {"stock", "future"})
 
+    def test_system_strategy_owner_comes_from_config(self):
+        config = yaml.safe_load(self.config_path.read_text(encoding="utf-8"))
+        config["strategy_owner"] = "chenboripple@gmail.com"
+        self.config_path.write_text(
+            yaml.safe_dump(config, allow_unicode=True), encoding="utf-8"
+        )
+
+        strategies = self._service().strategy_catalog()
+
+        self.assertEqual(
+            {item["owner"] for item in strategies},
+            {"chenboripple@gmail.com"},
+        )
+
     def test_future_market_detail_contains_chart_and_strategy(self):
         detail = self._service().market_detail("IF2609.CFFEX", limit=40)
 

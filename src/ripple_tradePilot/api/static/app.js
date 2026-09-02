@@ -6,9 +6,20 @@ const state = {
   allStocks: null,
   stockQuery: "",
   stockLimit: 200,
+  stockFilters: {
+    exchange: "",
+    board: "",
+    industry: "",
+    area: "",
+    status: "",
+    watch: "",
+  },
   assetClass: "stock",
   selectedSymbol: null,
   currentMarket: null,
+  selectedStrategyId: "",
+  appliedStrategyId: "",
+  detailRequest: 0,
   view: "overview",
   range: 120,
   indicators: { ma: true, bb: true, volume: true },
@@ -24,13 +35,14 @@ const elements = {
   watchlist: document.querySelector("#watchlist"),
   watchlistTitle: document.querySelector("#watchlist-title"),
   watchlistCount: document.querySelector("#watchlist-count"),
-  metrics: document.querySelector("#metrics-band"),
   dataAlert: document.querySelector("#data-alert"),
   workspace: document.querySelector("#market-workspace"),
   emptyMarket: document.querySelector("#empty-market"),
   chart: document.querySelector("#market-chart"),
   chartTooltip: document.querySelector("#chart-tooltip"),
   chartEmpty: document.querySelector("#chart-empty"),
+  detailStrategy: document.querySelector("#detail-strategy"),
+  strategyCalculating: document.querySelector("#strategy-calculating"),
   accountButton: document.querySelector("#account-button"),
   accountMenu: document.querySelector("#account-menu"),
   accountName: document.querySelector("#account-name"),
@@ -56,6 +68,9 @@ const elements = {
   stockMore: document.querySelector("#stock-more"),
   stockCatalogStatus: document.querySelector("#stock-catalog-status"),
   syncStocks: document.querySelector("#sync-stocks-button"),
+  refreshQuotes: document.querySelector("#refresh-quotes-button"),
+  stockFilters: document.querySelectorAll("[data-stock-filter]"),
+  stockFilterReset: document.querySelector("#stock-filter-reset"),
 };
 
 const recommendationLabels = { BUY: "偏多", SELL: "偏空", HOLD: "观望" };
@@ -115,6 +130,7 @@ async function loadProtectedData() {
     state.backtests = [];
     renderStrategies();
     renderBacktests();
+    renderMarket();
     return;
   }
   try {
@@ -126,6 +142,7 @@ async function loadProtectedData() {
     state.backtests = backtests.items;
     renderStrategies();
     renderBacktests();
+    renderMarket();
   } catch (error) {
     if (error.status === 401) {
       state.user = null;
@@ -139,6 +156,7 @@ async function loadProtectedData() {
 async function fetchStockCatalog() {
   const payload = await apiRequest("/api/stocks");
   state.allStocks = payload.items;
+  populateStockFilters();
   populateStrategyStocks();
   renderStockCatalog();
 }
@@ -202,11 +220,16 @@ async function fetchDashboard() {
     elements.generatedAt.textContent = `更新 ${new Date(state.dashboard.generated_at).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
 
     const available = marketsForAsset();
-    if (!state.selectedSymbol || !available.some((item) => item.symbol === state.selectedSymbol)) {
-      state.selectedSymbol = available[0]?.symbol ?? null;
+    if (state.selectedSymbol && !available.some((item) => item.symbol === state.selectedSymbol)) {
+      state.selectedSymbol = null;
+      state.selectedStrategyId = "";
+      state.appliedStrategyId = "";
     }
     state.currentMarket = available.find((item) => item.symbol === state.selectedSymbol) ?? null;
     renderAll();
+    if (state.currentMarket && state.view === "detail" && state.selectedStrategyId) {
+      await loadMarketDetail();
+    }
   } catch (error) {
     elements.generatedAt.textContent = "连接失败";
     elements.systemDot.classList.remove("is-online");
@@ -225,7 +248,6 @@ function renderAll() {
   renderAuthState();
   renderAssetButtons();
   renderWatchlist();
-  renderMetrics();
   renderMarket();
   renderStrategies();
   renderBacktests();
@@ -282,26 +304,6 @@ function renderWatchlist() {
   });
 }
 
-function renderMetrics() {
-  const summary = state.dashboard?.summary?.by_asset?.[state.assetClass] ?? {};
-  const markets = marketsForAsset();
-  const stale = markets.filter((item) => item.freshness === "stale").length;
-  elements.metrics.innerHTML = [
-    ["已配置标的", summary.configured ?? 0, `${summary.available ?? 0} 个有行情`],
-    ["偏多", summary.buy ?? 0, "达到策略投票阈值"],
-    ["偏空", summary.sell ?? 0, "达到策略投票阈值"],
-    ["观望", summary.hold ?? 0, "指标方向未统一"],
-    ["数据状态", stale ? `${stale} 个滞后` : "正常", markets[0]?.latest_date ?? "暂无数据"],
-  ].map(([label, value, note]) => `
-    <div class="metric"><span>${label}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(note)}</small></div>
-  `).join("");
-
-  elements.dataAlert.hidden = stale === 0;
-  if (stale) {
-    elements.dataAlert.textContent = `${assetLabels[state.assetClass]}行情存在滞后，页面展示的是数据库中最近一次更新数据，请勿按实时行情使用。`;
-  }
-}
-
 async function refreshStock(button) {
   button.disabled = true;
   button.classList.add("is-loading");
@@ -333,23 +335,60 @@ async function removeStock(symbol) {
 function renderStockCatalog() {
   const stocks = state.allStocks ?? [];
   const query = state.stockQuery.trim().toLowerCase();
-  const filtered = query
-    ? stocks.filter((item) => `${item.symbol} ${item.name}`.toLowerCase().includes(query))
-    : stocks;
+  const matchesValue = (value, selected) => {
+    if (!selected) return true;
+    if (selected === "__missing__") return !String(value || "").trim();
+    return String(value || "") === selected;
+  };
+  const stockStatus = (item) => {
+    if (item.price_kind === "unavailable") return "unavailable";
+    if (item.freshness === "stale") return "stale";
+    return item.price_kind;
+  };
+  const filtered = stocks.filter((item) => {
+    const queryMatches = !query || (
+      `${item.symbol} ${item.name} ${item.exchange} ${item.board} ${item.industry} ${item.area}`
+        .toLowerCase()
+        .includes(query)
+    );
+    const watchStatus = item.is_watched ? "watched" : "archived";
+    return queryMatches
+      && matchesValue(item.exchange, state.stockFilters.exchange)
+      && matchesValue(item.board || item.market, state.stockFilters.board)
+      && matchesValue(item.industry, state.stockFilters.industry)
+      && matchesValue(item.area, state.stockFilters.area)
+      && (!state.stockFilters.status || stockStatus(item) === state.stockFilters.status)
+      && (!state.stockFilters.watch || watchStatus === state.stockFilters.watch);
+  });
+  const hasActiveFilters = Boolean(query) || Object.values(state.stockFilters).some(Boolean);
   const visible = filtered.slice(0, state.stockLimit);
   elements.stockEmpty.hidden = filtered.length > 0;
+  elements.stockEmpty.textContent = hasActiveFilters ? "没有符合筛选条件的股票" : "暂无股票数据";
   elements.stockMore.hidden = visible.length >= filtered.length;
   elements.stockMore.textContent = `显示更多（${visible.length} / ${filtered.length}）`;
   elements.stockCatalogStatus.textContent = stocks.length
-    ? `共 ${stocks.length.toLocaleString("zh-CN")} 只股票`
+    ? hasActiveFilters
+      ? `已筛选 ${filtered.length.toLocaleString("zh-CN")} / ${stocks.length.toLocaleString("zh-CN")} 只`
+      : `共 ${stocks.length.toLocaleString("zh-CN")} 只股票`
     : "尚未同步股票清单";
+  elements.stockFilterReset.disabled = !hasActiveFilters;
   elements.stockTable.innerHTML = visible.map((item) => {
+    const exchangeLabels = { SSE: "上交所", SZSE: "深交所", BSE: "北交所" };
     const hasChange = item.change_pct !== null && item.change_pct !== undefined;
     const changeClass = hasChange ? (Number(item.change_pct) >= 0 ? "rec-buy" : "rec-sell") : "";
     const changeText = hasChange
       ? `${Number(item.change_pct) >= 0 ? "+" : ""}${formatNumber(item.change_pct)}%`
       : "--";
-    const freshness = item.freshness === "fresh" ? "正常" : item.freshness === "stale" ? "滞后" : "暂无行情";
+    const freshness = item.price_kind === "realtime"
+      ? (item.freshness === "fresh" ? "实时快照" : "快照滞后")
+      : item.price_kind === "daily"
+        ? (item.freshness === "fresh" ? "日线收盘" : "日线滞后")
+        : "暂无行情";
+    const priceTime = item.price_time
+      ? String(item.price_time).replace("T", " ").slice(0, 16)
+      : "--";
+    const exchange = exchangeLabels[item.exchange] || item.exchange || "--";
+    const board = item.board || item.market || "--";
     let action = '<span class="owner-label">登录后管理</span>';
     if (state.user) {
       action = item.is_watched
@@ -358,10 +397,11 @@ function renderStockCatalog() {
     }
     return `<tr>
       <td class="symbol-cell"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.symbol)}${item.is_default ? " · 默认" : ""}</span></td>
-      <td class="symbol-cell"><strong>${escapeHtml(item.market || "--")}</strong><span>${escapeHtml(item.list_date || "--")}</span></td>
+      <td class="symbol-cell"><strong>${escapeHtml(exchange)} / ${escapeHtml(board)}</strong><span>上市 ${escapeHtml(item.list_date || "--")}</span></td>
+      <td class="symbol-cell"><strong>${escapeHtml(item.industry || "--")}</strong><span>${escapeHtml(item.area || "--")}</span></td>
       <td>${formatNumber(item.price)}</td>
       <td class="${changeClass}">${changeText}</td>
-      <td>${escapeHtml(item.latest_date || "--")}</td>
+      <td>${escapeHtml(priceTime)}</td>
       <td><span class="visibility-badge">${freshness}</span></td>
       <td><span class="visibility-badge ${item.is_watched ? "is-watched" : ""}">${item.is_watched ? "观察中" : "已归档"}</span></td>
       <td>${action}</td>
@@ -375,6 +415,51 @@ function renderStockCatalog() {
   });
 }
 
+function populateStockFilters() {
+  const stocks = state.allStocks ?? [];
+  const dynamicKeys = ["exchange", "board", "industry", "area"];
+  const allLabels = {
+    exchange: "全部交易所",
+    board: "全部板块",
+    industry: "全部行业",
+    area: "全部地域",
+  };
+  const valueLabels = {
+    SSE: "上交所",
+    SZSE: "深交所",
+    BSE: "北交所",
+    __missing__: "未标注",
+  };
+  dynamicKeys.forEach((key) => {
+    const select = Array.from(elements.stockFilters).find(
+      (item) => item.dataset.stockFilter === key
+    );
+    const values = new Set();
+    stocks.forEach((item) => {
+      const raw = key === "board" ? item.board || item.market : item[key];
+      values.add(String(raw || "").trim() || "__missing__");
+    });
+    const options = Array.from(values).sort((left, right) => {
+      const order = { SSE: 1, SZSE: 2, BSE: 3, __missing__: 99 };
+      if (key === "exchange") {
+        return (order[left] || 50) - (order[right] || 50);
+      }
+      return left.localeCompare(right, "zh-CN");
+    });
+    select.innerHTML = [
+      `<option value="">${allLabels[key]}</option>`,
+      ...options.map(
+        (value) => `<option value="${escapeHtml(value)}">${escapeHtml(valueLabels[value] || value)}</option>`
+      ),
+    ].join("");
+    if (options.includes(state.stockFilters[key])) {
+      select.value = state.stockFilters[key];
+    } else {
+      state.stockFilters[key] = "";
+    }
+  });
+}
+
 async function addCatalogStock(button) {
   button.disabled = true;
   try {
@@ -384,8 +469,11 @@ async function addCatalogStock(button) {
     });
     state.assetClass = "stock";
     state.selectedSymbol = result.item.symbol;
+    state.selectedStrategyId = "";
+    state.appliedStrategyId = "";
     await fetchDashboard();
     await fetchStockCatalog();
+    await switchView("detail");
   } catch (error) {
     window.alert(error.message);
   } finally {
@@ -408,13 +496,94 @@ async function syncStockCatalog() {
   }
 }
 
+async function refreshStockQuotes() {
+  elements.refreshQuotes.disabled = true;
+  elements.refreshQuotes.textContent = "正在刷新...";
+  try {
+    const result = await apiRequest("/api/stocks/quotes/refresh", { method: "POST" });
+    await fetchStockCatalog();
+    elements.stockCatalogStatus.textContent = `实时行情 ${result.data.count.toLocaleString("zh-CN")} 只 · ${result.data.quote_time.replace("T", " ")}`;
+  } catch (error) {
+    window.alert(error.message);
+  } finally {
+    elements.refreshQuotes.disabled = false;
+    elements.refreshQuotes.textContent = "刷新实时行情";
+  }
+}
+
+function strategiesForCurrentMarket() {
+  if (!state.currentMarket) return [];
+  return state.strategies.filter((item) => (
+    !item.is_system
+    && item.symbol === state.currentMarket.symbol
+    && item.asset_class === state.currentMarket.asset_class
+  ));
+}
+
+function renderDetailStrategy() {
+  const market = state.currentMarket;
+  if (!market) {
+    elements.detailStrategy.innerHTML = "";
+    return;
+  }
+  const defaultMarket = marketsForAsset().find((item) => item.symbol === market.symbol);
+  const strategies = strategiesForCurrentMarket();
+  if (state.selectedStrategyId && !strategies.some((item) => String(item.id) === state.selectedStrategyId)) {
+    state.selectedStrategyId = "";
+  }
+  elements.detailStrategy.innerHTML = [
+    `<option value="">${escapeHtml(defaultMarket?.strategy_profile || "默认策略")}</option>`,
+    ...strategies.map((item) => {
+      const owner = item.is_owner ? "我的" : item.owner;
+      return `<option value="${item.id}">${escapeHtml(item.name)} · ${escapeHtml(owner)}</option>`;
+    }),
+  ].join("");
+  elements.detailStrategy.value = state.selectedStrategyId;
+}
+
+async function loadMarketDetail() {
+  const symbol = state.selectedSymbol;
+  if (!symbol) return;
+  const request = ++state.detailRequest;
+  const query = new URLSearchParams({ limit: String(state.range) });
+  if (state.selectedStrategyId) query.set("strategy_id", state.selectedStrategyId);
+  elements.detailStrategy.disabled = true;
+  elements.strategyCalculating.hidden = false;
+  try {
+    const market = await apiRequest(`/api/markets/${encodeURIComponent(symbol)}?${query}`);
+    if (request !== state.detailRequest || symbol !== state.selectedSymbol) return;
+    state.currentMarket = market;
+    state.appliedStrategyId = state.selectedStrategyId;
+    state.hoverIndex = null;
+    renderMarket();
+  } catch (error) {
+    if (request !== state.detailRequest) return;
+    state.selectedStrategyId = state.appliedStrategyId;
+    renderDetailStrategy();
+    elements.dataAlert.hidden = false;
+    elements.dataAlert.textContent = `策略趋势计算失败：${error.message}`;
+  } finally {
+    if (request === state.detailRequest) {
+      elements.detailStrategy.disabled = false;
+      elements.strategyCalculating.hidden = true;
+    }
+  }
+}
+
 function renderMarket() {
   const market = state.currentMarket;
   elements.workspace.hidden = !market;
   elements.emptyMarket.hidden = Boolean(market);
   if (!market) {
     elements.chartTooltip.hidden = true;
+    elements.dataAlert.hidden = true;
     return;
+  }
+
+  renderDetailStrategy();
+  elements.dataAlert.hidden = market.freshness !== "stale";
+  if (market.freshness === "stale") {
+    elements.dataAlert.textContent = `${assetLabels[market.asset_class]}行情存在滞后，当前展示的是数据库中最近一次更新数据，请勿按实时行情使用。`;
   }
 
   document.querySelector("#instrument-class").textContent = assetLabels[market.asset_class];
@@ -435,7 +604,6 @@ function renderMarket() {
   recommendation.className = recClass(market.recommendation);
   recommendation.textContent = recommendationLabels[market.recommendation];
   document.querySelector("#confidence").textContent = `方向一致度 ${market.confidence}%`;
-  document.querySelector("#strategy-profile").textContent = market.strategy_profile;
   document.querySelector("#decision-reason").textContent = market.reason;
 
   const voteNames = { ma: "均线趋势", rsi: "RSI 区间", bollinger: "布林位置" };
@@ -712,18 +880,22 @@ function drawChart() {
 
 async function selectSymbol(symbol) {
   state.selectedSymbol = symbol;
+  state.selectedStrategyId = "";
+  state.appliedStrategyId = "";
   state.hoverIndex = null;
   state.currentMarket = marketsForAsset().find((item) => item.symbol === symbol) ?? null;
   renderWatchlist();
   renderMarket();
+  await switchView("detail");
 }
 
 function switchAsset(assetClass) {
   state.assetClass = assetClass;
   state.hoverIndex = null;
-  const markets = marketsForAsset();
-  state.selectedSymbol = markets[0]?.symbol ?? null;
-  state.currentMarket = markets[0] ?? null;
+  state.selectedSymbol = null;
+  state.selectedStrategyId = "";
+  state.appliedStrategyId = "";
+  state.currentMarket = null;
   renderAll();
 }
 
@@ -731,7 +903,7 @@ async function switchView(view) {
   state.view = view;
   document.querySelectorAll(".nav-button").forEach((button) => button.classList.toggle("is-active", button.dataset.view === view));
   document.querySelectorAll(".view").forEach((section) => section.classList.toggle("is-active", section.id === `view-${view}`));
-  if (view === "overview") requestAnimationFrame(drawChart);
+  if (view === "detail") requestAnimationFrame(drawChart);
   if (view === "stocks") await fetchStockCatalog();
   if (state.user && ["strategies", "backtests"].includes(view)) await loadProtectedData();
 }
@@ -749,12 +921,15 @@ document.querySelectorAll("[data-range]").forEach((button) => {
     state.range = Number(button.dataset.range);
     document.querySelectorAll("[data-range]").forEach((item) => item.classList.toggle("is-active", item === button));
     if (state.selectedSymbol && state.range > (state.currentMarket?.bars?.length ?? 0)) {
-      const response = await fetch(`/api/markets/${encodeURIComponent(state.selectedSymbol)}?limit=${state.range}`, { cache: "no-store" });
-      if (response.ok) state.currentMarket = await response.json();
+      await loadMarketDetail();
     }
     state.hoverIndex = null;
     renderMarket();
   });
+});
+elements.detailStrategy.addEventListener("change", async () => {
+  state.selectedStrategyId = elements.detailStrategy.value;
+  await loadMarketDetail();
 });
 document.querySelectorAll("[data-indicator]").forEach((input) => {
   input.addEventListener("change", () => {
@@ -768,9 +943,29 @@ elements.refresh.addEventListener("click", async () => {
   if (state.view === "stocks") await fetchStockCatalog();
 });
 elements.syncStocks.addEventListener("click", syncStockCatalog);
+elements.refreshQuotes.addEventListener("click", refreshStockQuotes);
 elements.stockSearch.addEventListener("input", () => {
   state.stockQuery = elements.stockSearch.value;
   state.stockLimit = 200;
+  renderStockCatalog();
+});
+elements.stockFilters.forEach((select) => {
+  select.addEventListener("change", () => {
+    state.stockFilters[select.dataset.stockFilter] = select.value;
+    state.stockLimit = 200;
+    renderStockCatalog();
+  });
+});
+elements.stockFilterReset.addEventListener("click", () => {
+  state.stockQuery = "";
+  state.stockLimit = 200;
+  elements.stockSearch.value = "";
+  Object.keys(state.stockFilters).forEach((key) => {
+    state.stockFilters[key] = "";
+  });
+  elements.stockFilters.forEach((select) => {
+    select.value = "";
+  });
   renderStockCatalog();
 });
 elements.stockMore.addEventListener("click", () => {
@@ -784,6 +979,8 @@ document.querySelector("#logout-button").addEventListener("click", async () => {
   state.strategies = [];
   state.backtests = [];
   state.allStocks = null;
+  state.selectedStrategyId = "";
+  state.appliedStrategyId = "";
   await fetchDashboard();
 });
 elements.addStockButton.addEventListener("click", () => {
@@ -841,10 +1038,13 @@ elements.stockForm.addEventListener("submit", async (event) => {
     });
     state.selectedSymbol = result.item.symbol;
     state.assetClass = "stock";
+    state.selectedStrategyId = "";
+    state.appliedStrategyId = "";
     elements.stockDialog.close();
     elements.stockForm.reset();
     await fetchDashboard();
     if (state.allStocks !== null) await fetchStockCatalog();
+    await switchView("detail");
   } catch (error) {
     elements.stockError.textContent = error.message;
     elements.stockError.hidden = false;
@@ -905,7 +1105,7 @@ elements.chart.addEventListener("mouseleave", () => {
 });
 
 new ResizeObserver(() => {
-  if (state.view === "overview") drawChart();
+  if (state.view === "detail") drawChart();
 }).observe(elements.chart.parentElement);
 
 async function bootstrap() {

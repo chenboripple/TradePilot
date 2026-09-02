@@ -130,6 +130,29 @@ class DashboardServiceTest(unittest.TestCase):
         self.assertEqual(detail["price"], 109)
         self.assertEqual(detail["total_rows"], 60)
 
+    def test_market_detail_recalculates_with_selected_strategy(self):
+        service = self._service()
+        default = service.market_detail("000001.SZ")
+        selected = service.market_detail(
+            "000001.SZ",
+            profile_override={
+                "ma_fast": 2,
+                "ma_slow": 8,
+                "rsi_period": 6,
+                "rsi_oversold": 20,
+                "rsi_overbought": 101,
+                "bb_period": 10,
+                "bb_std": 2,
+                "vote_threshold": 1,
+            },
+            strategy_profile="敏感趋势策略",
+        )
+
+        self.assertEqual(selected["strategy_profile"], "敏感趋势策略")
+        self.assertEqual(selected["parameters"]["ma_fast"], 2)
+        self.assertNotEqual(selected["indicators"]["ma_fast"], default["indicators"]["ma_fast"])
+        self.assertEqual(selected["recommendation"], "BUY")
+
 
 if __name__ == "__main__":
     unittest.main()

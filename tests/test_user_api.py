@@ -66,6 +66,13 @@ class ApiStockDataService:
         )
         return {"count": 1, "source": "test"}
 
+    def refresh_quotes(self):
+        return {
+            "count": 1,
+            "source": "akshare",
+            "quote_time": "2026-09-02T10:30:00",
+        }
+
 
 class UserApiTest(unittest.TestCase):
     def setUp(self):
@@ -138,6 +145,60 @@ class UserApiTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 422, response.text)
         self.assertEqual(response.json()["detail"], "股票标的必须来自全部数据池")
+
+    def test_market_detail_uses_only_visible_strategy_for_same_symbol(self):
+        self.register("alice")
+        with patch.object(api_module, "StockDataService", ApiStockDataService):
+            added = self.client.post("/api/watchlist", json={"symbol": "600000"})
+        self.assertEqual(added.status_code, 201, added.text)
+        upsert_stock_catalog(
+            [
+                {"symbol": "600000.SH", "name": "测试银行"},
+                {"symbol": "600309.SH", "name": "万华化学"},
+            ],
+            "test",
+            self.database,
+        )
+        selected = self.client.post(
+            "/api/strategies",
+            json={
+                "name": "敏感趋势策略",
+                "asset_class": "stock",
+                "symbol": "600000.SH",
+                "profile": "组合投票",
+                "parameters": {
+                    "ma_fast": 2,
+                    "ma_slow": 8,
+                    "rsi_period": 6,
+                    "rsi_oversold": 20,
+                    "rsi_overbought": 101,
+                    "bb_period": 10,
+                    "bb_std": 2,
+                    "vote_threshold": 1,
+                },
+                "visibility": "private",
+            },
+        ).json()["item"]
+        other = self.create_strategy("其他股票策略", "private")
+
+        detail = self.client.get(
+            f"/api/markets/600000.SH?strategy_id={selected['id']}"
+        )
+
+        self.assertEqual(detail.status_code, 200, detail.text)
+        self.assertEqual(detail.json()["strategy_profile"], "敏感趋势策略")
+        self.assertEqual(detail.json()["parameters"]["ma_fast"], 2)
+        self.assertEqual(detail.json()["recommendation"], "BUY")
+        mismatch = self.client.get(
+            f"/api/markets/600000.SH?strategy_id={other['id']}"
+        )
+        self.assertEqual(mismatch.status_code, 404, mismatch.text)
+
+        self.client.post("/api/auth/logout")
+        guest = self.client.get(
+            f"/api/markets/600000.SH?strategy_id={selected['id']}"
+        )
+        self.assertEqual(guest.status_code, 401, guest.text)
 
     def test_guests_only_receive_public_dashboard_sections(self):
         dashboard = self.client.get("/api/dashboard")
@@ -290,6 +351,20 @@ class UserApiTest(unittest.TestCase):
             [("600418.SH", "ST江淮")],
         )
         self.assertEqual(catalog[0]["market"], "主板")
+
+    def test_full_market_quote_refresh_requires_login_and_returns_snapshot_time(self):
+        unauthorized = self.client.post("/api/stocks/quotes/refresh")
+        self.assertEqual(unauthorized.status_code, 401)
+        self.register("alice")
+
+        with patch.object(api_module, "StockDataService", ApiStockDataService):
+            response = self.client.post("/api/stocks/quotes/refresh")
+
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["data"]["count"], 1)
+        self.assertEqual(
+            response.json()["data"]["quote_time"], "2026-09-02T10:30:00"
+        )
 
     def test_new_stock_is_not_saved_when_name_cannot_be_resolved(self):
         class UnnamedStockDataService(ApiStockDataService):

@@ -19,11 +19,13 @@ from ripple_tradePilot.storage.database import (
     stock_catalog_name,
     upsert_daily_bars,
     upsert_stock_catalog,
+    upsert_stock_quotes,
 )
 
 
 _DATA_LOCK = threading.Lock()
 _CATALOG_LOCK = threading.Lock()
+_QUOTE_LOCK = threading.Lock()
 
 
 class StockDataError(RuntimeError):
@@ -93,13 +95,80 @@ class StockDataService:
             name = StockDataService._valid_name(row.get("name"), symbol)
             if not symbol or not name:
                 continue
+            derived = StockDataService._market_metadata(symbol)
+            board = str(row.get("market") or derived["board"]).strip()
             records.append(
                 {
                     "symbol": symbol,
                     "name": name,
-                    "market": str(row.get("market") or "").strip(),
+                    "market": board,
+                    "exchange": str(
+                        row.get("exchange") or derived["exchange"]
+                    ).strip(),
+                    "board": board,
+                    "industry": str(row.get("industry") or "").strip(),
+                    "area": str(row.get("area") or "").strip(),
                     "list_status": str(row.get("list_status") or "L").strip(),
                     "list_date": str(row.get("list_date") or "").strip(),
+                }
+            )
+        return records
+
+    @staticmethod
+    def _market_metadata(symbol: str) -> Dict[str, str]:
+        code, suffix = symbol.upper().split(".", 1)
+        if suffix == "BJ":
+            return {"exchange": "BSE", "board": "北交所"}
+        if suffix == "SH":
+            board = "科创板" if code.startswith(("688", "689")) else "主板"
+            return {"exchange": "SSE", "board": board}
+        board = "创业板" if code.startswith(("300", "301")) else "主板"
+        return {"exchange": "SZSE", "board": board}
+
+    @staticmethod
+    def _optional_float(value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        try:
+            number = float(str(value).replace(",", "").replace("%", ""))
+        except (TypeError, ValueError):
+            return None
+        return None if pd.isna(number) else number
+
+    @staticmethod
+    def _realtime_records(frame: pd.DataFrame) -> list[Dict[str, Any]]:
+        if frame is None or len(frame) == 0 or "代码" not in frame.columns:
+            return []
+        quote_time = datetime.now().isoformat(timespec="seconds")
+        records = []
+        for _, row in frame.iterrows():
+            code = str(row.get("代码") or "").strip().zfill(6)
+            if not re.fullmatch(r"\d{6}", code):
+                continue
+            try:
+                symbol = StockDataService.normalize_symbol(code)
+            except InvalidStockSymbolError:
+                continue
+            price = StockDataService._optional_float(row.get("最新价"))
+            if price is None:
+                continue
+            volume = StockDataService._optional_float(row.get("成交量"))
+            records.append(
+                {
+                    "symbol": symbol,
+                    "price": price,
+                    "pre_close": StockDataService._optional_float(row.get("昨收")),
+                    "change": StockDataService._optional_float(row.get("涨跌额")),
+                    "change_pct": StockDataService._optional_float(row.get("涨跌幅")),
+                    "open": StockDataService._optional_float(row.get("今开")),
+                    "high": StockDataService._optional_float(row.get("最高")),
+                    "low": StockDataService._optional_float(row.get("最低")),
+                    "volume": volume * 100 if volume is not None else 0,
+                    "amount": StockDataService._optional_float(row.get("成交额")),
+                    "turnover_rate": StockDataService._optional_float(
+                        row.get("换手率")
+                    ),
+                    "quote_time": quote_time,
                 }
             )
         return records
@@ -159,19 +228,15 @@ class StockDataService:
             name = StockDataService._valid_name(row.get("f14"), symbol)
             if not name:
                 continue
-            if symbol.endswith(".BJ"):
-                market = "北交所"
-            elif code.startswith(("688", "689")):
-                market = "科创板"
-            elif code.startswith(("300", "301")):
-                market = "创业板"
-            else:
-                market = "主板"
+            metadata = StockDataService._market_metadata(symbol)
             records.append(
                 {
                     "symbol": symbol,
                     "name": name,
-                    "market": market,
+                    "market": metadata["board"],
+                    **metadata,
+                    "industry": "",
+                    "area": "",
                     "list_status": "L",
                     "list_date": "",
                 }
@@ -230,19 +295,15 @@ class StockDataService:
             name = StockDataService._valid_name(row.get("name"), symbol)
             if not name:
                 continue
-            if exchange == "BJ":
-                market = "北交所"
-            elif code.startswith(("688", "689")):
-                market = "科创板"
-            elif code.startswith(("300", "301")):
-                market = "创业板"
-            else:
-                market = "主板"
+            metadata = StockDataService._market_metadata(symbol)
             records.append(
                 {
                     "symbol": symbol,
                     "name": name,
-                    "market": market,
+                    "market": metadata["board"],
+                    **metadata,
+                    "industry": "",
+                    "area": "",
                     "list_status": "L",
                     "list_date": "",
                 }
@@ -253,17 +314,20 @@ class StockDataService:
         config = load_config(str(self.config_path))
         tushare = config.get("tushare", {})
         token = tushare.get("token")
-        if not token:
-            raise StockDataUnavailableError("缺少 Tushare Token，无法同步股票清单")
-        loader = TushareDataLoader(
-            token,
-            rate_limit_delay=float(tushare.get("rate_limit_delay", 1.5)),
-        )
         with _CATALOG_LOCK:
-            try:
-                records = self._catalog_records(loader.get_stock_list())
-                source = "tushare"
-            except Exception:
+            records = []
+            source = ""
+            if token:
+                try:
+                    loader = TushareDataLoader(
+                        token,
+                        rate_limit_delay=float(tushare.get("rate_limit_delay", 1.5)),
+                    )
+                    records = self._catalog_records(loader.get_stock_list())
+                    source = "tushare"
+                except Exception:
+                    records = []
+            if not records:
                 try:
                     records = self._eastmoney_catalog_records()
                     source = "eastmoney"
@@ -280,6 +344,24 @@ class StockDataService:
             upsert_stock_catalog(records, source, self.database)
         return {"count": len(records), "source": source}
 
+    def refresh_quotes(self) -> Dict[str, Any]:
+        with _QUOTE_LOCK:
+            try:
+                frame = ak.stock_zh_a_spot_em()
+            except Exception as error:
+                raise StockDataUnavailableError(
+                    "暂时无法获取全市场实时行情，请稍后重试"
+                ) from error
+            records = self._realtime_records(frame)
+            if not records:
+                raise StockDataUnavailableError("全市场实时行情返回了空数据")
+            upsert_stock_quotes(records, "akshare", self.database)
+        return {
+            "count": len(records),
+            "source": "akshare",
+            "quote_time": records[0]["quote_time"],
+        }
+
     @staticmethod
     def _normalize_frame(frame: pd.DataFrame) -> pd.DataFrame:
         data = frame.copy().rename(
@@ -289,6 +371,9 @@ class StockDataService:
                 "最高": "high",
                 "最低": "low",
                 "收盘": "close",
+                "昨收": "pre_close",
+                "涨跌额": "change",
+                "涨跌幅": "pct_chg",
                 "成交量": "vol",
                 "成交额": "amount",
                 "datetime": "trade_date",
@@ -302,6 +387,9 @@ class StockDataService:
             if column not in data.columns:
                 raise StockDataUnavailableError(f"行情数据缺少 {column} 字段")
             data[column] = pd.to_numeric(data[column], errors="coerce")
+        for column in ("pre_close", "change", "pct_chg"):
+            if column in data.columns:
+                data[column] = pd.to_numeric(data[column], errors="coerce")
         if "vol" not in data.columns:
             data["vol"] = 0
         data["vol"] = pd.to_numeric(data["vol"], errors="coerce").fillna(0)
@@ -316,6 +404,11 @@ class StockDataService:
         )
         data["trade_date"] = parsed_dates.dt.strftime("%Y%m%d")
         columns = ["trade_date", "open", "high", "low", "close", "vol"]
+        columns.extend(
+            column
+            for column in ("pre_close", "change", "pct_chg")
+            if column in data.columns
+        )
         if "amount" in data.columns:
             data["amount"] = pd.to_numeric(data["amount"], errors="coerce")
             columns.append("amount")

@@ -271,13 +271,19 @@ class DashboardService:
             "reason": "；".join(reasons),
         }
 
-    def market_detail(self, symbol_code: str, limit: int = 160) -> Dict[str, Any]:
+    def market_detail(
+        self,
+        symbol_code: str,
+        limit: int = 160,
+        profile_override: Optional[Dict[str, Any]] = None,
+        strategy_profile: Optional[str] = None,
+    ) -> Dict[str, Any]:
         symbol = next((item for item in self._symbols() if item["code"] == symbol_code), None)
         if symbol is None:
             raise DashboardDataError(f"未配置标的: {symbol_code}")
 
         bars = self._read_bars(symbol_code)
-        profile = self._profile(symbol)
+        profile = profile_override if profile_override is not None else self._profile(symbol)
         parameters = self._profile_parameters(profile)
         closes = [bar["close"] for bar in bars]
         fast_ma = self._rolling_mean(closes, parameters["ma_fast"])
@@ -340,8 +346,8 @@ class DashboardService:
             "name": symbol.get("name", symbol_code),
             "asset_class": symbol.get("asset_class", "stock"),
             "exchange": symbol.get("exchange", symbol_code.rsplit(".", 1)[-1] if "." in symbol_code else ""),
-            "strategy_profile": symbol.get("strategy_profile", "未配置"),
-            "profile_kind": profile.get("kind", "unknown"),
+            "strategy_profile": strategy_profile or symbol.get("strategy_profile", "未配置"),
+            "profile_kind": profile.get("kind", "combo_vote" if profile_override is not None else "unknown"),
             "parameters": parameters,
             "price": latest["close"],
             "change": latest["close"] - previous["close"],

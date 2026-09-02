@@ -90,7 +90,10 @@ class TushareDataLoader:
         df = self.pro.stock_basic(
             exchange='',
             list_status='L',
-            fields='ts_code,symbol,name,area,industry,market,list_status,list_date'
+            fields=(
+                'ts_code,symbol,name,area,industry,market,exchange,'
+                'list_status,list_date'
+            )
         )
         return df
 
@@ -99,7 +102,10 @@ class TushareDataLoader:
         self._rate_limit()
         df = self.pro.stock_basic(
             ts_code=ts_code,
-            fields="ts_code,symbol,name,market,list_status,list_date",
+            fields=(
+                "ts_code,symbol,name,area,industry,market,exchange,"
+                "list_status,list_date"
+            ),
         )
         if df is None or len(df) == 0:
             return None

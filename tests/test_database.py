@@ -2,15 +2,20 @@ import os
 import sqlite3
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
 from ripple_tradePilot.storage import database_path, init_database
+from ripple_tradePilot.storage.__main__ import main as initialize_storage
 from ripple_tradePilot.storage.database import (
+    DATABASE_SCHEMA_VERSION,
     list_stock_catalog,
     load_daily_bars,
     upsert_daily_bars,
     upsert_stock_catalog,
+    upsert_stock_quotes,
 )
 
 
@@ -44,9 +49,67 @@ class DatabaseInitializationTest(unittest.TestCase):
             self.assertIn("strategy_id", columns)
             self.assertIn("idx_backtest_results_symbol_created", indexes)
             self.assertTrue(
-                {"users", "user_sessions", "strategies", "user_watchlist", "stock_catalog", "daily_bars"}.issubset(tables)
+                {
+                    "users",
+                    "user_sessions",
+                    "strategies",
+                    "user_watchlist",
+                    "stock_catalog",
+                    "daily_bars",
+                    "stock_quotes",
+                }.issubset(tables)
             )
-            self.assertEqual(version, 7)
+            self.assertEqual(version, DATABASE_SCHEMA_VERSION)
+
+    def test_storage_startup_command_migrates_market_schema(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "legacy-market.db"
+            with sqlite3.connect(target) as connection:
+                connection.execute(
+                    "CREATE TABLE stock_catalog ("
+                    "symbol TEXT PRIMARY KEY, name TEXT, market TEXT)"
+                )
+                connection.execute(
+                    "CREATE TABLE daily_bars (id INTEGER PRIMARY KEY)"
+                )
+
+            output = StringIO()
+            with (
+                patch.dict(
+                    os.environ, {"TRADEPILOT_BACKTEST_DB": str(target)}
+                ),
+                redirect_stdout(output),
+            ):
+                initialize_storage()
+
+            with sqlite3.connect(target) as connection:
+                catalog_columns = {
+                    row[1]
+                    for row in connection.execute("PRAGMA table_info(stock_catalog)")
+                }
+                daily_columns = {
+                    row[1]
+                    for row in connection.execute("PRAGMA table_info(daily_bars)")
+                }
+                quote_table = connection.execute(
+                    "SELECT 1 FROM sqlite_master "
+                    "WHERE type = 'table' AND name = 'stock_quotes'"
+                ).fetchone()
+                version = connection.execute("PRAGMA user_version").fetchone()[0]
+
+            self.assertTrue(
+                {"exchange", "board", "industry", "area"}.issubset(
+                    catalog_columns
+                )
+            )
+            self.assertTrue(
+                {"pre_close", "change", "pct_chg"}.issubset(daily_columns)
+            )
+            self.assertIsNotNone(quote_table)
+            self.assertEqual(version, DATABASE_SCHEMA_VERSION)
+            self.assertIn(
+                f"SQLite schema v{DATABASE_SCHEMA_VERSION} ready", output.getvalue()
+            )
 
     def test_adds_columns_missing_from_legacy_database(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -115,7 +178,17 @@ class DatabaseInitializationTest(unittest.TestCase):
                     watchlist_columns
                 )
             )
-            self.assertTrue({"symbol", "trade_date", "close", "source"}.issubset(daily_bar_columns))
+            self.assertTrue(
+                {
+                    "symbol",
+                    "trade_date",
+                    "close",
+                    "pre_close",
+                    "change",
+                    "pct_chg",
+                    "source",
+                }.issubset(daily_bar_columns)
+            )
 
     def test_daily_bars_are_upserted_by_symbol_and_date(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -126,6 +199,9 @@ class DatabaseInitializationTest(unittest.TestCase):
                 "high": 11,
                 "low": 9,
                 "close": 10.5,
+                "pre_close": 10.2,
+                "change": 0.3,
+                "pct_chg": 2.9412,
                 "vol": 100,
             }
             upsert_daily_bars("600000.SH", [first], "test", target)
@@ -138,6 +214,9 @@ class DatabaseInitializationTest(unittest.TestCase):
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0]["close"], 10.8)
             self.assertEqual(rows[0]["vol"], 120)
+            self.assertEqual(rows[0]["pre_close"], 10.2)
+            self.assertEqual(rows[0]["change"], 0.3)
+            self.assertEqual(rows[0]["pct_chg"], 2.9412)
 
     def test_stock_catalog_upsert_updates_watchlist_names(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -162,6 +241,10 @@ class DatabaseInitializationTest(unittest.TestCase):
                         "symbol": "600418.SH",
                         "name": "ST江淮",
                         "market": "主板",
+                        "exchange": "SSE",
+                        "board": "主板",
+                        "industry": "汽车整车",
+                        "area": "安徽",
                         "list_status": "L",
                         "list_date": "20010930",
                     }
@@ -179,6 +262,98 @@ class DatabaseInitializationTest(unittest.TestCase):
 
             self.assertEqual(name, "ST江淮")
             self.assertEqual(catalog[0]["market"], "主板")
+            self.assertEqual(catalog[0]["exchange"], "SSE")
+            self.assertEqual(catalog[0]["board"], "主板")
+            self.assertEqual(catalog[0]["industry"], "汽车整车")
+            self.assertEqual(catalog[0]["area"], "安徽")
+
+    def test_realtime_quote_takes_priority_over_official_daily_change(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "market.db"
+            upsert_stock_catalog(
+                [{"symbol": "600000.SH", "name": "浦发银行"}], "test", target
+            )
+            upsert_daily_bars(
+                "600000.SH",
+                [
+                    {
+                        "trade_date": "20260901",
+                        "open": 10,
+                        "high": 10.5,
+                        "low": 9.8,
+                        "close": 10.2,
+                        "pre_close": 10,
+                        "change": 0.2,
+                        "pct_chg": 2,
+                        "vol": 100,
+                    }
+                ],
+                "tushare",
+                target,
+            )
+            upsert_stock_quotes(
+                [
+                    {
+                        "symbol": "600000.SH",
+                        "price": 10.6,
+                        "pre_close": 10.2,
+                        "change": 0.4,
+                        "change_pct": 3.9216,
+                        "quote_time": "2026-09-02T10:30:00",
+                    }
+                ],
+                "akshare",
+                target,
+            )
+
+            item = list_stock_catalog(target)[0]
+
+            self.assertEqual(item["price"], 10.6)
+            self.assertEqual(item["change"], 0.4)
+            self.assertEqual(item["change_pct"], 3.9216)
+            self.assertEqual(item["price_kind"], "realtime")
+            self.assertEqual(item["price_source"], "akshare")
+            self.assertEqual(item["price_time"], "2026-09-02T10:30:00")
+
+    def test_daily_catalog_uses_official_change_fields_on_adjustment_day(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "market.db"
+            upsert_stock_catalog(
+                [{"symbol": "600000.SH", "name": "浦发银行"}], "test", target
+            )
+            upsert_daily_bars(
+                "600000.SH",
+                [
+                    {
+                        "trade_date": "20260831",
+                        "open": 20,
+                        "high": 20,
+                        "low": 20,
+                        "close": 20,
+                        "vol": 100,
+                    },
+                    {
+                        "trade_date": "20260901",
+                        "open": 9.5,
+                        "high": 10.2,
+                        "low": 9.4,
+                        "close": 10,
+                        "pre_close": 9.5,
+                        "change": 0.5,
+                        "pct_chg": 5.2632,
+                        "vol": 120,
+                    },
+                ],
+                "tushare",
+                target,
+            )
+
+            item = list_stock_catalog(target)[0]
+
+            self.assertEqual(item["price"], 10)
+            self.assertEqual(item["change"], 0.5)
+            self.assertEqual(item["change_pct"], 5.2632)
+            self.assertEqual(item["price_kind"], "daily")
 
 
 if __name__ == "__main__":

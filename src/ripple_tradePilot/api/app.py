@@ -167,6 +167,10 @@ def _stock_catalog(user: Optional[Dict]) -> Dict:
     }
     empty_market = {
         "market": "",
+        "exchange": "",
+        "board": "",
+        "industry": "",
+        "area": "",
         "list_status": "L",
         "list_date": "",
         "updated_at": None,
@@ -174,6 +178,14 @@ def _stock_catalog(user: Optional[Dict]) -> Dict:
         "price": None,
         "change": None,
         "change_pct": None,
+        "pre_close": None,
+        "price_time": None,
+        "price_source": None,
+        "price_kind": "unavailable",
+        "quote_time": None,
+        "quote_volume": None,
+        "quote_amount": None,
+        "turnover_rate": None,
     }
     for code, item in configured.items():
         symbols.setdefault(
@@ -202,12 +214,13 @@ def _stock_catalog(user: Optional[Dict]) -> Dict:
         record = records.get(code)
         watched = record["is_watched"] if record is not None else code in configured
         latest_date = symbol.get("latest_date")
+        price_time = symbol.get("price_time") or latest_date
         freshness = "unavailable"
-        if latest_date:
+        if price_time:
             try:
-                parsed = datetime.strptime(str(latest_date)[:10], "%Y-%m-%d")
+                parsed = datetime.fromisoformat(str(price_time).replace("Z", "+00:00"))
             except ValueError:
-                parsed = datetime.strptime(str(latest_date)[:8], "%Y%m%d")
+                parsed = datetime.strptime(str(price_time)[:8], "%Y%m%d")
             freshness = (
                 "fresh"
                 if max((datetime.now().date() - parsed.date()).days, 0) <= 4
@@ -217,6 +230,10 @@ def _stock_catalog(user: Optional[Dict]) -> Dict:
             "symbol": code,
             "name": symbol.get("name", code),
             "market": symbol.get("market", ""),
+            "exchange": symbol.get("exchange", ""),
+            "board": symbol.get("board") or symbol.get("market", ""),
+            "industry": symbol.get("industry", ""),
+            "area": symbol.get("area", ""),
             "list_status": symbol.get("list_status", "L"),
             "list_date": symbol.get("list_date", ""),
             "catalog_updated_at": symbol.get("updated_at"),
@@ -224,9 +241,17 @@ def _stock_catalog(user: Optional[Dict]) -> Dict:
             "is_default": code in configured,
             "last_updated_at": record.get("last_updated_at") if record else None,
             "price": symbol.get("price"),
+            "pre_close": symbol.get("pre_close"),
             "change": symbol.get("change"),
             "change_pct": symbol.get("change_pct"),
             "latest_date": latest_date,
+            "price_time": price_time,
+            "price_source": symbol.get("price_source"),
+            "price_kind": symbol.get("price_kind", "unavailable"),
+            "quote_time": symbol.get("quote_time"),
+            "volume": symbol.get("quote_volume"),
+            "amount": symbol.get("quote_amount"),
+            "turnover_rate": symbol.get("turnover_rate"),
             "freshness": freshness,
         }
         items.append(item)
@@ -289,10 +314,34 @@ def dashboard(user: Optional[Dict] = Depends(optional_user)):
 def market_detail(
     symbol: str,
     limit: int = Query(default=160, ge=40, le=260),
+    strategy_id: Optional[int] = Query(default=None, ge=1),
     user: Optional[Dict] = Depends(optional_user),
 ):
     try:
-        return _dashboard_for_user(user).market_detail(symbol, limit=limit)
+        strategy = None
+        if strategy_id is not None:
+            if user is None:
+                raise HTTPException(status_code=401, detail="请先注册或登录")
+            strategy = next(
+                (
+                    item
+                    for item in list_visible_strategies(user["id"])
+                    if item["id"] == strategy_id and item["symbol"] == symbol
+                ),
+                None,
+            )
+            if strategy is None:
+                raise HTTPException(status_code=404, detail="策略不存在、不可见或不适用于当前标的")
+
+        detail = _dashboard_for_user(user).market_detail(
+            symbol,
+            limit=limit,
+            profile_override=strategy["parameters"] if strategy else None,
+            strategy_profile=strategy["name"] if strategy else None,
+        )
+        if strategy is not None and strategy["asset_class"] != detail["asset_class"]:
+            raise HTTPException(status_code=404, detail="策略不存在、不可见或不适用于当前标的")
+        return detail
     except DashboardDataError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
@@ -368,6 +417,14 @@ def stocks(user: Optional[Dict] = Depends(optional_user)):
 def refresh_stocks(user: Dict = Depends(required_user)):
     try:
         return {"data": StockDataService().refresh_catalog()}
+    except StockDataUnavailableError as error:
+        raise _stock_error(error) from error
+
+
+@app.post("/api/stocks/quotes/refresh")
+def refresh_stock_quotes(user: Dict = Depends(required_user)):
+    try:
+        return {"data": StockDataService().refresh_quotes()}
     except StockDataUnavailableError as error:
         raise _stock_error(error) from error
 

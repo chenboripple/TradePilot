@@ -12,6 +12,7 @@ from ripple_tradePilot.data.stock_service import (
     StockDataService,
 )
 from ripple_tradePilot.storage.database import (
+    list_stock_catalog,
     load_daily_bars,
     stock_catalog_name,
     upsert_stock_catalog,
@@ -71,6 +72,9 @@ class FakeTushareLoader:
                     "ts_code": "600418.SH",
                     "name": "江淮汽车",
                     "market": "主板",
+                    "exchange": "SSE",
+                    "industry": "汽车整车",
+                    "area": "安徽",
                     "list_status": "L",
                     "list_date": "20010930",
                 }
@@ -126,6 +130,53 @@ class StockDataServiceTest(unittest.TestCase):
             self.assertEqual(result["count"], 1)
             self.assertEqual(stock_catalog_name("600418.SH", root / "market.db"), "江淮汽车")
             self.assertEqual(FakeTushareLoader.catalog_requests, 1)
+            item = list_stock_catalog(root / "market.db")[0]
+            self.assertEqual(item["exchange"], "SSE")
+            self.assertEqual(item["board"], "主板")
+            self.assertEqual(item["industry"], "汽车整车")
+            self.assertEqual(item["area"], "安徽")
+
+    def test_full_market_realtime_snapshot_is_fetched_once_and_persisted(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            database = root / "market.db"
+            upsert_stock_catalog(
+                [{"symbol": "600418.SH", "name": "江淮汽车"}],
+                "test",
+                database,
+            )
+            frame = pd.DataFrame(
+                [
+                    {
+                        "代码": "600418",
+                        "最新价": 42.6,
+                        "昨收": 41.8,
+                        "涨跌额": 0.8,
+                        "涨跌幅": 1.9139,
+                        "今开": 42,
+                        "最高": 43,
+                        "最低": 41.9,
+                        "成交量": 1234,
+                        "成交额": 5300000,
+                        "换手率": 1.2,
+                    }
+                ]
+            )
+            service = StockDataService(database=database)
+            with patch(
+                "ripple_tradePilot.data.stock_service.ak.stock_zh_a_spot_em",
+                return_value=frame,
+            ) as snapshot:
+                result = service.refresh_quotes()
+
+            item = list_stock_catalog(database)[0]
+            self.assertEqual(snapshot.call_count, 1)
+            self.assertEqual(result["count"], 1)
+            self.assertEqual(item["price"], 42.6)
+            self.assertEqual(item["pre_close"], 41.8)
+            self.assertEqual(item["change_pct"], 1.9139)
+            self.assertEqual(item["quote_volume"], 123400)
+            self.assertEqual(item["price_kind"], "realtime")
 
     def test_catalog_refresh_falls_back_to_full_eastmoney_list(self):
         class LimitedTushareLoader(FakeTushareLoader):
@@ -165,6 +216,34 @@ class StockDataServiceTest(unittest.TestCase):
             self.assertEqual(result, {"count": 2, "source": "eastmoney"})
             self.assertEqual(stock_catalog_name("600418.SH", root / "market.db"), "江淮汽车")
             self.assertEqual(stock_catalog_name("920855.BJ", root / "market.db"), "浙江大农")
+
+    def test_catalog_refresh_without_tushare_token_uses_fallback_source(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = root / "config.yaml"
+            config.write_text("symbols: []\n", encoding="utf-8")
+            service = StockDataService(config_path=config, database=root / "market.db")
+            with (
+                patch.object(
+                    StockDataService,
+                    "_eastmoney_catalog_records",
+                    return_value=[
+                        {
+                            "symbol": "600418.SH",
+                            "name": "江淮汽车",
+                            "exchange": "SSE",
+                            "board": "主板",
+                        }
+                    ],
+                ),
+                patch(
+                    "ripple_tradePilot.data.stock_service.TushareDataLoader"
+                ) as loader,
+            ):
+                result = service.refresh_catalog()
+
+            loader.assert_not_called()
+            self.assertEqual(result, {"count": 1, "source": "eastmoney"})
 
     def test_eastmoney_catalog_retries_an_alternate_endpoint_after_disconnect(self):
         class FakeResponse:

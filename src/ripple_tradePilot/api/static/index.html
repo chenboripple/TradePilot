@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=5">
+  <link rel="stylesheet" href="/assets/app.css?v=8">
 </head>
 <body>
   <header class="topbar">
@@ -39,10 +39,11 @@
     <aside class="sidebar">
       <nav class="primary-nav" aria-label="主导航">
         <button class="nav-button is-active" data-view="overview"><span>01</span>市场总览</button>
-        <button class="nav-button" data-view="stocks"><span>02</span>全部数据</button>
-        <button class="nav-button" data-view="strategies"><span>03</span>策略配置</button>
-        <button class="nav-button" data-view="backtests"><span>04</span>回测记录</button>
-        <button class="nav-button" data-view="system"><span>05</span>系统状态</button>
+        <button class="nav-button" data-view="detail"><span>02</span>标的详情</button>
+        <button class="nav-button" data-view="stocks"><span>03</span>全部数据</button>
+        <button class="nav-button" data-view="strategies"><span>04</span>策略配置</button>
+        <button class="nav-button" data-view="backtests"><span>05</span>回测记录</button>
+        <button class="nav-button" data-view="system"><span>06</span>系统状态</button>
       </nav>
 
       <section class="watchlist-section">
@@ -63,8 +64,9 @@
     </aside>
 
     <main class="main-content">
-      <section class="view is-active" id="view-overview">
-        <div class="metrics-band" id="metrics-band"></div>
+      <section class="view overview-blank is-active" id="view-overview" aria-label="市场总览"></section>
+
+      <section class="view" id="view-detail">
         <div class="data-alert" id="data-alert" hidden></div>
 
         <section class="market-workspace" id="market-workspace">
@@ -111,7 +113,11 @@
             <section class="analysis-panel">
               <div class="panel-heading">
                 <h2>策略判断</h2>
-                <span id="strategy-profile">--</span>
+                <div class="detail-strategy-control">
+                  <label for="detail-strategy">策略</label>
+                  <select id="detail-strategy" aria-label="切换分析策略"></select>
+                  <span id="strategy-calculating" hidden>计算中</span>
+                </div>
               </div>
               <p class="decision-reason" id="decision-reason">--</p>
               <div class="vote-grid" id="vote-grid"></div>
@@ -129,9 +135,9 @@
         </section>
 
         <section class="empty-market" id="empty-market" hidden>
-          <span class="empty-code">FUT</span>
-          <h2>期货市场尚未接入数据</h2>
-          <p>资产分类和策略结构已就绪，等待配置期货合约与行情源。</p>
+          <span class="empty-code">--</span>
+          <h2>请选择一个标的</h2>
+          <p>从左侧观察池选择后查看行情和策略趋势。</p>
         </section>
       </section>
 
@@ -142,11 +148,21 @@
             <label class="catalog-search"><span>搜索股票</span><input id="stock-search" type="search" placeholder="代码或名称"></label>
             <span id="stock-catalog-status">尚未同步股票清单</span>
             <button class="primary-button authenticated-content" id="sync-stocks-button" hidden>同步股票清单</button>
+            <button class="secondary-button authenticated-content" id="refresh-quotes-button" hidden>刷新实时行情</button>
           </div>
         </header>
+        <div class="catalog-filters" aria-label="股票筛选条件">
+          <label><span>交易所</span><select data-stock-filter="exchange"><option value="">全部交易所</option></select></label>
+          <label><span>上市板块</span><select data-stock-filter="board"><option value="">全部板块</option></select></label>
+          <label><span>行业</span><select data-stock-filter="industry"><option value="">全部行业</option></select></label>
+          <label><span>地域</span><select data-stock-filter="area"><option value="">全部地域</option></select></label>
+          <label><span>行情状态</span><select data-stock-filter="status"><option value="">全部行情</option><option value="realtime">实时快照</option><option value="daily">日线收盘</option><option value="stale">数据滞后</option><option value="unavailable">暂无行情</option></select></label>
+          <label><span>观察状态</span><select data-stock-filter="watch"><option value="">全部股票</option><option value="watched">观察中</option><option value="archived">未观察</option></select></label>
+          <button class="table-action catalog-filter-reset" id="stock-filter-reset" disabled>清除筛选</button>
+        </div>
         <div class="table-panel">
           <table class="stock-catalog-table">
-            <thead><tr><th>股票</th><th>市场 / 上市日期</th><th>最新价</th><th>涨跌</th><th>行情日期</th><th>数据状态</th><th>观察状态</th><th>操作</th></tr></thead>
+            <thead><tr><th>股票</th><th>交易所 / 板块</th><th>行业 / 地域</th><th>最新价</th><th>涨跌</th><th>价格时间</th><th>数据状态</th><th>观察状态</th><th>操作</th></tr></thead>
             <tbody id="stock-table"></tbody>
           </table>
           <div class="table-empty" id="stock-empty" hidden>暂无股票数据</div>
@@ -264,6 +280,6 @@
     </form>
   </dialog>
 
-  <script src="/assets/app.js?v=5" defer></script>
+  <script src="/assets/app.js?v=8" defer></script>
 </body>
 </html>

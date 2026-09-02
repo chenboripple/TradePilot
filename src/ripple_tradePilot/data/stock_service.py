@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
 import threading
@@ -26,6 +27,7 @@ from ripple_tradePilot.storage.database import (
 _DATA_LOCK = threading.Lock()
 _CATALOG_LOCK = threading.Lock()
 _QUOTE_LOCK = threading.Lock()
+logger = logging.getLogger(__name__)
 
 
 class StockDataError(RuntimeError):
@@ -244,7 +246,7 @@ class StockDataService:
         return records
 
     @staticmethod
-    def _sina_catalog_records() -> list[Dict[str, str]]:
+    def _sina_market_rows() -> list[Dict[str, Any]]:
         count_url = (
             "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
             "Market_Center.getHQNodeStockCount"
@@ -280,8 +282,13 @@ class StockDataService:
                 response.raise_for_status()
                 page_rows = response.json()
                 if not isinstance(page_rows, list):
-                    raise StockDataUnavailableError("新浪返回了无效的股票清单")
+                    raise StockDataUnavailableError("新浪返回了无效的市场数据")
                 rows.extend(page_rows)
+        return rows
+
+    @staticmethod
+    def _sina_catalog_records() -> list[Dict[str, str]]:
+        rows = StockDataService._sina_market_rows()
 
         records = []
         exchange_names = {"sh": "SH", "sz": "SZ", "bj": "BJ"}
@@ -306,6 +313,56 @@ class StockDataService:
                     "area": "",
                     "list_status": "L",
                     "list_date": "",
+                }
+            )
+        return records
+
+    @staticmethod
+    def _sina_realtime_records() -> list[Dict[str, Any]]:
+        rows = StockDataService._sina_market_rows()
+        quote_date = datetime.now().date().isoformat()
+        exchange_names = {"sh": "SH", "sz": "SZ", "bj": "BJ"}
+        records = []
+        for row in rows:
+            code = str(row.get("code") or "").strip()
+            raw_symbol = str(row.get("symbol") or "").lower().strip()
+            exchange = exchange_names.get(raw_symbol[:2])
+            if not re.fullmatch(r"\d{6}", code) or not exchange:
+                continue
+            pre_close = StockDataService._optional_float(row.get("settlement"))
+            price = StockDataService._optional_float(row.get("trade"))
+            if price == 0 and pre_close not in (None, 0):
+                price = pre_close
+            if price is None:
+                continue
+            tick_time = str(row.get("ticktime") or "").strip()
+            quote_time = (
+                f"{quote_date}T{tick_time}"
+                if re.fullmatch(r"\d{2}:\d{2}:\d{2}", tick_time)
+                else datetime.now().isoformat(timespec="seconds")
+            )
+            records.append(
+                {
+                    "symbol": f"{code}.{exchange}",
+                    "price": price,
+                    "pre_close": pre_close,
+                    "change": StockDataService._optional_float(
+                        row.get("pricechange")
+                    ),
+                    "change_pct": StockDataService._optional_float(
+                        row.get("changepercent")
+                    ),
+                    "open": StockDataService._optional_float(row.get("open")),
+                    "high": StockDataService._optional_float(row.get("high")),
+                    "low": StockDataService._optional_float(row.get("low")),
+                    "volume": (
+                        StockDataService._optional_float(row.get("volume")) or 0
+                    ),
+                    "amount": StockDataService._optional_float(row.get("amount")),
+                    "turnover_rate": StockDataService._optional_float(
+                        row.get("turnoverratio")
+                    ),
+                    "quote_time": quote_time,
                 }
             )
         return records
@@ -346,19 +403,45 @@ class StockDataService:
 
     def refresh_quotes(self) -> Dict[str, Any]:
         with _QUOTE_LOCK:
+            records = []
+            source = ""
+            errors = []
             try:
                 frame = ak.stock_zh_a_spot_em()
             except Exception as error:
-                raise StockDataUnavailableError(
-                    "暂时无法获取全市场实时行情，请稍后重试"
-                ) from error
-            records = self._realtime_records(frame)
+                errors.append(("AkShare/东方财富", error))
+                logger.exception("AkShare realtime snapshot request failed")
+            else:
+                records = self._realtime_records(frame)
+                if records:
+                    source = "akshare"
+                else:
+                    error = StockDataUnavailableError("返回了空数据")
+                    errors.append(("AkShare/东方财富", error))
+                    logger.warning("AkShare realtime snapshot returned no valid records")
             if not records:
-                raise StockDataUnavailableError("全市场实时行情返回了空数据")
-            upsert_stock_quotes(records, "akshare", self.database)
+                try:
+                    records = self._sina_realtime_records()
+                except Exception as error:
+                    errors.append(("新浪财经", error))
+                    logger.exception("Sina realtime snapshot request failed")
+                else:
+                    if records:
+                        source = "sina"
+                    else:
+                        error = StockDataUnavailableError("返回了空数据")
+                        errors.append(("新浪财经", error))
+                        logger.warning("Sina realtime snapshot returned no valid records")
+            if not records:
+                attempted = "、".join(name for name, _ in errors)
+                cause = errors[-1][1] if errors else None
+                raise StockDataUnavailableError(
+                    f"全市场实时行情刷新失败（已尝试：{attempted}），原有行情数据未受影响"
+                ) from cause
+            upsert_stock_quotes(records, source, self.database)
         return {
             "count": len(records),
-            "source": "akshare",
+            "source": source,
             "quote_time": records[0]["quote_time"],
         }
 

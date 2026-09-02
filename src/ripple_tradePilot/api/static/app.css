@@ -383,7 +383,7 @@ tbody tr:hover { background: rgba(0, 106, 96, .05); }
   .account-menu strong { display: none; }
   .app-shell { display: block; }
   .sidebar { position: static; height: auto; }
-  .primary-nav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); padding: 8px; overflow-x: auto; }
+  .primary-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 8px; overflow-x: auto; }
   .nav-button { justify-content: center; min-width: 98px; padding: 0 8px; gap: 6px; }
   .watchlist-section { display: block; }
   .section-label { padding: 10px 12px 7px; }
@@ -419,7 +419,7 @@ tbody tr:hover { background: rgba(0, 106, 96, .05); }
 
 @media (max-width: 480px) {
   .brand small { display: none; }
-  .primary-nav { grid-template-columns: repeat(6, 104px); }
+  .primary-nav { grid-template-columns: repeat(5, 104px); }
   .metrics-band { grid-template-columns: 1fr 1fr; }
   .metric { padding: 13px; }
   .instrument-header { gap: 10px; }

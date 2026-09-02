@@ -10,12 +10,14 @@ import pandas as pd
 from ripple_tradePilot.data.stock_service import (
     InvalidStockSymbolError,
     StockDataService,
+    StockDataUnavailableError,
 )
 from ripple_tradePilot.storage.database import (
     list_stock_catalog,
     load_daily_bars,
     stock_catalog_name,
     upsert_stock_catalog,
+    upsert_stock_quotes,
 )
 
 
@@ -177,6 +179,121 @@ class StockDataServiceTest(unittest.TestCase):
             self.assertEqual(item["change_pct"], 1.9139)
             self.assertEqual(item["quote_volume"], 123400)
             self.assertEqual(item["price_kind"], "realtime")
+
+    def test_sina_realtime_snapshot_maps_official_quote_fields(self):
+        rows = [
+            {
+                "symbol": "bj920000",
+                "code": "920000",
+                "trade": "14.760",
+                "settlement": "14.190",
+                "pricechange": 0.57,
+                "changepercent": 4.017,
+                "open": "14.160",
+                "high": "15.990",
+                "low": "14.160",
+                "volume": 2394472,
+                "amount": 36274538,
+                "turnoverratio": 4.15751,
+                "ticktime": "15:30:00",
+            }
+        ]
+        with patch.object(StockDataService, "_sina_market_rows", return_value=rows):
+            records = StockDataService._sina_realtime_records()
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["symbol"], "920000.BJ")
+        self.assertEqual(records[0]["price"], 14.76)
+        self.assertEqual(records[0]["pre_close"], 14.19)
+        self.assertEqual(records[0]["change"], 0.57)
+        self.assertEqual(records[0]["change_pct"], 4.017)
+        self.assertEqual(records[0]["volume"], 2394472)
+        self.assertTrue(records[0]["quote_time"].endswith("T15:30:00"))
+
+    def test_realtime_refresh_falls_back_to_sina_and_persists_snapshot(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            database = Path(temp_dir) / "market.db"
+            upsert_stock_catalog(
+                [{"symbol": "920000.BJ", "name": "安徽凤凰"}],
+                "test",
+                database,
+            )
+            records = [
+                {
+                    "symbol": "920000.BJ",
+                    "price": 14.76,
+                    "pre_close": 14.19,
+                    "change": 0.57,
+                    "change_pct": 4.017,
+                    "open": 14.16,
+                    "high": 15.99,
+                    "low": 14.16,
+                    "volume": 2394472,
+                    "amount": 36274538,
+                    "turnover_rate": 4.15751,
+                    "quote_time": "2026-09-02T15:30:00",
+                }
+            ]
+            service = StockDataService(database=database)
+            with (
+                patch(
+                    "ripple_tradePilot.data.stock_service.ak.stock_zh_a_spot_em",
+                    side_effect=RuntimeError("eastmoney disconnected"),
+                ),
+                patch.object(
+                    StockDataService,
+                    "_sina_realtime_records",
+                    return_value=records,
+                ),
+            ):
+                result = service.refresh_quotes()
+
+            item = list_stock_catalog(database)[0]
+            self.assertEqual(result["source"], "sina")
+            self.assertEqual(result["count"], 1)
+            self.assertEqual(item["price"], 14.76)
+            self.assertEqual(item["price_source"], "sina")
+
+    def test_failed_realtime_refresh_preserves_existing_snapshot(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            database = Path(temp_dir) / "market.db"
+            upsert_stock_catalog(
+                [{"symbol": "600418.SH", "name": "江淮汽车"}],
+                "test",
+                database,
+            )
+            upsert_stock_quotes(
+                [
+                    {
+                        "symbol": "600418.SH",
+                        "price": 42.6,
+                        "quote_time": "2026-09-02T10:30:00",
+                    }
+                ],
+                "existing",
+                database,
+            )
+            service = StockDataService(database=database)
+            with (
+                patch(
+                    "ripple_tradePilot.data.stock_service.ak.stock_zh_a_spot_em",
+                    side_effect=RuntimeError("eastmoney disconnected"),
+                ),
+                patch.object(
+                    StockDataService,
+                    "_sina_realtime_records",
+                    side_effect=RuntimeError("sina disconnected"),
+                ),
+            ):
+                with self.assertRaisesRegex(
+                    StockDataUnavailableError,
+                    "AkShare/东方财富、新浪财经",
+                ):
+                    service.refresh_quotes()
+
+            item = list_stock_catalog(database)[0]
+            self.assertEqual(item["price"], 42.6)
+            self.assertEqual(item["price_source"], "existing")
 
     def test_catalog_refresh_falls_back_to_full_eastmoney_list(self):
         class LimitedTushareLoader(FakeTushareLoader):

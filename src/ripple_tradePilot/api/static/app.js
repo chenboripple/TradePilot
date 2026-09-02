@@ -368,8 +368,8 @@ function renderStockCatalog() {
   elements.stockMore.textContent = `显示更多（${visible.length} / ${filtered.length}）`;
   elements.stockCatalogStatus.textContent = stocks.length
     ? hasActiveFilters
-      ? `已筛选 ${filtered.length.toLocaleString("zh-CN")} / ${stocks.length.toLocaleString("zh-CN")} 只`
-      : `共 ${stocks.length.toLocaleString("zh-CN")} 只股票`
+      ? `已筛选 ${filtered.length.toLocaleString("zh-CN")} / 数据库 ${stocks.length.toLocaleString("zh-CN")} 只`
+      : `数据库共 ${stocks.length.toLocaleString("zh-CN")} 只股票`
     : "尚未同步股票清单";
   elements.stockFilterReset.disabled = !hasActiveFilters;
   elements.stockTable.innerHTML = visible.map((item) => {

@@ -27,6 +27,10 @@ const state = {
   authMode: "login",
   pendingView: null,
   editingStrategyId: null,
+  backtest: null,
+  backtestHover: null,
+  backtestChartGeometry: null,
+  autoRefresh: { timer: null, lastRun: 0, busy: false },
 };
 
 const elements = {
@@ -76,11 +80,24 @@ const elements = {
   refreshQuotes: document.querySelector("#refresh-quotes-button"),
   stockFilters: document.querySelectorAll("[data-stock-filter]"),
   stockFilterReset: document.querySelector("#stock-filter-reset"),
+  backtestForm: document.querySelector("#backtest-form"),
+  backtestSubmit: document.querySelector("#backtest-submit"),
+  backtestError: document.querySelector("#backtest-error"),
+  backtestResult: document.querySelector("#backtest-result"),
+  backtestNotes: document.querySelector("#backtest-notes"),
+  backtestChart: document.querySelector("#backtest-chart"),
+  backtestChartTooltip: document.querySelector("#backtest-chart-tooltip"),
+  backtestChartEmpty: document.querySelector("#backtest-chart-empty"),
+  autoRefreshToggle: document.querySelector("#auto-refresh-toggle"),
+  autoRefreshInterval: document.querySelector("#auto-refresh-interval"),
 };
 
 const recommendationLabels = { BUY: "偏多", SELL: "偏空", HOLD: "观望" };
 const voteLabels = { BUY: "偏多", SELL: "偏空", HOLD: "中性" };
 const assetLabels = { stock: "股票", future: "期货" };
+const backtestStrategyLabels = { ma: "均线交叉", rsi: "RSI 反转", macd: "MACD 趋势", bollinger: "布林带", donchian: "唐奇安通道" };
+const backtestExecutionLabels = { next_open: "次日开盘撮合", close: "当日收盘撮合" };
+const AUTO_REFRESH_INTERVALS = { 60: 60000, 300: 300000 };
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -94,6 +111,13 @@ function escapeHtml(value) {
 function formatNumber(value, digits = 2) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
   return Number(value).toLocaleString("zh-CN", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function formatPercent(value, digits = 2, signed = false) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
+  const percent = Number(value) * 100;
+  const sign = signed && percent > 0 ? "+" : "";
+  return `${sign}${percent.toLocaleString("zh-CN", { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
 }
 
 function recClass(value) {
@@ -779,6 +803,222 @@ function renderBacktests() {
   `).join("");
 }
 
+async function runBacktest(event) {
+  event.preventDefault();
+  elements.backtestError.hidden = true;
+  const fields = elements.backtestForm.elements;
+  const submit = elements.backtestSubmit;
+  submit.disabled = true;
+  submit.textContent = "回测运行中...";
+  try {
+    const payload = {
+      symbol: fields.symbol.value.trim(),
+      strategy: fields.strategy.value,
+      bars: Number(fields.bars.value),
+      execution: fields.execution.value,
+    };
+    const response = await apiRequest("/api/backtest", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    state.backtest = response.data;
+    state.backtestHover = null;
+    renderBacktestResult();
+  } catch (error) {
+    elements.backtestError.textContent = `回测失败：${error.message}`;
+    elements.backtestError.hidden = false;
+  } finally {
+    submit.disabled = false;
+    submit.textContent = "开始回测";
+  }
+}
+
+function setBacktestMetric(selector, text, tone) {
+  const element = document.querySelector(selector);
+  element.textContent = text;
+  element.className = tone === "up" ? "rec-buy" : tone === "down" ? "rec-sell" : "";
+}
+
+function renderBacktestResult() {
+  const data = state.backtest;
+  if (!data) return;
+  elements.backtestResult.hidden = false;
+  document.querySelector("#backtest-result-title").textContent = `${data.symbol} · ${backtestStrategyLabels[data.strategy] ?? data.strategy}`;
+  document.querySelector("#backtest-result-meta").textContent = `${backtestExecutionLabels[data.execution] ?? data.execution} · ${data.bar_count} 根 K 线`;
+
+  const notes = [];
+  if (data.halted_by_drawdown) {
+    notes.push(["alert", "已触发回撤闸门：净值回撤达到风控阈值后回测提前停止，后续信号不再撮合。"]);
+  }
+  if (data.skipped_fills > 0) {
+    notes.push(["info", `涨跌停拦截：${data.skipped_fills} 笔委托因涨停/跌停无法成交，已按废单处理。`]);
+  }
+  if (!notes.length) {
+    notes.push(["info", "本次回测未触发涨跌停拦截，也未触发回撤闸门。"]);
+  }
+  elements.backtestNotes.innerHTML = notes
+    .map(([kind, text]) => `<div class="data-alert ${kind === "info" ? "note-info" : ""}">${escapeHtml(text)}</div>`)
+    .join("");
+
+  const metrics = data.metrics ?? {};
+  const trades = data.trades ?? {};
+  setBacktestMetric("#bt-total-return", formatPercent(metrics.total_return, 2, true), Number(metrics.total_return) >= 0 ? "up" : "down");
+  setBacktestMetric("#bt-annual-return", formatPercent(metrics.annual_return, 2, true), Number(metrics.annual_return) >= 0 ? "up" : "down");
+  setBacktestMetric("#bt-max-drawdown", formatPercent(metrics.max_drawdown), Number(metrics.max_drawdown) < 0 ? "down" : "");
+  setBacktestMetric("#bt-sharpe", formatNumber(metrics.sharpe), "");
+  setBacktestMetric("#bt-total-fees", `${formatNumber(trades.total_fees)} 元`, "");
+  setBacktestMetric("#bt-num-trades", String(trades.num_trades ?? 0), "");
+  setBacktestMetric("#bt-win-rate", formatPercent(trades.win_rate, 1), "");
+  setBacktestMetric("#bt-avg-return", formatPercent(trades.avg_return_per_trade, 2, true), Number(trades.avg_return_per_trade) >= 0 ? "up" : "down");
+  setBacktestMetric("#bt-best-trade", formatPercent(trades.best_trade, 2, true), Number(trades.best_trade) >= 0 ? "up" : "down");
+  setBacktestMetric("#bt-worst-trade", formatPercent(trades.worst_trade, 2, true), Number(trades.worst_trade) >= 0 ? "up" : "down");
+
+  const fills = data.fills ?? [];
+  document.querySelector("#backtest-fill-count").textContent = `${fills.length} 笔`;
+  document.querySelector("#backtest-fill-table").innerHTML = fills.length
+    ? fills.map((fill) => `
+      <tr>
+        <td>${escapeHtml(fill.date)}</td>
+        <td class="${fill.side === "BUY" ? "side-buy" : "side-sell"}">${fill.side === "BUY" ? "买入" : "卖出"}</td>
+        <td>${formatNumber(fill.quantity, 0)}</td>
+        <td>${formatNumber(fill.price)}</td>
+        <td>${formatNumber(fill.fee)}</td>
+      </tr>
+    `).join("")
+    : '<tr><td colspan="5">本次回测没有产生成交</td></tr>';
+
+  const curve = data.equity_curve ?? [];
+  document.querySelector("#backtest-chart-range").textContent = curve.length >= 2
+    ? `${curve[0].date} — ${curve[curve.length - 1].date}`
+    : "--";
+  document.querySelector("#backtest-disclaimer").textContent = data.disclaimer ?? "";
+  requestAnimationFrame(drawEquityChart);
+}
+
+function drawEquityChart() {
+  const canvas = elements.backtestChart;
+  const frame = canvas.parentElement;
+  const curve = state.backtest?.equity_curve ?? [];
+  if (elements.backtestResult.hidden) return;
+  if (frame.clientWidth === 0) return;
+  if (!curve.length) {
+    elements.backtestChartEmpty.hidden = false;
+    elements.backtestChartEmpty.textContent = "暂无权益曲线";
+    return;
+  }
+  elements.backtestChartEmpty.hidden = true;
+
+  const width = frame.clientWidth;
+  const height = frame.clientHeight;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = Math.round(width * ratio);
+  canvas.height = Math.round(height * ratio);
+  const context = canvas.getContext("2d");
+  context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  context.clearRect(0, 0, width, height);
+
+  const margin = { top: 18, right: 70, bottom: 26, left: 14 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+  const values = curve.map((point) => point.equity);
+  let valueMin = Math.min(...values);
+  let valueMax = Math.max(...values);
+  const valuePadding = Math.max((valueMax - valueMin) * 0.1, valueMax * 0.005);
+  valueMin -= valuePadding;
+  valueMax += valuePadding;
+  const yAt = (value) => margin.top + ((valueMax - value) / (valueMax - valueMin || 1)) * chartHeight;
+  const xAt = (index) => margin.left + (curve.length <= 1 ? chartWidth / 2 : (index / (curve.length - 1)) * chartWidth);
+
+  context.strokeStyle = "#e5eaee";
+  context.fillStyle = "#7d8993";
+  context.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace";
+  context.lineWidth = 1;
+  for (let grid = 0; grid <= 4; grid += 1) {
+    const y = margin.top + chartHeight * grid / 4;
+    context.beginPath();
+    context.moveTo(margin.left, y + 0.5);
+    context.lineTo(width - margin.right, y + 0.5);
+    context.stroke();
+    const value = valueMax - (valueMax - valueMin) * grid / 4;
+    context.fillText(formatNumber(value, 0), width - margin.right + 8, y + 3);
+  }
+
+  const baseline = values[0];
+  context.strokeStyle = "#a8b1b9";
+  context.setLineDash([4, 3]);
+  context.beginPath();
+  context.moveTo(margin.left, yAt(baseline) + 0.5);
+  context.lineTo(width - margin.right, yAt(baseline) + 0.5);
+  context.stroke();
+  context.setLineDash([]);
+
+  context.beginPath();
+  curve.forEach((point, index) => {
+    const x = xAt(index);
+    const y = yAt(point.equity);
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  });
+  context.strokeStyle = "#006a60";
+  context.lineWidth = 1.6;
+  context.stroke();
+  context.lineTo(xAt(curve.length - 1), margin.top + chartHeight);
+  context.lineTo(xAt(0), margin.top + chartHeight);
+  context.closePath();
+  context.fillStyle = "rgba(0, 106, 96, .08)";
+  context.fill();
+
+  const labelCount = Math.min(5, curve.length);
+  context.fillStyle = "#7d8993";
+  for (let labelIndex = 0; labelIndex < labelCount; labelIndex += 1) {
+    const index = Math.round((curve.length - 1) * labelIndex / Math.max(labelCount - 1, 1));
+    const x = xAt(index);
+    context.fillText(shortDate(curve[index].date), Math.min(Math.max(x - 14, margin.left), width - margin.right - 28), height - 8);
+  }
+
+  if (state.backtestHover !== null && curve[state.backtestHover]) {
+    const x = xAt(state.backtestHover);
+    context.strokeStyle = "#7f8a93";
+    context.setLineDash([3, 3]);
+    context.beginPath();
+    context.moveTo(x, margin.top);
+    context.lineTo(x, margin.top + chartHeight);
+    context.stroke();
+    context.setLineDash([]);
+    context.fillStyle = "#006a60";
+    context.beginPath();
+    context.arc(x, yAt(curve[state.backtestHover].equity), 3, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  state.backtestChartGeometry = { margin, chartWidth, curve };
+}
+
+async function autoRefreshTick() {
+  if (state.autoRefresh.busy) return;
+  state.autoRefresh.busy = true;
+  state.autoRefresh.lastRun = Date.now();
+  try {
+    await fetchDashboard();
+    if (state.user) await loadProtectedData();
+    if (state.allStocks !== null) await fetchStockCatalog();
+  } catch (_) {
+    // 各请求内部已有错误提示，这里仅防止定时器中断
+  } finally {
+    state.autoRefresh.busy = false;
+  }
+}
+
+function syncAutoRefreshTimer() {
+  if (state.autoRefresh.timer) {
+    window.clearInterval(state.autoRefresh.timer);
+    state.autoRefresh.timer = null;
+  }
+  if (!elements.autoRefreshToggle.checked || document.hidden) return;
+  const intervalMs = AUTO_REFRESH_INTERVALS[Number(elements.autoRefreshInterval.value)] ?? AUTO_REFRESH_INTERVALS[60];
+  state.autoRefresh.timer = window.setInterval(autoRefreshTick, intervalMs);
+}
+
 async function toggleStrategyVisibility(button) {
   button.disabled = true;
   try {
@@ -1034,6 +1274,23 @@ elements.refresh.addEventListener("click", async () => {
   await fetchDashboard();
   if (state.view === "stocks") await fetchStockCatalog();
 });
+elements.autoRefreshToggle.addEventListener("change", () => {
+  elements.autoRefreshInterval.disabled = !elements.autoRefreshToggle.checked;
+  syncAutoRefreshTimer();
+  if (elements.autoRefreshToggle.checked && !document.hidden) autoRefreshTick();
+});
+elements.autoRefreshInterval.addEventListener("change", syncAutoRefreshTimer);
+document.addEventListener("visibilitychange", () => {
+  if (!elements.autoRefreshToggle.checked) return;
+  if (document.hidden) {
+    syncAutoRefreshTimer();
+    return;
+  }
+  const intervalMs = AUTO_REFRESH_INTERVALS[Number(elements.autoRefreshInterval.value)] ?? AUTO_REFRESH_INTERVALS[60];
+  if (Date.now() - state.autoRefresh.lastRun >= intervalMs) autoRefreshTick();
+  syncAutoRefreshTimer();
+});
+elements.backtestForm.addEventListener("submit", runBacktest);
 elements.syncStocks.addEventListener("click", syncStockCatalog);
 elements.refreshQuotes.addEventListener("click", refreshStockQuotes);
 elements.stockSearch.addEventListener("input", () => {
@@ -1201,10 +1458,36 @@ elements.chart.addEventListener("mouseleave", () => {
   elements.chartTooltip.hidden = true;
   drawChart();
 });
+elements.backtestChart.addEventListener("mousemove", (event) => {
+  const geometry = state.backtestChartGeometry;
+  if (!geometry || !geometry.curve.length) return;
+  const rect = elements.backtestChart.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const ratio = geometry.curve.length <= 1 ? 0.5 : (x - geometry.margin.left) / geometry.chartWidth;
+  const index = Math.max(0, Math.min(geometry.curve.length - 1, Math.round(ratio * (geometry.curve.length - 1))));
+  state.backtestHover = index;
+  const point = geometry.curve[index];
+  const baseEquity = geometry.curve[0].equity;
+  const changePct = baseEquity ? (point.equity / baseEquity - 1) * 100 : 0;
+  elements.backtestChartTooltip.hidden = false;
+  elements.backtestChartTooltip.style.left = `${Math.min(x + 14, rect.width - 174)}px`;
+  elements.backtestChartTooltip.style.top = "18px";
+  elements.backtestChartTooltip.innerHTML = `${escapeHtml(point.date)}<br>净值 ${formatNumber(point.equity)}<br>区间收益 ${changePct >= 0 ? "+" : ""}${formatNumber(changePct)}%`;
+  drawEquityChart();
+});
+elements.backtestChart.addEventListener("mouseleave", () => {
+  state.backtestHover = null;
+  elements.backtestChartTooltip.hidden = true;
+  drawEquityChart();
+});
 
 new ResizeObserver(() => {
   if (state.view === "detail") drawChart();
 }).observe(elements.chart.parentElement);
+
+new ResizeObserver(() => {
+  if (!elements.backtestResult.hidden) drawEquityChart();
+}).observe(elements.backtestChart.parentElement);
 
 async function bootstrap() {
   try {

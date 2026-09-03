@@ -368,6 +368,42 @@ tbody tr:hover { background: rgba(0, 106, 96, .05); }
 .rec-sell { color: var(--sell); }
 .rec-hold { color: var(--hold); }
 
+.auto-refresh-toggle { display: flex; align-items: center; gap: 5px; margin-left: 6px; color: var(--muted); font-size: 12px; cursor: pointer; white-space: nowrap; }
+.auto-refresh-toggle input { accent-color: var(--info); }
+.auto-refresh-interval { height: 32px; padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--muted); font-size: 11px; outline: none; }
+.auto-refresh-interval:focus { border-color: var(--info); box-shadow: 0 0 0 2px var(--info-soft); }
+.auto-refresh-interval:disabled { opacity: .55; }
+
+.backtest-runner { margin-bottom: 16px; padding: 18px 20px 20px; border: 0; border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+.backtest-runner .panel-heading span { font-size: 10px; }
+.backtest-form { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)) auto; gap: 12px; align-items: end; margin-top: 14px; }
+.backtest-form .field { margin-bottom: 0; }
+.backtest-form .field input, .backtest-form .field select { height: 40px; }
+.backtest-submit { min-height: 40px; white-space: nowrap; }
+.backtest-runner > .form-error { margin-top: 12px; margin-bottom: 0; }
+.backtest-result { margin-top: 18px; }
+.backtest-result-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.backtest-result-head h3 { margin: 0; font-size: 15px; }
+.backtest-result-head span { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.backtest-notes { display: grid; gap: 8px; margin: 12px 0 0; }
+.backtest-notes:empty { margin: 0; }
+.backtest-notes .data-alert { margin-bottom: 0; }
+.backtest-notes .note-info { border-left-color: var(--info); background: var(--info-soft); color: #00332e; }
+.backtest-runner .metrics-band { margin-top: 12px; min-height: 0; border: 1px solid var(--line); box-shadow: none; }
+.backtest-chart-panel { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.backtest-chart-panel .panel-heading { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-soft); }
+.backtest-chart-frame { height: 280px; min-height: 220px; }
+.backtest-fills { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.backtest-fills summary { display: flex; align-items: center; gap: 8px; padding: 12px 16px; color: var(--info); font-size: 12px; font-weight: 600; cursor: pointer; list-style: none; }
+.backtest-fills summary::-webkit-details-marker { display: none; }
+.backtest-fills summary::before { content: "▸"; transition: transform .15s ease; }
+.backtest-fills[open] summary::before { transform: rotate(90deg); }
+.backtest-fills summary span { color: var(--muted); font-weight: 400; }
+.backtest-fills .table-panel { border-radius: 0; box-shadow: none; border-top: 1px solid var(--line); }
+.backtest-fills table { min-width: 560px; }
+.backtest-fills th, .backtest-fills td { height: 40px; }
+.backtest-disclaimer { margin: 12px 0 0; color: var(--quiet); font-size: 11px; line-height: 1.6; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 1100px) {
@@ -418,6 +454,9 @@ tbody tr:hover { background: rgba(0, 106, 96, .05); }
   .catalog-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .catalog-filter-reset { width: 100%; }
   .system-grid { grid-template-columns: 1fr; }
+  .backtest-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .backtest-submit { grid-column: 1 / -1; }
+  .backtest-chart-frame { height: 240px; }
 }
 
 @media (max-width: 480px) {
@@ -437,4 +476,6 @@ tbody tr:hover { background: rgba(0, 106, 96, .05); }
   .catalog-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .form-grid { grid-template-columns: 1fr; }
   .field-wide { grid-column: auto; }
+  .backtest-form { grid-template-columns: 1fr; }
+  .backtest-result-head { flex-direction: column; gap: 4px; }
 }

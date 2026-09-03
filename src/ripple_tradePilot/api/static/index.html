@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=11">
+  <link rel="stylesheet" href="/assets/app.css?v=12">
 </head>
 <body>
   <header class="topbar">
@@ -26,6 +26,14 @@
       <span class="status-dot" id="system-dot"></span>
       <span id="generated-at">正在连接</span>
       <button class="icon-button" id="refresh-button" title="刷新数据" aria-label="刷新数据">↻</button>
+      <label class="auto-refresh-toggle" title="开启后按所选间隔定时重新拉取看板数据">
+        <input type="checkbox" id="auto-refresh-toggle">
+        <span>自动刷新</span>
+      </label>
+      <select class="auto-refresh-interval" id="auto-refresh-interval" aria-label="自动刷新间隔" disabled>
+        <option value="60" selected>60 秒</option>
+        <option value="300">5 分钟</option>
+      </select>
       <button class="account-button" id="account-button">登录 / 注册</button>
       <div class="account-menu" id="account-menu" hidden>
         <span class="account-avatar" id="account-avatar" aria-hidden="true">U</span>
@@ -210,6 +218,70 @@
             <button class="secondary-button" data-auth-mode="login">登录</button>
           </div>
         </section>
+        <section class="backtest-runner authenticated-content" id="backtest-runner" hidden>
+          <div class="panel-heading">
+            <h2>执行回测</h2>
+            <span>统一撮合引擎 · 100 股整数倍 · 佣金 + 印花税 + 滑点</span>
+          </div>
+          <form id="backtest-form" class="backtest-form">
+            <label class="field"><span>股票代码</span><input name="symbol" minlength="6" maxlength="16" placeholder="600309 或 002022.SZ" autocomplete="off" required></label>
+            <label class="field"><span>策略</span><select name="strategy">
+              <option value="ma">均线交叉 (MA)</option>
+              <option value="rsi" selected>RSI 反转</option>
+              <option value="macd">MACD 趋势</option>
+              <option value="bollinger">布林带</option>
+              <option value="donchian">唐奇安通道</option>
+            </select></label>
+            <label class="field"><span>K 线根数</span><input name="bars" type="number" min="60" max="2500" step="1" value="252" required></label>
+            <label class="field"><span>撮合模式</span><select name="execution">
+              <option value="next_open" selected>次日开盘撮合</option>
+              <option value="close">当日收盘撮合</option>
+            </select></label>
+            <button class="primary-button backtest-submit" id="backtest-submit" type="submit">开始回测</button>
+          </form>
+          <p class="form-error" id="backtest-error" hidden></p>
+
+          <div class="backtest-result" id="backtest-result" hidden>
+            <div class="backtest-result-head">
+              <h3 id="backtest-result-title">--</h3>
+              <span id="backtest-result-meta">--</span>
+            </div>
+            <div class="backtest-notes" id="backtest-notes"></div>
+            <div class="metrics-band">
+              <div class="metric"><span>总收益</span><strong id="bt-total-return">--</strong><small>区间净值变化</small></div>
+              <div class="metric"><span>年化收益</span><strong id="bt-annual-return">--</strong><small>按 252 交易日折算</small></div>
+              <div class="metric"><span>最大回撤</span><strong id="bt-max-drawdown">--</strong><small>净值峰值到谷底</small></div>
+              <div class="metric"><span>夏普比率</span><strong id="bt-sharpe">--</strong><small>日收益年化</small></div>
+              <div class="metric"><span>交易费用</span><strong id="bt-total-fees">--</strong><small>佣金 + 印花税 + 滑点</small></div>
+            </div>
+            <div class="metrics-band">
+              <div class="metric"><span>完整回合数</span><strong id="bt-num-trades">--</strong><small>一买一卖为一回合</small></div>
+              <div class="metric"><span>胜率</span><strong id="bt-win-rate">--</strong><small>按回合净盈亏</small></div>
+              <div class="metric"><span>单笔平均收益</span><strong id="bt-avg-return">--</strong><small>回合收益均值</small></div>
+              <div class="metric"><span>最佳单笔</span><strong id="bt-best-trade">--</strong><small>收益最高回合</small></div>
+              <div class="metric"><span>最差单笔</span><strong id="bt-worst-trade">--</strong><small>亏损最大回合</small></div>
+            </div>
+            <section class="backtest-chart-panel">
+              <div class="panel-heading"><h2>权益曲线</h2><span id="backtest-chart-range">--</span></div>
+              <div class="chart-frame backtest-chart-frame">
+                <canvas id="backtest-chart" aria-label="回测权益曲线"></canvas>
+                <div class="chart-tooltip" id="backtest-chart-tooltip" hidden></div>
+                <div class="chart-empty" id="backtest-chart-empty" hidden></div>
+              </div>
+            </section>
+            <details class="backtest-fills">
+              <summary>成交明细 <span id="backtest-fill-count">0 笔</span></summary>
+              <div class="table-panel">
+                <table>
+                  <thead><tr><th>日期</th><th>方向</th><th>数量</th><th>成交价</th><th>费用</th></tr></thead>
+                  <tbody id="backtest-fill-table"></tbody>
+                </table>
+              </div>
+            </details>
+            <p class="backtest-disclaimer" id="backtest-disclaimer"></p>
+          </div>
+        </section>
+
         <div class="table-panel authenticated-content" hidden>
           <table>
             <thead><tr><th>标的 / 策略</th><th>区间</th><th>总收益</th><th>最大回撤</th><th>胜率</th><th>交易数</th><th>运行时间</th></tr></thead>
@@ -283,6 +355,6 @@
     </form>
   </dialog>
 
-  <script src="/assets/app.js?v=11" defer></script>
+  <script src="/assets/app.js?v=12" defer></script>
 </body>
 </html>

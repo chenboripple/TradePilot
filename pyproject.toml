@@ -1,6 +1,6 @@
 [project]
 name = "ripple_tradePilot"
-version = "0.1.0"
+version = "0.5.0"
 description = "Wave trading system with shared strategy core"
 readme = "README.md"
 requires-python = ">=3.9"

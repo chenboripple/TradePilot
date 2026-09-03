@@ -10,7 +10,16 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from ripple_tradePilot import __version__
 from ripple_tradePilot.api.dashboard import DashboardDataError, DashboardService
+from ripple_tradePilot.backtest.engine import run_backtest
+from ripple_tradePilot.backtest.report import compute_metrics, compute_trade_stats
+from ripple_tradePilot.models.types import Bar
+from ripple_tradePilot.strategies.bollinger import BollingerBands
+from ripple_tradePilot.strategies.donchian import DonchianBreakout
+from ripple_tradePilot.strategies.macd import MACD
+from ripple_tradePilot.strategies.moving_average import MovingAverageCross
+from ripple_tradePilot.strategies.rsi import RSI
 from ripple_tradePilot.data.stock_service import (
     InvalidStockSymbolError,
     StockDataService,
@@ -19,6 +28,7 @@ from ripple_tradePilot.data.stock_service import (
 from ripple_tradePilot.storage.database import (
     init_database,
     list_stock_catalog,
+    load_daily_bars,
     stock_catalog_name,
     stock_catalog_names,
 )
@@ -56,7 +66,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="TradePilot API", version="0.4.0", lifespan=lifespan)
+app = FastAPI(title="TradePilot API", version=__version__, lifespan=lifespan)
 app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")
 
 
@@ -546,6 +556,106 @@ def refresh_stock_quotes(user: Dict = Depends(required_user)):
     try:
         return {"data": StockDataService().refresh_quotes()}
     except StockDataUnavailableError as error:
+        raise _stock_error(error) from error
+
+
+class BacktestRequest(BaseModel):
+    symbol: str
+    strategy: Literal["ma", "rsi", "macd", "bollinger", "donchian"] = "rsi"
+    bars: int = Field(252, ge=60, le=2500)
+    cash: float = Field(100000.0, gt=0)
+    execution: Literal["next_open", "close"] = "next_open"
+
+
+_BACKTEST_STRATEGIES = {
+    "ma": MovingAverageCross,
+    "rsi": RSI,
+    "macd": MACD,
+    "bollinger": BollingerBands,
+    "donchian": DonchianBreakout,
+}
+
+
+@app.post("/api/backtest")
+def run_web_backtest(payload: BacktestRequest, user: Dict = Depends(required_user)):
+    """统一引擎回测：次日开盘撮合、涨跌停拦截、100 股整数倍、佣金+印花税+滑点。"""
+    try:
+        symbol = StockDataService.normalize_symbol(payload.symbol)
+        rows = load_daily_bars(symbol)
+        if len(rows) < payload.bars:
+            # 本地日线不足时先刷新行情再回测
+            StockDataService().refresh(symbol, initial_days=max(payload.bars + 60, 365))
+            rows = load_daily_bars(symbol)
+        if len(rows) < 60:
+            raise StockDataUnavailableError(f"{symbol} 的日线数据不足，无法回测")
+
+        rows = rows[-payload.bars:]
+        bars = []
+        for row in rows:
+            open_price, high = float(row["open"]), float(row["high"])
+            low, close = float(row["low"]), float(row["close"])
+            if min(open_price, high, low, close) <= 0 or high < low:
+                continue
+            bars.append(
+                Bar(
+                    timestamp=datetime.strptime(row["trade_date"], "%Y%m%d"),
+                    open=open_price,
+                    high=high,
+                    low=low,
+                    close=close,
+                    volume=float(row.get("vol") or 0),
+                )
+            )
+
+        result = run_backtest(
+            strategy=_BACKTEST_STRATEGIES[payload.strategy](),
+            bars=bars,
+            initial_cash=payload.cash,
+            execution=payload.execution,
+        )
+        metrics = compute_metrics(result.equity_curve)
+        stats = compute_trade_stats(result.fills)
+        return {
+            "data": {
+                "symbol": symbol,
+                "strategy": payload.strategy,
+                "execution": payload.execution,
+                "bar_count": len(bars),
+                "metrics": {
+                    "total_return": metrics.total_return,
+                    "annual_return": metrics.annual_return,
+                    "max_drawdown": metrics.max_drawdown,
+                    "sharpe": metrics.sharpe,
+                },
+                "trades": {
+                    "num_trades": stats.num_trades,
+                    "win_rate": stats.win_rate,
+                    "avg_return_per_trade": stats.avg_return_per_trade,
+                    "best_trade": stats.best_trade,
+                    "worst_trade": stats.worst_trade,
+                    "total_fees": stats.total_fees,
+                },
+                "halted_by_drawdown": result.halted_by_drawdown,
+                "skipped_fills": len(result.skipped_fills),
+                "equity_curve": [
+                    {"date": bars[index].timestamp.strftime("%Y-%m-%d"), "equity": value}
+                    for index, value in enumerate(result.equity_curve)
+                    if index < len(bars)
+                ],
+                "fills": [
+                    {
+                        "date": fill.timestamp.strftime("%Y-%m-%d"),
+                        "side": fill.side.value,
+                        "quantity": fill.quantity,
+                        "price": fill.price,
+                        "fee": fill.fee,
+                    }
+                    for fill in result.fills
+                ],
+                "disclaimer": "样本内回测仅供参考，未经样本外验证的收益不可作为预期收益。",
+            }
+        }
+    except (InvalidStockSymbolError, StockDataUnavailableError) as error:
         raise _stock_error(error) from error
 
 

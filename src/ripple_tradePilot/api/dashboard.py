@@ -4,11 +4,16 @@ import csv
 import os
 import sqlite3
 from datetime import datetime
-from math import sqrt
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from ripple_tradePilot.config_loader import load_config
+from ripple_tradePilot.indicators import (
+    DEFAULT_VOTE_THRESHOLD,
+    bollinger,
+    rolling_mean,
+    rsi_series,
+)
 from ripple_tradePilot.storage.user_store import get_system_strategy
 
 
@@ -70,14 +75,6 @@ class DashboardService:
                 "code": str(symbol.get("code", "")).upper(),
                 "asset_class": symbol.get("asset_class", "stock"),
             }
-            for symbol in config.get("symbols", [])
-            if symbol.get("code")
-        ]
-
-    def configured_symbols(self) -> List[str]:
-        config = self._config()
-        return [
-            str(symbol.get("code", "")).upper()
             for symbol in config.get("symbols", [])
             if symbol.get("code")
         ]
@@ -175,42 +172,6 @@ class DashboardService:
         return bars
 
     @staticmethod
-    def _rolling_mean(values: List[float], window: int) -> List[Optional[float]]:
-        result: List[Optional[float]] = [None] * len(values)
-        running_total = 0.0
-        for index, value in enumerate(values):
-            running_total += value
-            if index >= window:
-                running_total -= values[index - window]
-            if index >= window - 1:
-                result[index] = running_total / window
-        return result
-
-    @staticmethod
-    def _rsi(values: List[float], period: int) -> List[Optional[float]]:
-        result: List[Optional[float]] = [None] * len(values)
-        for index in range(period, len(values)):
-            changes = [values[position] - values[position - 1] for position in range(index - period + 1, index + 1)]
-            gains = sum(max(change, 0) for change in changes) / period
-            losses = sum(max(-change, 0) for change in changes) / period
-            result[index] = 100.0 if losses == 0 else 100 - (100 / (1 + gains / losses))
-        return result
-
-    @staticmethod
-    def _bollinger(values: List[float], period: int, multiplier: float) -> Dict[str, List[Optional[float]]]:
-        upper: List[Optional[float]] = [None] * len(values)
-        middle: List[Optional[float]] = [None] * len(values)
-        lower: List[Optional[float]] = [None] * len(values)
-        for index in range(period - 1, len(values)):
-            window = values[index - period + 1:index + 1]
-            average = sum(window) / period
-            deviation = sqrt(sum((value - average) ** 2 for value in window) / period)
-            middle[index] = average
-            upper[index] = average + multiplier * deviation
-            lower[index] = average - multiplier * deviation
-        return {"upper": upper, "middle": middle, "lower": lower}
-
-    @staticmethod
     def _profile_parameters(profile: Dict[str, Any]) -> Dict[str, Any]:
         ma_config = profile.get("ma", {})
         rsi_config = profile.get("rsi", {})
@@ -223,7 +184,7 @@ class DashboardService:
             "rsi_overbought": float(profile.get("rsi_overbought", rsi_config.get("overbought", 70))),
             "bb_period": int(profile.get("bb_period", bb_config.get("period", 20))),
             "bb_std": float(profile.get("bb_std", bb_config.get("std_dev", 2.0))),
-            "vote_threshold": int(profile.get("vote_threshold", 2)),
+            "vote_threshold": int(profile.get("vote_threshold", DEFAULT_VOTE_THRESHOLD)),
         }
 
     @staticmethod
@@ -324,10 +285,12 @@ class DashboardService:
         )
         parameters = self._profile_parameters(profile)
         closes = [bar["close"] for bar in bars]
-        fast_ma = self._rolling_mean(closes, parameters["ma_fast"])
-        slow_ma = self._rolling_mean(closes, parameters["ma_slow"])
-        rsi_values = self._rsi(closes, parameters["rsi_period"])
-        bands = self._bollinger(closes, parameters["bb_period"], parameters["bb_std"])
+        fast_ma = rolling_mean(closes, parameters["ma_fast"])
+        slow_ma = rolling_mean(closes, parameters["ma_slow"])
+        rsi_values = rsi_series(closes, parameters["rsi_period"])
+        bb_middle, bb_upper, bb_lower = bollinger(
+            closes, parameters["bb_period"], parameters["bb_std"]
+        )
 
         decisions: List[Dict[str, Any]] = []
         signals: List[Dict[str, Any]] = []
@@ -338,8 +301,8 @@ class DashboardService:
                 fast_ma[index],
                 slow_ma[index],
                 rsi_values[index],
-                bands["upper"][index],
-                bands["lower"][index],
+                bb_upper[index],
+                bb_lower[index],
                 parameters,
             )
             decisions.append(decision)
@@ -373,9 +336,9 @@ class DashboardService:
                     "volume": bar["volume"],
                     "ma_fast": fast_ma[index],
                     "ma_slow": slow_ma[index],
-                    "bb_upper": bands["upper"][index],
-                    "bb_middle": bands["middle"][index],
-                    "bb_lower": bands["lower"][index],
+                    "bb_upper": bb_upper[index],
+                    "bb_middle": bb_middle[index],
+                    "bb_lower": bb_lower[index],
                 }
             )
 
@@ -411,9 +374,9 @@ class DashboardService:
                 "ma_fast": fast_ma[-1],
                 "ma_slow": slow_ma[-1],
                 "rsi": rsi_values[-1],
-                "bb_upper": bands["upper"][-1],
-                "bb_middle": bands["middle"][-1],
-                "bb_lower": bands["lower"][-1],
+                "bb_upper": bb_upper[-1],
+                "bb_middle": bb_middle[-1],
+                "bb_lower": bb_lower[-1],
             },
             "bars": chart_bars,
             "signals": signals[-8:][::-1],

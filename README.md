@@ -16,21 +16,21 @@
 
 ```bash
 # macOS / Linux
-git clone https://github.com/chenboripple/TradePolot.git
-cd TradePolot
+git clone https://github.com/chenboripple/TradePilot.git
+cd TradePilot
 python3 install.py
 
 # Windows
-git clone https://github.com/chenboripple/TradePolot.git
-cd TradePolot
+git clone https://github.com/chenboripple/TradePilot.git
+cd TradePilot
 python install.py
 ```
 
 ### 方式二：使用 pip
 
 ```bash
-git clone https://github.com/chenboripple/TradePolot.git
-cd TradePolot
+git clone https://github.com/chenboripple/TradePilot.git
+cd TradePilot
 pip install -e .
 ```
 
@@ -108,7 +108,7 @@ df = loader.get_daily('000999.SZ')
 ## 项目结构
 
 ```
-TradePolot/
+TradePilot/
 ├── src/ripple_tradePilot/    # 核心代码
 │   ├── strategies/           # 策略模块
 │   ├── backtest/             # 回测引擎

@@ -14,8 +14,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/chenboripple/TradePolot.git
-cd TradePolot
+git clone https://github.com/chenboripple/TradePilot.git
+cd TradePilot
 
 # 运行安装脚本
 python3 install.py
@@ -25,8 +25,8 @@ python3 install.py
 
 ```powershell
 # 克隆仓库
-git clone https://github.com/chenboripple/TradePolot.git
-cd TradePolot
+git clone https://github.com/chenboripple/TradePilot.git
+cd TradePilot
 
 # 运行安装脚本
 python install.py
@@ -36,8 +36,8 @@ python install.py
 
 ```bash
 # 克隆仓库
-git clone https://github.com/chenboripple/TradePolot.git
-cd TradePolot
+git clone https://github.com/chenboripple/TradePilot.git
+cd TradePilot
 
 # 安装
 pip install -e .

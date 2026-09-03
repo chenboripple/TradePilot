@@ -398,43 +398,6 @@ def init_database(path: Path | None = None) -> Path:
     return target
 
 
-def insert_backtest_result(
-    result: Any,
-    path: Path | None = None,
-    user_id: int | None = None,
-    strategy_id: int | None = None,
-) -> Path:
-    target = init_database(path)
-    with sqlite3.connect(target, timeout=30) as connection:
-        connection.execute(
-            """
-            INSERT INTO backtest_results (
-                symbol, name, start_date, end_date,
-                initial_capital, final_capital, total_return, annual_return,
-                max_drawdown, sharpe_ratio, total_trades, win_rate,
-                user_id, strategy_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                result.symbol,
-                result.name,
-                result.start_date,
-                result.end_date,
-                result.initial_capital,
-                result.final_capital,
-                result.total_return,
-                result.annual_return,
-                result.max_drawdown,
-                result.sharpe_ratio,
-                result.total_trades,
-                result.win_rate,
-                user_id,
-                strategy_id,
-            ),
-        )
-    return target
-
-
 def load_daily_bars(
     symbol: str, path: Path | None = None
 ) -> List[Mapping[str, Any]]:

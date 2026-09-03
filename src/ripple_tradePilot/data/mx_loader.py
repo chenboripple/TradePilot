@@ -8,9 +8,8 @@ from __future__ import annotations
 import os
 import re
 import time
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Iterable, List, Optional, Dict, Any
+from datetime import timedelta
+from typing import Iterable, Optional, Dict, Any
 
 import pandas as pd
 import requests
@@ -329,31 +328,7 @@ class MXDataLoader:
             pass
         
         return merged_df
-    
-    def get_realtime_quote(self, symbol: str) -> Optional[dict]:
-        """获取实时行情快照"""
-        query = f"{symbol} 最新价 涨跌幅 成交量"
-        result = self._query(query)
-        
-        if result.get("status") != 0:
-            return None
-        
-        df = self._extract_price_data(result)
-        if df is None or len(df) == 0:
-            return None
-        
-        # 取最新一条
-        latest = df.iloc[-1]
-        
-        return {
-            'price': float(latest.get('close', 0)),
-            'change': 0.0,  # 需要额外查询
-            'pct_change': 0.0,  # 需要额外查询
-            'volume': float(latest.get('vol', 0)),
-            'amount': float(latest.get('amount', 0)) if 'amount' in latest else 0.0,
-            'timestamp': latest['datetime'],
-        }
-    
+
     def load_bars(
         self,
         symbol: str,
@@ -415,17 +390,6 @@ class MXDataLoader:
             except Exception as e:
                 print(f"解析分钟 K 线失败：{row}, 错误：{e}")
                 continue
-
-
-# 兼容层：保持与 TushareDataLoader 相同的接口
-class MXDataLoaderCompat(MXDataLoader):
-    """兼容层：提供与 TushareDataLoader 相同的接口"""
-    
-    def __init__(self, token: Optional[str] = None, rate_limit_delay: float = 0.5):
-        """
-        初始化（token 参数被忽略，仅用于兼容）
-        """
-        super().__init__(api_key=None, rate_limit_delay=rate_limit_delay)
 
 
 if __name__ == "__main__":

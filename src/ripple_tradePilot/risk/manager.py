@@ -3,8 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from ripple_tradePilot.models.types import Bar, Side
-
 
 @dataclass
 class RiskConfig:

@@ -14,6 +14,7 @@ TradePilot 心跳优化脚本
 from __future__ import annotations
 
 import json
+import os
 import sys
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
@@ -476,6 +477,19 @@ def maybe_notify(config: dict, run_payload: dict):
 
 
 def main():
+    # 过拟合防护：网格再拟合默认关闭。
+    # 在短窗口上反复挑选最优参数只会拟合噪声（详见项目分析），
+    # 确需运行时必须显式传 --allow-refit 或设置 TRADEPILOT_AUTOFIT=1。
+    allow_refit = "--allow-refit" in sys.argv or os.getenv("TRADEPILOT_AUTOFIT") == "1"
+    if not allow_refit:
+        print(
+            "⚠️ 自动参数再拟合已默认停用（过拟合风险）。\n"
+            "   本脚本不再搜索/写回新参数。如确有需要：\n"
+            "   python heartbeat_tradepilot.py --allow-refit\n"
+            "   或设置环境变量 TRADEPILOT_AUTOFIT=1"
+        )
+        return
+
     refresh_full = "--refresh-full" in sys.argv
 
     config = load_config()

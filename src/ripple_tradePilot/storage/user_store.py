@@ -439,6 +439,23 @@ def list_user_watchlist(
     return [_watchlist_dict(row) for row in rows]
 
 
+def list_all_watched_symbols(path: Path | None = None) -> List[Dict[str, str]]:
+    """所有用户观察中的标的（去重），供监控进程联动使用。"""
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            """
+            SELECT symbol, MAX(name) AS name
+            FROM user_watchlist
+            WHERE is_watched = 1
+            GROUP BY symbol
+            ORDER BY symbol
+            """
+        ).fetchall()
+    return [{"symbol": row["symbol"], "name": row["name"]} for row in rows]
+
+
 def list_user_stocks(
     user_id: int, path: Path | None = None
 ) -> List[Dict[str, Any]]:
@@ -564,36 +581,6 @@ def set_watchlist_default_strategy(
             (user_id, symbol),
         ).fetchone()
     return _watchlist_dict(row)
-
-
-def watchlist_contains(
-    user_id: int, symbol: str, path: Path | None = None
-) -> bool:
-    target = _target(path)
-    with sqlite3.connect(target, timeout=30) as connection:
-        row = connection.execute(
-            """
-            SELECT 1 FROM user_watchlist
-            WHERE user_id = ? AND symbol = ? AND is_watched = 1
-            """,
-            (user_id, symbol),
-        ).fetchone()
-    return row is not None
-
-
-def mark_watchlist_updated(
-    user_id: int, symbol: str, name: str, path: Path | None = None
-) -> None:
-    target = _target(path)
-    with sqlite3.connect(target, timeout=30) as connection:
-        connection.execute(
-            """
-            UPDATE user_watchlist
-            SET name = ?, last_updated_at = CURRENT_TIMESTAMP
-            WHERE user_id = ? AND symbol = ?
-            """,
-            (name, user_id, symbol),
-        )
 
 
 def delete_watchlist_item(

@@ -14,6 +14,7 @@ from typing import List, Optional, Dict, Tuple
 
 from ripple_tradePilot.config_loader import load_config
 from ripple_tradePilot.data.tushare_loader import TushareDataLoader
+from ripple_tradePilot.indicators import DEFAULT_VOTE_THRESHOLD
 from ripple_tradePilot.strategies.moving_average import MovingAverageCross
 from ripple_tradePilot.strategies.rsi import RSI
 from ripple_tradePilot.strategies.bollinger import BollingerBands
@@ -37,9 +38,10 @@ logger = logging.getLogger("TradePilot")
 
 class SignalNotifier:
     """信号通知器"""
-    
-    def __init__(self, config: dict):
+
+    def __init__(self, config: dict, feishu=None):
         self.config = config
+        self.feishu = feishu  # FeishuWebhookNotifier 实例（可选）
         self._last_signals = {}  # 避免重复通知：{symbol: (side, timestamp)}
     
     def should_notify(self, symbol: str, side: Side) -> bool:
@@ -86,7 +88,17 @@ class SignalNotifier:
         if self.config.get('console', {}).get('enabled', True):
             print(message)
             logger.info(f"信号：{symbol} {side.value} @ {price:.2f}")
-        
+
+        # 飞书信号通知（个股信号必须进飞书，而不仅是定期汇总）
+        if self.feishu is not None:
+            try:
+                self.feishu.send(
+                    symbol=symbol, name=name, side=side,
+                    price=price, strategy=strategy, bar=bar,
+                )
+            except Exception as e:
+                logger.error(f"飞书信号通知失败：{e}")
+
         # 企业微信通知（可选）
         if self.config.get('wechat', {}).get('enabled', False):
             self._send_wechat(symbol, name, side, price, strategy, bar)
@@ -180,10 +192,7 @@ class MarketMonitor:
         rate_limit = self.config.get('tushare', {}).get('rate_limit_delay', 1.5)
         self.data_loader = TushareDataLoader(ts_token, rate_limit_delay=rate_limit)
         
-        # 初始化通知器
-        self.notifier = SignalNotifier(self.config.get('notifiers', {}))
-        
-        # 初始化飞书通知器（用于定期报告）
+        # 初始化飞书通知器（用于个股信号与定期报告）
         feishu_config = self.config.get('notifiers', {}).get('feishu', {})
         if feishu_config.get('enabled', False):
             self.feishu_notifier = FeishuWebhookNotifier(
@@ -193,18 +202,78 @@ class MarketMonitor:
             logger.info("✅ 飞书通知器已初始化")
         else:
             self.feishu_notifier = None
-        
+
+        # 初始化通知器（个股信号同步推送飞书）
+        self.notifier = SignalNotifier(
+            self.config.get('notifiers', {}), feishu=self.feishu_notifier
+        )
+
         # 初始化按标的的策略画像
         self._configured_strategy_profiles = self.config.get('strategy_profiles', {})
         self.strategy_profiles = {}
         self._refresh_strategy_profiles()
         logger.info(f"✅ 已加载策略画像：{', '.join(sorted(self.strategy_profiles.keys()))}")
-        
+
+        # 观察池联动：Web 端加入观察池的股票也纳入监控
+        self._use_watchlist = self.config.get('monitor', {}).get('use_watchlist', True)
+        # 观察池标的无专属画像时的默认参数（可被该股 system 策略覆盖）
+        self._default_profile = {
+            'kind': 'combo_vote',
+            'ma_fast': 5, 'ma_slow': 20,
+            'rsi_period': 14, 'rsi_oversold': 30, 'rsi_overbought': 70,
+            'bb_period': 20, 'bb_std': 2.0,
+            'vote_threshold': DEFAULT_VOTE_THRESHOLD,
+        }
+
         # 监控状态
         self._running = False
         self._check_interval = self.config.get('monitor', {}).get('interval_seconds', 300)
+        # 定期汇总报告的最短间隔（秒），避免每个检查周期都轰炸飞书
+        self._report_interval = self.config.get('monitor', {}).get('report_interval_seconds', 3600)
+        self._last_report_at: Optional[datetime] = None
         self._check_count = 0
         self._minute_freq = self.config.get('monitor', {}).get('bar_freq', '1min')
+
+    def _collect_symbols(self) -> List[dict]:
+        """汇总监控标的：config.yaml 的 symbols + Web 观察池（去重）。"""
+        symbols = list(self.config.get('symbols', []))
+        known = {str(s.get('code', '')).upper() for s in symbols}
+
+        if not self._use_watchlist:
+            return symbols
+
+        try:
+            from ripple_tradePilot.storage.user_store import (
+                list_all_watched_symbols,
+            )
+            watched = list_all_watched_symbols()
+        except Exception as e:
+            logger.warning(f"读取观察池失败，仅监控 config 标的：{e}")
+            return symbols
+
+        for item in watched:
+            code = str(item.get('symbol', '')).upper()
+            if not code or code in known:
+                continue
+            known.add(code)
+            profile_name = f"观察池:{code}"
+            profile = dict(self._default_profile)
+            try:
+                override = get_system_strategy(code, 'stock')
+                if override and override.get('parameters'):
+                    profile.update(override['parameters'])
+                    profile.setdefault('kind', 'combo_vote')
+            except Exception as e:
+                logger.debug(f"读取 {code} 系统策略失败，使用默认画像：{e}")
+            self.strategy_profiles[profile_name] = profile
+            symbols.append({
+                'code': code,
+                'name': item.get('name') or code,
+                'strategy_profile': profile_name,
+                'from_watchlist': True,
+            })
+
+        return symbols
 
     def _refresh_strategy_profiles(self):
         self.strategy_profiles = {
@@ -248,7 +317,7 @@ class MarketMonitor:
         rsi_overbought = profile.get('rsi_overbought', 70)
         bb_period = profile.get('bb_period', 20)
         bb_std = profile.get('bb_std', 2.0)
-        vote_threshold = profile.get('vote_threshold', 2)
+        vote_threshold = profile.get('vote_threshold', DEFAULT_VOTE_THRESHOLD)
 
         ma_strategy = MovingAverageCross(fast=ma_fast, slow=ma_slow)
         rsi_strategy = RSI(period=rsi_period, oversold=rsi_oversold, overbought=rsi_overbought)
@@ -291,7 +360,7 @@ class MarketMonitor:
         ma_cfg = profile.get('ma', {})
         rsi_cfg = profile.get('rsi', {})
         bb_cfg = profile.get('bb', {})
-        vote_threshold = profile.get('vote_threshold', 2)  # 默认 2 票，可配置
+        vote_threshold = profile.get('vote_threshold', DEFAULT_VOTE_THRESHOLD)  # 默认 2 票，可配置
 
         ma_strategy = MovingAverageCross(fast=ma_cfg.get('fast', 5), slow=ma_cfg.get('slow', 20))
         rsi_strategy = RSI(
@@ -378,11 +447,9 @@ class MarketMonitor:
         for bar in bars[:-1]:
             rsi_strategy.on_bar(bar)
         rsi_signal = rsi_strategy.on_bar(latest_bar)
-        latest_rsi = None
-        try:
-            latest_rsi = rsi_strategy._last_rsi
-        except Exception:
-            latest_rsi = None
+        # RSI 类没有 _last_rsi 属性（旧代码静默吞掉 AttributeError，
+        # 导致 breakout 画像永远不产生信号）；改用公开访问器。
+        latest_rsi = rsi_strategy.get_current_rsi()
 
         side = None
         strength = 0.0
@@ -555,7 +622,12 @@ class MarketMonitor:
             elif profile_kind == 'ma':
                 signals, strongest_signal, recommendation = self._run_ma_profile(profile, bars)
             elif profile_kind == 'combo_vote':
-                signals, strongest_signal, recommendation = self._run_combo_profile(profile, bars)
+                # components 结构走组合策略；扁平参数（ma_fast/rsi_period...）走投票画像。
+                # 修复：此前扁平结构被路由到 components 分支，导致组件为空、永远无信号。
+                if 'components' in profile:
+                    signals, strongest_signal, recommendation = self._run_combo_profile(profile, bars)
+                else:
+                    signals, strongest_signal, recommendation = self._run_combo_vote_profile(profile, bars)
             else:
                 logger.warning(f"未找到策略画像：{symbol} -> {profile_name} (kind={profile_kind})")
                 signals, strongest_signal, recommendation = {}, None, '❌ 错误'
@@ -712,47 +784,62 @@ class MarketMonitor:
         except Exception as e:
             logger.error(f"发送飞书报告失败：{e}")
     
+    def _should_send_report(self, results: list) -> bool:
+        """定期报告限频：默认每小时最多一条，出现买卖信号时立即发送。"""
+        has_signal = any(
+            r.get('recommendation') in ('🟢 买入', '🔴 卖出') for r in results
+        )
+        if has_signal:
+            return True
+        if self._last_report_at is None:
+            return True
+        return (datetime.now() - self._last_report_at).total_seconds() >= self._report_interval
+
     async def run_loop(self):
         """主监控循环"""
         logger.info("🚀 TradePilot 启动监控...")
-        logger.info(f"📊 监控标的数：{len(self.config.get('symbols', []))}")
+        logger.info(f"📊 配置标的数：{len(self.config.get('symbols', []))}（观察池联动：{'开' if self._use_watchlist else '关'}）")
         logger.info(f"⏱️ 检查间隔：{self._check_interval}秒")
+        logger.info(f"📝 汇总报告间隔：{self._report_interval}秒（有信号时立即发送）")
         logger.info(f"🕒 交易时间：09:30-15:00（仅 A 股开市时间）")
         logger.info(f"📱 飞书通知：{'✅ 已启用' if self.feishu_notifier else '❌ 未启用'}")
-        
+
         self._running = True
-        
+
         while self._running:
             results = []  # 存储本次检查结果
-            
+
             try:
                 # 检查是否交易时间
                 if self.is_trading_time():
                     self._refresh_strategy_profiles()
+                    symbols = self._collect_symbols()
                     self._check_count += 1
                     logger.info(f"\n{'='*60}")
-                    logger.info(f"📋 第 {self._check_count} 次监控 ({datetime.now().strftime('%H:%M')})")
+                    logger.info(f"📋 第 {self._check_count} 次监控 ({datetime.now().strftime('%H:%M')})，标的 {len(symbols)} 只")
                     logger.info(f"{'='*60}")
-                    
+
                     # 并行检查所有标的
                     tasks = [
                         self.check_symbol(sym, results)
-                        for sym in self.config.get('symbols', [])
+                        for sym in symbols
                     ]
                     await asyncio.gather(*tasks)
-                    
-                    # 发送定期报告（每次监控都发送）
-                    await self.send_periodic_report(results)
-                    
+
+                    # 定期报告（限频，避免每个检查周期轰炸飞书）
+                    if self._should_send_report(results):
+                        await self.send_periodic_report(results)
+                        self._last_report_at = datetime.now()
+
                 else:
-                    next_trading_time = datetime.now().replace(hour=9, minute=30, second=0)
+                    next_trading_time = datetime.now().replace(hour=9, minute=30, second=0, microsecond=0)
                     if datetime.now() >= next_trading_time:
-                        next_trading_time = next_trading_time.replace(day=next_trading_time.day + 1)
+                        next_trading_time += timedelta(days=1)
                     logger.info(f"⏸️  非交易时间，下次检查：{next_trading_time.strftime('%Y-%m-%d %H:%M')}")
-                
+
                 # 等待下一次检查
                 await asyncio.sleep(self._check_interval)
-            
+
             except Exception as e:
                 logger.error(f"监控循环异常：{e}", exc_info=True)
                 await asyncio.sleep(60)  # 异常后等待 1 分钟

@@ -41,6 +41,10 @@ tushare:
 
 monitor:
   interval_seconds: 300
+  # 汇总报告最短间隔（秒）。个股买卖信号不受此限制，触发即推送。
+  report_interval_seconds: 3600
+  # 是否把 Web 监控台观察池中的股票也纳入监控
+  use_watchlist: true
   bar_freq: "1min"
   trading_hours:
     start: "09:30"

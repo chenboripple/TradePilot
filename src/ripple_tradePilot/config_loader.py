@@ -89,14 +89,19 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     return config
 
 
-def init_config():
-    """初始化用户配置文件"""
-    USER_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    
-    if USER_CONFIG_FILE.exists():
-        print(f"⚠️  配置文件已存在: {USER_CONFIG_FILE}")
+def init_config(config_path: Optional[Path] = None):
+    """初始化用户配置文件
+
+    Args:
+        config_path: 可选，指定生成位置；默认 ~/.tradepilot/config.yaml
+    """
+    target = Path(config_path) if config_path else USER_CONFIG_FILE
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    if target.exists():
+        print(f"⚠️  配置文件已存在: {target}")
         return
-    
+
     default_config = """# TradePilot 用户配置
 # 设置环境变量或使用此配置文件
 
@@ -123,17 +128,18 @@ monitor:
     start: "09:30"
     end: "15:00"
   check_non_trading: false
+  report_interval_seconds: 3600  # 无信号时的例行心跳间隔
+  use_watchlist: true            # 是否联动用户观察池
 
-# 监控标的
+# 监控标的（不填 strategy_profile 时使用默认 combo_vote 画像）
 symbols:
   - code: "002022.SZ"
     name: "科华生物"
-    strategy_profile: "rsi_002022"
     notify_on: ["BUY", "SELL"]
 """
-    
-    USER_CONFIG_FILE.write_text(default_config, encoding='utf-8')
-    print(f"✅ 配置文件已创建: {USER_CONFIG_FILE}")
+
+    target.write_text(default_config, encoding='utf-8')
+    print(f"✅ 配置文件已创建: {target}")
     print("请编辑配置文件设置您的 API Key")
 
 
@@ -146,16 +152,3 @@ def get_tushare_token(config: Dict[str, Any]) -> str:
             "Set TUSHARE_TOKEN env var or add to ~/.tradepilot/config.yaml"
         )
     return token
-
-
-def get_mx_apikey(config: Dict[str, Any]) -> Optional[str]:
-    """获取东方财富妙想 API Key"""
-    return config.get('mx', {}).get('api_key') or os.getenv('MX_APIKEY')
-
-
-def get_feishu_webhook(config: Dict[str, Any]) -> tuple:
-    """获取飞书 Webhook 配置"""
-    feishu = config.get('feishu', {})
-    url = feishu.get('webhook_url') or os.getenv('FEISHU_WEBHOOK_URL')
-    secret = feishu.get('webhook_secret') or os.getenv('FEISHU_WEBHOOK_SECRET')
-    return url, secret

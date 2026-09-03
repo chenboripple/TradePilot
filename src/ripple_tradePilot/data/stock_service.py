@@ -529,7 +529,8 @@ class StockDataService:
             period="daily",
             start_date=start_date,
             end_date=end_date,
-            adjust="",
+            # 前复权：不复权序列在除权日有假跳空，会污染信号与盈亏
+            adjust="qfq",
         )
         return frame
 
@@ -566,6 +567,12 @@ class StockDataService:
                         f"无法获取 {symbol} 的日线数据，请检查行情源配置"
                     ) from error
             fetched = self._normalize_frame(frame)
+            if len(fetched):
+                # 价格合理性校验：丢弃非正价/高低倒置的脏行
+                fetched = fetched[
+                    (fetched[["open", "high", "low", "close"]] > 0).all(axis=1)
+                    & (fetched["high"] >= fetched["low"])
+                ].reset_index(drop=True)
             if len(fetched) == 0:
                 raise StockDataUnavailableError(f"未获取到 {symbol} 的有效日线数据")
             merged = self._normalize_frame(pd.concat([existing, fetched], ignore_index=True))

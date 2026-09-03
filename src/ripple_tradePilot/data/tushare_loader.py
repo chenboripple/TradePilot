@@ -12,13 +12,19 @@ from __future__ import annotations
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Iterable, Optional
 
 import pandas as pd
 import tushare as ts
 import akshare as ak
 
 from ripple_tradePilot.models.types import Bar
+
+
+def _is_valid_ohlc(open_price: float, high: float, low: float, close: float) -> bool:
+    """价格合理性校验：拦截 0.19 元这类脏数据（真实价约 40 元）。"""
+    values = (open_price, high, low, close)
+    return all(v == v and v > 0 for v in values) and high >= low
 
 
 class TushareDataLoader:
@@ -97,20 +103,6 @@ class TushareDataLoader:
         )
         return df
 
-    def get_stock_basic(self, ts_code: str) -> Optional[dict]:
-        """获取单只股票的基础信息。"""
-        self._rate_limit()
-        df = self.pro.stock_basic(
-            ts_code=ts_code,
-            fields=(
-                "ts_code,symbol,name,area,industry,market,exchange,"
-                "list_status,list_date"
-            ),
-        )
-        if df is None or len(df) == 0:
-            return None
-        return df.iloc[0].to_dict()
-    
     def get_daily_bars(
         self,
         ts_code: str,
@@ -127,28 +119,85 @@ class TushareDataLoader:
         
         Returns:
             DataFrame with columns: trade_date, open, high, low, close, vol, amount
+
+        默认取前复权（qfq）数据：不复权序列在除权除息日会产生假跳空，
+        污染信号与盈亏。pro_bar 不可用时退回不复权 daily 并明确提示。
         """
         self._rate_limit()
         if end_date is None:
             end_date = datetime.now().strftime('%Y%m%d')
         if start_date is None:
             start_date = (datetime.now() - timedelta(days=365)).strftime('%Y%m%d')
-        
-        df = self.pro.daily(
-            ts_code=ts_code,
-            start_date=start_date,
-            end_date=end_date
-        )
-        
+
+        df = None
+        try:
+            df = ts.pro_bar(
+                ts_code=ts_code,
+                start_date=start_date,
+                end_date=end_date,
+                adj='qfq',
+            )
+        except Exception as e:
+            print(f"前复权日线获取失败，回退不复权数据：{e}")
+
+        if df is None or len(df) == 0:
+            df = self.pro.daily(
+                ts_code=ts_code,
+                start_date=start_date,
+                end_date=end_date
+            )
+
         if df is None or len(df) == 0:
             return pd.DataFrame()
-        
+
         # 数据清洗
         df = df.sort_values('trade_date', ascending=True)
         df = df.reset_index(drop=True)
-        
+
         return df
-    
+
+    def get_index_bars(
+        self,
+        index_code: str = '000300.SH',
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> pd.DataFrame:
+        """
+        获取指数日线数据（用于沪深300基准对比，限流：50 次/分钟）
+
+        Args:
+            index_code: 指数代码，默认 '000300.SH'（沪深300）
+            start_date: 开始日期，格式 'YYYYMMDD'，默认 365 天前
+            end_date: 结束日期，格式 'YYYYMMDD'，默认今天
+
+        Returns:
+            按 trade_date 升序排列的 DataFrame；接口异常或无数据时
+            返回空 DataFrame 并打印警告，不中断回测/对比流程。
+        """
+        self._rate_limit()
+        if end_date is None:
+            end_date = datetime.now().strftime('%Y%m%d')
+        if start_date is None:
+            start_date = (datetime.now() - timedelta(days=365)).strftime('%Y%m%d')
+
+        df = None
+        try:
+            df = self.pro.index_daily(
+                ts_code=index_code,
+                start_date=start_date,
+                end_date=end_date,
+            )
+        except Exception as e:
+            print(f"获取指数日线失败（{index_code}）：{e}")
+            return pd.DataFrame()
+
+        if df is None or len(df) == 0:
+            print(f"警告：指数日线为空（{index_code}），无法进行基准对比")
+            return pd.DataFrame()
+
+        df = df.sort_values('trade_date', ascending=True).reset_index(drop=True)
+        return df
+
     def get_realtime_quote(self, ts_code: str) -> Optional[dict]:
         """获取实时行情快照，优先走 AkShare。"""
         try:
@@ -196,7 +245,10 @@ class TushareDataLoader:
             period = freq.replace('min', '')
             if period not in {'1', '5', '15', '30', '60'}:
                 period = '1'
-            df = ak.stock_zh_a_hist_min_em(symbol=ak_symbol, period=period, adjust='')
+            try:
+                df = ak.stock_zh_a_hist_min_em(symbol=ak_symbol, period=period, adjust='qfq')
+            except Exception:
+                df = ak.stock_zh_a_hist_min_em(symbol=ak_symbol, period=period, adjust='')
             df = self._normalize_ak_minute_df(df)
             if len(df) > 0:
                 start_ts = pd.to_datetime(start_dt)
@@ -256,12 +308,17 @@ class TushareDataLoader:
         for _, row in df.iterrows():
             try:
                 trade_date = datetime.strptime(row['trade_date'], '%Y%m%d')
+                open_price, high = float(row['open']), float(row['high'])
+                low, close = float(row['low']), float(row['close'])
+                if not _is_valid_ohlc(open_price, high, low, close):
+                    print(f"跳过异常 K 线（价格不合理）：{ts_code} {row['trade_date']} close={close}")
+                    continue
                 yield Bar(
                     timestamp=trade_date,
-                    open=float(row['open']),
-                    high=float(row['high']),
-                    low=float(row['low']),
-                    close=float(row['close']),
+                    open=open_price,
+                    high=high,
+                    low=low,
+                    close=close,
                     volume=float(row.get('vol', 0)) * 100,  # 手转股
                 )
             except Exception as e:
@@ -280,12 +337,17 @@ class TushareDataLoader:
 
         for _, row in df.iterrows():
             try:
+                open_price, high = float(row['open']), float(row['high'])
+                low, close = float(row['low']), float(row['close'])
+                if not _is_valid_ohlc(open_price, high, low, close):
+                    print(f"跳过异常分钟 K 线（价格不合理）：{ts_code} {row['datetime']} close={close}")
+                    continue
                 yield Bar(
                     timestamp=row['datetime'].to_pydatetime() if hasattr(row['datetime'], 'to_pydatetime') else row['datetime'],
-                    open=float(row['open']),
-                    high=float(row['high']),
-                    low=float(row['low']),
-                    close=float(row['close']),
+                    open=open_price,
+                    high=high,
+                    low=low,
+                    close=close,
                     volume=float(row.get('vol', 0)) * 100,
                 )
             except Exception as e:

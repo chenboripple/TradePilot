@@ -404,6 +404,29 @@ tbody tr:hover { background: rgba(0, 106, 96, .05); }
 .backtest-fills th, .backtest-fills td { height: 40px; }
 .backtest-disclaimer { margin: 12px 0 0; color: var(--quiet); font-size: 11px; line-height: 1.6; }
 
+.market-overview { margin-bottom: 16px; padding: 18px 20px 20px; border: 0; border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+.market-overview-tools { display: flex; align-items: center; gap: 10px; }
+.market-overview-status { color: var(--quiet); }
+.market-overview-stale { padding: 3px 8px; border-radius: 8px; background: var(--hold-soft); color: var(--hold); font-weight: 600; }
+.market-overview-indices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.market-overview-index { padding: 12px 14px; border-radius: var(--radius); background: var(--surface-soft); }
+.market-overview-index span { display: block; color: var(--muted); font-size: 11px; }
+.market-overview-index strong { display: block; margin-top: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 20px; line-height: 1; }
+.market-overview-index small { display: block; margin-top: 7px; font-size: 11px; }
+.market-overview-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(180px, .7fr); gap: 16px; margin-top: 14px; }
+.market-overview-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--surface-container); }
+.market-overview-seg-up { background: var(--buy); }
+.market-overview-seg-flat { background: var(--line-strong); }
+.market-overview-seg-down { background: var(--sell); }
+.market-overview-breadth-text { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-top: 8px; color: var(--muted); font-size: 11px; }
+.market-overview-side { display: grid; align-content: start; gap: 12px; }
+.market-overview-item { padding: 12px 14px; border-radius: var(--radius); background: var(--surface-soft); }
+.market-overview-item span { display: block; color: var(--muted); font-size: 10px; }
+.market-overview-item strong { display: block; margin-top: 6px; font-size: 16px; line-height: 1.2; }
+.market-overview-value.is-strong { color: var(--buy); }
+.market-overview-value.is-weak { color: var(--sell); }
+.market-overview-value.is-neutral { color: var(--muted); }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 1100px) {
@@ -457,6 +480,8 @@ tbody tr:hover { background: rgba(0, 106, 96, .05); }
   .backtest-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .backtest-submit { grid-column: 1 / -1; }
   .backtest-chart-frame { height: 240px; }
+  .market-overview-grid { grid-template-columns: 1fr; }
+  .market-overview-side { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 480px) {
@@ -478,4 +503,8 @@ tbody tr:hover { background: rgba(0, 106, 96, .05); }
   .field-wide { grid-column: auto; }
   .backtest-form { grid-template-columns: 1fr; }
   .backtest-result-head { flex-direction: column; gap: 4px; }
+  .market-overview { padding: 14px; }
+  .market-overview-tools { flex-wrap: wrap; justify-content: flex-end; }
+  .market-overview-indices { grid-template-columns: 1fr; }
+  .market-overview-side { grid-template-columns: 1fr; }
 }

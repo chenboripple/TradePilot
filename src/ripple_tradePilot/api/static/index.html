@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=12">
+  <link rel="stylesheet" href="/assets/app.css?v=13">
 </head>
 <body>
   <header class="topbar">
@@ -71,7 +71,35 @@
     </aside>
 
     <main class="main-content">
-      <section class="view overview-blank is-active" id="view-overview" aria-label="市场总览"></section>
+      <section class="view overview-blank is-active" id="view-overview" aria-label="市场总览">
+        <section class="market-overview authenticated-content" id="market-overview" hidden>
+          <div class="panel-heading">
+            <h2>市场总览</h2>
+            <div class="market-overview-tools">
+              <span class="market-overview-status" id="market-overview-status" hidden>行情暂不可用</span>
+              <span class="market-overview-stale" id="market-overview-stale" hidden>数据较旧</span>
+              <span id="market-overview-source" hidden></span>
+              <span id="market-overview-time"></span>
+            </div>
+          </div>
+          <div id="market-overview-body" hidden>
+            <div class="market-overview-indices" id="market-overview-indices"></div>
+            <div class="market-overview-grid">
+              <div class="market-overview-breadth">
+                <div class="market-overview-bar" id="market-overview-bar"></div>
+                <div class="market-overview-breadth-text">
+                  <span id="market-overview-breadth-counts"></span>
+                  <span id="market-overview-breadth-limits"></span>
+                </div>
+              </div>
+              <div class="market-overview-side">
+                <div class="market-overview-item"><span>总成交额</span><strong id="market-overview-turnover">--</strong></div>
+                <div class="market-overview-item"><span>市场情绪</span><strong class="market-overview-value" id="market-overview-sentiment">--</strong></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
 
       <section class="view" id="view-detail">
         <div class="data-alert" id="data-alert" hidden></div>
@@ -355,6 +383,6 @@
     </form>
   </dialog>
 
-  <script src="/assets/app.js?v=12" defer></script>
+  <script src="/assets/app.js?v=13" defer></script>
 </body>
 </html>

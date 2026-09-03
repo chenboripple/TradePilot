@@ -602,6 +602,22 @@ def upsert_stock_quotes(
     return len(records)
 
 
+def load_stock_quotes(path: Path | None = None) -> List[Mapping[str, Any]]:
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            """
+            SELECT symbol, price, pre_close, change, change_pct,
+                   open, high, low, volume, amount, turnover_rate,
+                   quote_time, source
+            FROM stock_quotes
+            ORDER BY symbol
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def stock_catalog_name(symbol: str, path: Path | None = None) -> str | None:
     target = init_database(path)
     with sqlite3.connect(target, timeout=30) as connection:

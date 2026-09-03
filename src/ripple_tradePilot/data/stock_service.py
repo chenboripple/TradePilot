@@ -4,9 +4,10 @@ import logging
 import os
 import re
 import threading
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import akshare as ak
 import httpx
@@ -28,6 +29,28 @@ _DATA_LOCK = threading.Lock()
 _CATALOG_LOCK = threading.Lock()
 _QUOTE_LOCK = threading.Lock()
 logger = logging.getLogger(__name__)
+
+# 市场总览固定展示的三支指数
+MARKET_INDEXES: Tuple[Dict[str, str], ...] = (
+    {"name": "上证指数", "code": "sh000001"},
+    {"name": "深证成指", "code": "sz399001"},
+    {"name": "创业板指", "code": "sz399006"},
+)
+
+# 指数行情模块级内存缓存：{来源: (monotonic 时间, 行情列表)}，60 秒有效，
+# 缓存键含来源，避免频繁请求把上游刷爆。
+_INDEX_QUOTE_CACHE: Dict[str, Tuple[float, list]] = {}
+_INDEX_QUOTE_TTL = 60.0
+
+
+def _cached_index_quotes() -> Optional[Tuple[list, str]]:
+    """返回 60 秒内的指数行情缓存 (items, source)，无可用缓存返回 None。"""
+    now = time.monotonic()
+    for source, (cached_at, items) in list(_INDEX_QUOTE_CACHE.items()):
+        if now - cached_at < _INDEX_QUOTE_TTL:
+            return items, source
+        _INDEX_QUOTE_CACHE.pop(source, None)
+    return None
 
 
 class StockDataError(RuntimeError):
@@ -444,6 +467,212 @@ class StockDataService:
             "source": source,
             "quote_time": records[0]["quote_time"],
         }
+
+    def _mx_loader(self):
+        """创建东方财富妙想加载器；未配置 key 或依赖缺失时返回 None（静默降级）。
+
+        API key 取自 load_config() 的 mx.api_key（config_loader 会把环境变量
+        MX_APIKEY 合并进该配置项）。
+        """
+        api_key = (
+            load_config(str(self.config_path)).get("mx", {}).get("api_key")
+            or os.getenv("MX_APIKEY")
+        )
+        if not api_key:
+            return None
+        try:
+            from ripple_tradePilot.data.mx_loader import MXDataLoader
+
+            return MXDataLoader(api_key=api_key)
+        except Exception as error:
+            logger.warning("妙想数据源不可用：%s", error)
+            return None
+
+    def _mx_index_quotes(self) -> list:
+        """一级来源：妙想自然语言查询三支指数的最新点位（失败返回 []）。"""
+        loader = self._mx_loader()
+        if loader is None:
+            return []
+        items = []
+        for index in MARKET_INDEXES:
+            # 妙想查询有延迟和不确定性：任何异常都静默降级，绝不上抛
+            try:
+                result = loader._query(f"{index['name']} 最新价 涨跌幅")
+                frame = loader._extract_price_data(result)
+            except Exception as error:
+                logger.warning("妙想指数查询失败（%s）：%s", index["name"], error)
+                return []
+            if frame is None or len(frame) == 0 or "close" not in frame.columns:
+                return []
+            row = frame.iloc[-1]  # 妙想对"最新"查询通常返回当日数据，取最后一根
+            price = self._optional_float(row.get("close"))
+            if price is None:
+                return []
+            change = None
+            change_pct = None
+            for column in frame.columns:
+                label = str(column)
+                if change_pct is None and "涨跌幅" in label:
+                    change_pct = self._optional_float(row.get(column))
+                elif change is None and "涨跌额" in label:
+                    change = self._optional_float(row.get(column))
+            if change is None and change_pct is not None and change_pct > -100:
+                change = round(price * change_pct / (100 + change_pct), 2)
+            items.append(
+                {
+                    "name": index["name"],
+                    "code": index["code"],
+                    "price": price,
+                    "change": change,
+                    "change_pct": change_pct,
+                }
+            )
+        return items
+
+    @staticmethod
+    def _sina_index_quotes() -> list:
+        """二级来源：新浪简版指数行情接口（GBK 编码，需 Referer 头）。"""
+        codes = ",".join(f"s_{index['code']}" for index in MARKET_INDEXES)
+        response = httpx.get(
+            f"https://hq.sinajs.cn/list={codes}",
+            headers={
+                "Referer": "https://finance.sina.com.cn",
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36"
+                ),
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        text = response.content.decode("gbk", errors="replace")
+        parsed: Dict[str, Dict[str, Any]] = {}
+        for line in text.splitlines():
+            match = re.fullmatch(
+                r'var hq_str_s_([a-z]{2}\d{6})="([^"]*)";?', line.strip()
+            )
+            if not match:
+                continue
+            code, payload = match.groups()
+            # 简版字段：名称,点位,涨跌,涨跌幅,成交量(手),成交额(万)
+            fields = [field.strip() for field in payload.split(",")]
+            if len(fields) < 4:
+                continue
+            price = StockDataService._optional_float(fields[1])
+            if price is None:
+                continue
+            parsed[code] = {
+                "name": fields[0],
+                "price": price,
+                "change": StockDataService._optional_float(fields[2]),
+                "change_pct": StockDataService._optional_float(fields[3]),
+            }
+        items = []
+        for index in MARKET_INDEXES:
+            quote = parsed.get(index["code"])
+            if quote is None:
+                continue
+            items.append(
+                {
+                    "name": quote["name"] or index["name"],
+                    "code": index["code"],
+                    "price": quote["price"],
+                    "change": quote["change"],
+                    "change_pct": quote["change_pct"],
+                }
+            )
+        return items
+
+    @staticmethod
+    def _akshare_index_quotes() -> list:
+        """三级来源：AkShare 东财指数列表里挑出三支目标指数。"""
+        frame = ak.stock_zh_index_spot_em()
+        if frame is None or len(frame) == 0 or "代码" not in frame.columns:
+            return []
+        by_digits = {index["code"][2:]: index for index in MARKET_INDEXES}
+        found: Dict[str, Dict[str, Any]] = {}
+        for _, row in frame.iterrows():
+            digits = str(row.get("代码") or "").strip()
+            index = by_digits.get(digits)
+            if index is None or digits in found:
+                continue
+            price = StockDataService._optional_float(row.get("最新价"))
+            if price is None:
+                continue
+            found[digits] = {
+                "name": str(row.get("名称") or "").strip() or index["name"],
+                "code": index["code"],
+                "price": price,
+                "change": StockDataService._optional_float(row.get("涨跌额")),
+                "change_pct": StockDataService._optional_float(row.get("涨跌幅")),
+            }
+        return [
+            found[index["code"][2:]]
+            for index in MARKET_INDEXES
+            if index["code"][2:] in found
+        ]
+
+    def fetch_index_quotes(self) -> Dict[str, Any]:
+        """获取三大指数行情：妙想 → 新浪 → AkShare 依次降级，都失败返回 []。
+
+        返回 {"indices": [...], "source": "mx"/"sina"/"akshare"/""}，
+        成功结果带 60 秒模块级内存缓存（缓存键含来源）。
+        """
+        cached = _cached_index_quotes()
+        if cached is not None:
+            items, source = cached
+            return {"indices": items, "source": source}
+        tiers = (
+            ("mx", self._mx_index_quotes),
+            ("sina", self._sina_index_quotes),
+            ("akshare", self._akshare_index_quotes),
+        )
+        for source, fetch in tiers:
+            try:
+                items = fetch()
+            except Exception as error:
+                logger.warning("指数行情获取失败（%s）：%s", source, error)
+                items = []
+            if items:
+                _INDEX_QUOTE_CACHE[source] = (time.monotonic(), items)
+                return {"indices": items, "source": source}
+        return {"indices": [], "source": ""}
+
+    def fetch_market_breadth_mx(self) -> Optional[Dict[str, int]]:
+        """用妙想查询"A股上涨/下跌/平盘家数"；结构不保证，解析失败返回 None。
+
+        返回 None 时，调用方应退回本地 stock_quotes 快照统计。
+        """
+        loader = self._mx_loader()
+        if loader is None:
+            return None
+        try:
+            result = loader._query("今日A股上涨家数 下跌家数 平盘家数")
+            frame = loader._extract_price_data(result)
+        except Exception as error:
+            logger.warning("妙想市场宽度查询失败：%s", error)
+            return None
+        if frame is None or len(frame) == 0:
+            return None
+        row = frame.iloc[-1]
+        breadth: Dict[str, int] = {}
+        for column in frame.columns:
+            if column == "datetime":
+                continue
+            label = str(column)
+            value = self._optional_float(row.get(column))
+            if value is None or value < 0 or value != int(value):
+                continue
+            if "涨" in label or "up" in label.lower():
+                breadth["up"] = int(value)
+            elif "跌" in label or "down" in label.lower():
+                breadth["down"] = int(value)
+            elif "平" in label or "flat" in label.lower():
+                breadth["flat"] = int(value)
+        # 三项家数必须齐全才可用，否则放弃（回到快照统计）
+        if {"up", "down", "flat"} - breadth.keys():
+            return None
+        return breadth
 
     @staticmethod
     def _normalize_frame(frame: pd.DataFrame) -> pd.DataFrame:

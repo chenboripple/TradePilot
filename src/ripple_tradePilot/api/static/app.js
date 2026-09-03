@@ -30,6 +30,7 @@ const state = {
   backtest: null,
   backtestHover: null,
   backtestChartGeometry: null,
+  marketOverview: null,
   autoRefresh: { timer: null, lastRun: 0, busy: false },
 };
 
@@ -90,6 +91,17 @@ const elements = {
   backtestChartEmpty: document.querySelector("#backtest-chart-empty"),
   autoRefreshToggle: document.querySelector("#auto-refresh-toggle"),
   autoRefreshInterval: document.querySelector("#auto-refresh-interval"),
+  marketOverviewStatus: document.querySelector("#market-overview-status"),
+  marketOverviewStale: document.querySelector("#market-overview-stale"),
+  marketOverviewSource: document.querySelector("#market-overview-source"),
+  marketOverviewTime: document.querySelector("#market-overview-time"),
+  marketOverviewBody: document.querySelector("#market-overview-body"),
+  marketOverviewIndices: document.querySelector("#market-overview-indices"),
+  marketOverviewBar: document.querySelector("#market-overview-bar"),
+  marketOverviewBreadthCounts: document.querySelector("#market-overview-breadth-counts"),
+  marketOverviewBreadthLimits: document.querySelector("#market-overview-breadth-limits"),
+  marketOverviewTurnover: document.querySelector("#market-overview-turnover"),
+  marketOverviewSentiment: document.querySelector("#market-overview-sentiment"),
 };
 
 const recommendationLabels = { BUY: "偏多", SELL: "偏空", HOLD: "观望" };
@@ -311,6 +323,89 @@ async function fetchDashboard() {
 
 function marketsForAsset() {
   return (state.dashboard?.markets ?? []).filter((item) => item.asset_class === state.assetClass);
+}
+
+function marketOverviewSourceLabel(source) {
+  if (source === null || source === undefined || source === "") return null;
+  const value = String(source);
+  if (value === "mx") return "妙想行情";
+  if (value.includes("snapshot")) return "本地快照";
+  return value;
+}
+
+async function fetchMarketOverview() {
+  if (!state.user) return;
+  try {
+    const payload = await apiRequest("/api/market/overview");
+    state.marketOverview = payload.data ?? null;
+  } catch (error) {
+    if (error.status === 401) {
+      state.user = null;
+      renderAuthState();
+      return;
+    }
+    state.marketOverview = null;
+  }
+  renderMarketOverview();
+}
+
+function renderMarketOverview() {
+  const data = state.marketOverview;
+  elements.marketOverviewStatus.hidden = data !== null;
+  elements.marketOverviewBody.hidden = data === null;
+  if (!data) {
+    elements.marketOverviewStale.hidden = true;
+    elements.marketOverviewSource.hidden = true;
+    elements.marketOverviewTime.textContent = "";
+    return;
+  }
+
+  const quoteTime = data.quote_time ? String(data.quote_time).slice(11, 16) : "--";
+  elements.marketOverviewTime.textContent = `数据时间 ${quoteTime}`;
+  elements.marketOverviewStale.hidden = !data.stale;
+  const sourceLabel = marketOverviewSourceLabel(data.source);
+  elements.marketOverviewSource.hidden = sourceLabel === null;
+  elements.marketOverviewSource.textContent = sourceLabel ?? "";
+
+  const indices = data.indices ?? [];
+  elements.marketOverviewIndices.hidden = indices.length === 0;
+  elements.marketOverviewIndices.innerHTML = indices.map((item) => {
+    const tone = Number(item.change_pct) >= 0 ? "rec-buy" : "rec-sell";
+    const changeSign = Number(item.change) >= 0 ? "+" : "";
+    return `<div class="market-overview-index">
+      <span>${escapeHtml(item.name)}</span>
+      <strong>${formatNumber(item.price)}</strong>
+      <small class="${tone}">${changeSign}${formatNumber(item.change)}　${formatPercent(item.change_pct, 2, true)}</small>
+    </div>`;
+  }).join("");
+
+  const breadth = data.breadth ?? {};
+  const up = Number(breadth.up) || 0;
+  const flat = Number(breadth.flat) || 0;
+  const down = Number(breadth.down) || 0;
+  const total = Number(breadth.total) || up + flat + down;
+  elements.marketOverviewBar.innerHTML = total > 0
+    ? [
+      ["up", "上涨", up],
+      ["flat", "平", flat],
+      ["down", "下跌", down],
+    ]
+      .filter(([, , count]) => count > 0)
+      .map(([kind, label, count]) => `<span class="market-overview-seg-${kind}" style="width:${((count / total) * 100).toFixed(2)}%" title="${label} ${count.toLocaleString("zh-CN")}"></span>`)
+      .join("")
+    : "";
+  elements.marketOverviewBreadthCounts.innerHTML = `<span class="rec-buy">上涨 ${up.toLocaleString("zh-CN")}</span> / 平 ${flat.toLocaleString("zh-CN")} / <span class="rec-sell">下跌 ${down.toLocaleString("zh-CN")}</span>`;
+  elements.marketOverviewBreadthLimits.textContent = `涨停 ${Number(breadth.limit_up) || 0} · 跌停 ${Number(breadth.limit_down) || 0}`;
+
+  const turnover = data.turnover;
+  elements.marketOverviewTurnover.textContent = turnover === null || turnover === undefined
+    ? "--"
+    : `${formatNumber(turnover / 1e8, 0)} 亿元`;
+
+  const sentiment = data.sentiment?.label ?? "--";
+  const sentimentTone = sentiment === "偏强" ? "is-strong" : sentiment === "偏弱" ? "is-weak" : "is-neutral";
+  elements.marketOverviewSentiment.className = `market-overview-value ${sentimentTone}`;
+  elements.marketOverviewSentiment.textContent = sentiment;
 }
 
 function renderAll() {
@@ -1000,6 +1095,7 @@ async function autoRefreshTick() {
   state.autoRefresh.lastRun = Date.now();
   try {
     await fetchDashboard();
+    if (state.user) await fetchMarketOverview();
     if (state.user) await loadProtectedData();
     if (state.allStocks !== null) await fetchStockCatalog();
   } catch (_) {
@@ -1272,6 +1368,7 @@ document.querySelectorAll("[data-indicator]").forEach((input) => {
 
 elements.refresh.addEventListener("click", async () => {
   await fetchDashboard();
+  if (state.user) await fetchMarketOverview();
   if (state.view === "stocks") await fetchStockCatalog();
 });
 elements.autoRefreshToggle.addEventListener("change", () => {
@@ -1328,6 +1425,7 @@ document.querySelector("#logout-button").addEventListener("click", async () => {
   state.strategies = [];
   state.backtests = [];
   state.allStocks = null;
+  state.marketOverview = null;
   state.selectedStrategyId = "";
   state.appliedStrategyId = "";
   await fetchDashboard();
@@ -1358,6 +1456,7 @@ elements.authForm.addEventListener("submit", async (event) => {
     await fetchDashboard();
     if (state.allStocks !== null) await fetchStockCatalog();
     await loadProtectedData();
+    await fetchMarketOverview();
     if (state.pendingView) await switchView(state.pendingView);
     state.pendingView = null;
   } catch (error) {
@@ -1494,6 +1593,7 @@ async function bootstrap() {
     await fetchCurrentUser();
     await fetchDashboard();
     if (state.user) await loadProtectedData();
+    if (state.user) await fetchMarketOverview();
   } catch (error) {
     elements.generatedAt.textContent = "连接失败";
     elements.dataAlert.hidden = false;

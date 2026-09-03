@@ -1,9 +1,9 @@
 import os
 import re
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Literal, Optional
+from typing import Any, Dict, Literal, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse
@@ -29,6 +29,7 @@ from ripple_tradePilot.storage.database import (
     init_database,
     list_stock_catalog,
     load_daily_bars,
+    load_stock_quotes,
     stock_catalog_name,
     stock_catalog_names,
 )
@@ -555,6 +556,123 @@ def refresh_stocks(user: Dict = Depends(required_user)):
 def refresh_stock_quotes(user: Dict = Depends(required_user)):
     try:
         return {"data": StockDataService().refresh_quotes()}
+    except StockDataUnavailableError as error:
+        raise _stock_error(error) from error
+
+
+# 市场总览：本地快照超过该时长视为过期，先尝试刷新一次
+MARKET_OVERVIEW_MAX_AGE = timedelta(minutes=5)
+# 涨跌停近似阈值（主板 ±10%；创业板/科创板 ±20%，此处统一近似，见 breadth 注释）
+MARKET_LIMIT_PCT = 9.8
+
+
+def _parse_quote_time(value: Any) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value))
+    except ValueError:
+        return None
+
+
+def _latest_quote_time(rows) -> tuple:
+    """返回 (最新 quote_time 的 datetime, 原始字符串)；无有效值返回 (None, "")。"""
+    latest: Optional[datetime] = None
+    raw = ""
+    for row in rows:
+        parsed = _parse_quote_time(row.get("quote_time"))
+        if parsed is not None and (latest is None or parsed > latest):
+            latest = parsed
+            raw = str(row.get("quote_time"))
+    return latest, raw
+
+
+def _market_overview_data() -> Dict[str, Any]:
+    service = StockDataService()
+    rows = load_stock_quotes()
+    latest, quote_time = _latest_quote_time(rows)
+    # 快照为空或已过期：先刷新一次再重算；刷新失败时沿用旧快照并标记 stale
+    if not rows or latest is None or datetime.now() - latest > MARKET_OVERVIEW_MAX_AGE:
+        try:
+            service.refresh_quotes()
+        except StockDataUnavailableError:
+            pass
+        rows = load_stock_quotes()
+        latest, quote_time = _latest_quote_time(rows)
+    if not rows:
+        raise StockDataUnavailableError("暂无全市场行情快照，请稍后重试")
+    stale = latest is None or datetime.now() - latest > MARKET_OVERVIEW_MAX_AGE
+
+    breadth = {"total": len(rows), "up": 0, "flat": 0, "down": 0, "limit_up": 0, "limit_down": 0}
+    turnover = 0.0
+    for row in rows:
+        change_pct = row.get("change_pct")
+        if change_pct is None:
+            breadth["flat"] += 1
+        elif change_pct > 0:
+            breadth["up"] += 1
+        elif change_pct < 0:
+            breadth["down"] += 1
+        else:
+            breadth["flat"] += 1
+        if change_pct is not None:
+            # 近似口径：主板涨跌停为 ±10%，创业板/科创板为 ±20%，此处统一按 ±9.8% 估算
+            if change_pct >= MARKET_LIMIT_PCT:
+                breadth["limit_up"] += 1
+            elif change_pct <= -MARKET_LIMIT_PCT:
+                breadth["limit_down"] += 1
+        amount = row.get("amount")
+        if amount is not None:
+            turnover += float(amount)
+
+    # 市场宽度优先用妙想（结构不保证，解析失败回退本地快照统计）
+    breadth_from_mx = False
+    try:
+        mx_breadth = service.fetch_market_breadth_mx()
+    except Exception:
+        mx_breadth = None
+    if mx_breadth:
+        breadth["up"] = mx_breadth["up"]
+        breadth["down"] = mx_breadth["down"]
+        breadth["flat"] = mx_breadth["flat"]
+        breadth["total"] = mx_breadth["up"] + mx_breadth["down"] + mx_breadth["flat"]
+        breadth_from_mx = True
+
+    total = breadth["total"]
+    up_ratio = round(breadth["up"] / total, 2) if total else 0.0
+    if up_ratio >= 0.6:
+        label = "偏强"
+    elif up_ratio <= 0.4:
+        label = "偏弱"
+    else:
+        label = "均衡"
+
+    indices_payload = service.fetch_index_quotes()
+    indices = indices_payload.get("indices", [])
+    index_source = indices_payload.get("source", "")
+    index_label = {"mx": "mx", "sina": "sina", "akshare": "akshare"}.get(index_source, "")
+    breadth_label = "mx" if breadth_from_mx else "snapshot"
+    source_parts = []
+    for part in (index_label, breadth_label):
+        if part and part not in source_parts:
+            source_parts.append(part)
+    source = "+".join(source_parts) if source_parts else "snapshot"
+
+    return {
+        "quote_time": quote_time,
+        "indices": indices,
+        "breadth": breadth,
+        "turnover": turnover,
+        "sentiment": {"up_ratio": up_ratio, "label": label},
+        "stale": stale,
+        "source": source,
+    }
+
+
+@app.get("/api/market/overview")
+def market_overview(user: Dict = Depends(required_user)):
+    try:
+        return {"data": _market_overview_data()}
     except StockDataUnavailableError as error:
         raise _stock_error(error) from error
 

@@ -1,0 +1,33 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - release
+      - release-ripple
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package
+        run: pip install . pytest
+
+      - name: Run test suite
+        run: pytest tests/ -q

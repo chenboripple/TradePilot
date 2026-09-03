@@ -18,7 +18,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    uses: ./.github/workflows/tests.yml
+
   publish:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Check out source

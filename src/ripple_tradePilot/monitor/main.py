@@ -21,6 +21,7 @@ from ripple_tradePilot.strategies.macd import MACD
 from ripple_tradePilot.strategies.combo_vote import ComboVoteStrategy
 from ripple_tradePilot.notifiers.feishu import FeishuWebhookNotifier
 from ripple_tradePilot.models.types import Bar, Side, Signal
+from ripple_tradePilot.storage.user_store import get_system_strategy
 
 
 # 配置日志
@@ -194,7 +195,9 @@ class MarketMonitor:
             self.feishu_notifier = None
         
         # 初始化按标的的策略画像
-        self.strategy_profiles = self.config.get('strategy_profiles', {})
+        self._configured_strategy_profiles = self.config.get('strategy_profiles', {})
+        self.strategy_profiles = {}
+        self._refresh_strategy_profiles()
         logger.info(f"✅ 已加载策略画像：{', '.join(sorted(self.strategy_profiles.keys()))}")
         
         # 监控状态
@@ -202,6 +205,24 @@ class MarketMonitor:
         self._check_interval = self.config.get('monitor', {}).get('interval_seconds', 300)
         self._check_count = 0
         self._minute_freq = self.config.get('monitor', {}).get('bar_freq', '1min')
+
+    def _refresh_strategy_profiles(self):
+        self.strategy_profiles = {
+            name: dict(profile)
+            for name, profile in self._configured_strategy_profiles.items()
+        }
+        for symbol in self.config.get('symbols', []):
+            profile_name = symbol.get('strategy_profile')
+            if not profile_name:
+                continue
+            override = get_system_strategy(symbol['code'], 'stock')
+            if override is None:
+                continue
+            configured = self.strategy_profiles.get(profile_name, {})
+            self.strategy_profiles[profile_name] = {
+                **override['parameters'],
+                'kind': configured.get('kind', 'combo_vote'),
+            }
     
     def is_trading_time(self) -> bool:
         """判断是否在 A 股交易时间。"""
@@ -707,6 +728,7 @@ class MarketMonitor:
             try:
                 # 检查是否交易时间
                 if self.is_trading_time():
+                    self._refresh_strategy_profiles()
                     self._check_count += 1
                     logger.info(f"\n{'='*60}")
                     logger.info(f"📋 第 {self._check_count} 次监控 ({datetime.now().strftime('%H:%M')})")

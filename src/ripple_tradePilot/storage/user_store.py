@@ -211,9 +211,90 @@ def _strategy_dict(row: sqlite3.Row, viewer_id: int) -> Dict[str, Any]:
         "visibility": row["visibility"],
         "owner": row["owner_username"],
         "is_owner": row["user_id"] == viewer_id,
+        "is_system": bool(row["system_key"]),
+        "system_key": row["system_key"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
+
+
+def ensure_system_strategies(
+    owner_username: str,
+    strategies: List[Dict[str, Any]],
+    path: Path | None = None,
+) -> List[str]:
+    """Create editable DB-backed copies once the configured owner exists."""
+    if not owner_username or not strategies:
+        return []
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("BEGIN IMMEDIATE")
+        owner = connection.execute(
+            "SELECT id FROM users WHERE username = ? COLLATE NOCASE",
+            (owner_username,),
+        ).fetchone()
+        if owner is None:
+            return []
+        bound_keys = []
+        for strategy in strategies:
+            system_key = strategy["system_key"]
+            existing = connection.execute(
+                "SELECT id, user_id FROM strategies WHERE system_key = ?",
+                (system_key,),
+            ).fetchone()
+            if existing is None:
+                connection.execute(
+                    """
+                    INSERT INTO strategies (
+                        user_id, name, asset_class, symbol, profile,
+                        parameters_json, visibility, system_key
+                    ) VALUES (?, ?, ?, ?, ?, ?, 'public', ?)
+                    """,
+                    (
+                        owner["id"],
+                        strategy["name"],
+                        strategy["asset_class"],
+                        strategy["symbol"],
+                        strategy["profile"],
+                        json.dumps(
+                            strategy["parameters"],
+                            ensure_ascii=False,
+                            separators=(",", ":"),
+                        ),
+                        system_key,
+                    ),
+                )
+            elif existing["user_id"] != owner["id"]:
+                connection.execute(
+                    """
+                    UPDATE strategies
+                    SET user_id = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (owner["id"], existing["id"]),
+                )
+            bound_keys.append(system_key)
+    return bound_keys
+
+
+def get_system_strategy(
+    symbol: str,
+    asset_class: str = "stock",
+    path: Path | None = None,
+) -> Optional[Dict[str, Any]]:
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        row = connection.execute(
+            """
+            SELECT strategies.*, users.username AS owner_username
+            FROM strategies JOIN users ON users.id = strategies.user_id
+            WHERE strategies.system_key = ?
+            """,
+            (f"{asset_class}:{symbol.upper()}",),
+        ).fetchone()
+    return _strategy_dict(row, row["user_id"]) if row else None
 
 
 def list_visible_strategies(
@@ -250,6 +331,48 @@ def update_strategy_visibility(
             WHERE id = ? AND user_id = ?
             """,
             (visibility, strategy_id, user_id),
+        )
+        if cursor.rowcount == 0:
+            raise StrategyNotFoundError("策略不存在或无权修改")
+        row = connection.execute(
+            """
+            SELECT strategies.*, users.username AS owner_username
+            FROM strategies JOIN users ON users.id = strategies.user_id
+            WHERE strategies.id = ?
+            """,
+            (strategy_id,),
+        ).fetchone()
+    return _strategy_dict(row, user_id)
+
+
+def update_strategy(
+    strategy_id: int,
+    user_id: int,
+    strategy: Dict[str, Any],
+    path: Path | None = None,
+) -> Dict[str, Any]:
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        cursor = connection.execute(
+            """
+            UPDATE strategies
+            SET name = ?, profile = ?, parameters_json = ?, visibility = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+            """,
+            (
+                strategy["name"],
+                strategy["profile"],
+                json.dumps(
+                    strategy["parameters"],
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ),
+                strategy["visibility"],
+                strategy_id,
+                user_id,
+            ),
         )
         if cursor.rowcount == 0:
             raise StrategyNotFoundError("策略不存在或无权修改")

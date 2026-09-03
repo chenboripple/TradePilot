@@ -7,6 +7,8 @@ from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+import yaml
+
 from fastapi.testclient import TestClient
 
 from ripple_tradePilot.api.app import app
@@ -299,6 +301,87 @@ class UserApiTest(unittest.TestCase):
         forbidden = self.client.patch(
             f"/api/strategies/{public_strategy['id']}/visibility",
             json={"visibility": "private"},
+        )
+        self.assertEqual(forbidden.status_code, 404)
+
+    def test_configured_owner_can_edit_system_strategies(self):
+        profile = {
+            "kind": "combo_vote",
+            "ma_fast": 5,
+            "ma_slow": 20,
+            "rsi_period": 14,
+            "rsi_oversold": 30,
+            "rsi_overbought": 70,
+            "bb_period": 20,
+            "bb_std": 2,
+            "vote_threshold": 2,
+        }
+        self.config.write_text(
+            yaml.safe_dump(
+                {
+                    "strategy_owner": "chenboripple@gmail.com",
+                    "symbols": [
+                        {
+                            "code": "002022.SZ",
+                            "name": "科华生物",
+                            "strategy_profile": "科华生物策略",
+                        },
+                        {
+                            "code": "600309.SH",
+                            "name": "万华化学",
+                            "strategy_profile": "万华化学策略",
+                        },
+                    ],
+                    "strategy_profiles": {
+                        "科华生物策略": profile,
+                        "万华化学策略": profile,
+                    },
+                },
+                allow_unicode=True,
+            ),
+            encoding="utf-8",
+        )
+        service = ApiStockDataService()
+        service.refresh("002022.SZ")
+        service.refresh("600309.SH")
+
+        self.register("chenboripple@gmail.com")
+        items = self.client.get("/api/strategies").json()["items"]
+        system_items = [item for item in items if item["is_system"]]
+
+        self.assertEqual(
+            {item["symbol"] for item in system_items},
+            {"002022.SZ", "600309.SH"},
+        )
+        self.assertTrue(all(item["is_owner"] for item in system_items))
+        kehua = next(item for item in system_items if item["symbol"] == "002022.SZ")
+        updated_parameters = {**kehua["parameters"], "ma_fast": 2, "ma_slow": 8}
+        changed = self.client.patch(
+            f"/api/strategies/{kehua['id']}",
+            json={
+                "name": kehua["name"],
+                "profile": kehua["profile"],
+                "parameters": updated_parameters,
+                "visibility": "public",
+            },
+        )
+
+        self.assertEqual(changed.status_code, 200, changed.text)
+        self.assertEqual(changed.json()["item"]["parameters"]["ma_fast"], 2)
+        market = self.client.get("/api/dashboard").json()["markets"]
+        kehua_market = next(item for item in market if item["symbol"] == "002022.SZ")
+        self.assertEqual(kehua_market["parameters"]["ma_fast"], 2)
+
+        self.client.post("/api/auth/logout")
+        self.register("other@example.com")
+        forbidden = self.client.patch(
+            f"/api/strategies/{kehua['id']}",
+            json={
+                "name": kehua["name"],
+                "profile": kehua["profile"],
+                "parameters": updated_parameters,
+                "visibility": "private",
+            },
         )
         self.assertEqual(forbidden.status_code, 404)
 

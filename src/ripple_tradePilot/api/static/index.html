@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=10">
+  <link rel="stylesheet" href="/assets/app.css?v=11">
 </head>
 <body>
   <header class="topbar">
@@ -250,7 +250,7 @@
 
   <dialog class="app-dialog strategy-dialog" id="strategy-dialog">
     <form method="dialog" class="dialog-close-form"><button class="icon-button" aria-label="关闭" title="关闭">×</button></form>
-    <div class="dialog-heading"><span>NEW STRATEGY</span><h2>新建策略</h2></div>
+    <div class="dialog-heading"><span id="strategy-dialog-kicker">NEW STRATEGY</span><h2 id="strategy-dialog-title">新建策略</h2></div>
     <form id="strategy-form">
       <div class="form-grid">
         <label class="field field-wide"><span>策略名称</span><input name="name" maxlength="80" required></label>
@@ -262,11 +262,14 @@
         <label class="field"><span>短期均线</span><input name="ma_fast" type="number" min="1" value="5" required></label>
         <label class="field"><span>长期均线</span><input name="ma_slow" type="number" min="2" value="20" required></label>
         <label class="field"><span>RSI 周期</span><input name="rsi_period" type="number" min="2" value="14" required></label>
+        <label class="field"><span>RSI 超卖线</span><input name="rsi_oversold" type="number" min="0" max="100" step="0.1" value="30" required></label>
+        <label class="field"><span>RSI 超买线</span><input name="rsi_overbought" type="number" min="0" max="100" step="0.1" value="70" required></label>
         <label class="field"><span>布林周期</span><input name="bb_period" type="number" min="2" value="20" required></label>
         <label class="field"><span>布林倍数</span><input name="bb_std" type="number" min="0.1" step="0.1" value="2" required></label>
+        <label class="field"><span>投票阈值</span><input name="vote_threshold" type="number" min="1" max="3" value="2" required></label>
       </div>
       <p class="form-error" id="strategy-error" hidden></p>
-      <button class="primary-button dialog-submit" type="submit">保存策略</button>
+      <button class="primary-button dialog-submit" id="strategy-submit" type="submit">保存策略</button>
     </form>
   </dialog>
 
@@ -280,6 +283,6 @@
     </form>
   </dialog>
 
-  <script src="/assets/app.js?v=10" defer></script>
+  <script src="/assets/app.js?v=11" defer></script>
 </body>
 </html>

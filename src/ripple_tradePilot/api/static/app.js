@@ -26,6 +26,7 @@ const state = {
   hoverIndex: null,
   authMode: "login",
   pendingView: null,
+  editingStrategyId: null,
 };
 
 const elements = {
@@ -59,6 +60,9 @@ const elements = {
   strategyStockSymbol: document.querySelector("#strategy-stock-symbol"),
   strategyFutureField: document.querySelector("#strategy-future-field"),
   strategyFutureSymbol: document.querySelector("[name=future_symbol]"),
+  strategyDialogKicker: document.querySelector("#strategy-dialog-kicker"),
+  strategyDialogTitle: document.querySelector("#strategy-dialog-title"),
+  strategySubmit: document.querySelector("#strategy-submit"),
   stockDialog: document.querySelector("#stock-dialog"),
   stockForm: document.querySelector("#stock-form"),
   stockError: document.querySelector("#stock-error"),
@@ -180,6 +184,46 @@ function updateStrategySymbolField() {
   elements.strategyFutureField.hidden = isStock;
   elements.strategyStockSymbol.required = isStock;
   elements.strategyFutureSymbol.required = !isStock;
+}
+
+async function openStrategyDialog(strategy = null) {
+  elements.strategyError.hidden = true;
+  elements.strategyForm.reset();
+  state.editingStrategyId = strategy?.id ?? null;
+  if (state.allStocks === null) await fetchStockCatalog();
+  populateStrategyStocks();
+
+  const editing = Boolean(strategy);
+  elements.strategyDialogKicker.textContent = editing ? "EDIT STRATEGY" : "NEW STRATEGY";
+  elements.strategyDialogTitle.textContent = editing ? "编辑策略" : "新建策略";
+  elements.strategySubmit.textContent = editing ? "保存修改" : "保存策略";
+  elements.strategyAssetClass.disabled = editing;
+  elements.strategyStockSymbol.disabled = editing;
+  elements.strategyFutureSymbol.disabled = editing;
+
+  if (strategy) {
+    const params = strategy.parameters ?? {};
+    elements.strategyForm.elements.name.value = strategy.name;
+    elements.strategyAssetClass.value = strategy.asset_class;
+    elements.strategyStockSymbol.value = strategy.asset_class === "stock" ? strategy.symbol : "";
+    elements.strategyFutureSymbol.value = strategy.asset_class === "future" ? strategy.symbol : "";
+    elements.strategyForm.elements.profile.value = strategy.profile;
+    elements.strategyForm.elements.visibility.value = strategy.visibility;
+    elements.strategyForm.elements.ma_fast.value = params.ma_fast ?? 5;
+    elements.strategyForm.elements.ma_slow.value = params.ma_slow ?? 20;
+    elements.strategyForm.elements.rsi_period.value = params.rsi_period ?? 14;
+    elements.strategyForm.elements.rsi_oversold.value = params.rsi_oversold ?? 30;
+    elements.strategyForm.elements.rsi_overbought.value = params.rsi_overbought ?? 70;
+    elements.strategyForm.elements.bb_period.value = params.bb_period ?? 20;
+    elements.strategyForm.elements.bb_std.value = params.bb_std ?? 2;
+    elements.strategyForm.elements.vote_threshold.value = params.vote_threshold ?? 2;
+  }
+  updateStrategySymbolField();
+  if (!editing && !state.allStocks.length) {
+    elements.strategyError.textContent = "请先到全部数据页面同步股票清单";
+    elements.strategyError.hidden = false;
+  }
+  elements.strategyDialog.showModal();
 }
 
 function renderAuthState() {
@@ -688,7 +732,7 @@ function renderStrategies() {
     const params = item.parameters ?? {};
     const parameterText = `MA ${params.ma_fast ?? "--"}/${params.ma_slow ?? "--"} · RSI ${params.rsi_period ?? "--"} · BB ${params.bb_period ?? "--"}/${params.bb_std ?? "--"}`;
     const action = item.is_owner
-      ? `<button class="table-action" data-strategy-id="${item.id}" data-visibility="${item.visibility}">${item.visibility === "public" ? "设为私有" : "设为开放"}</button>`
+      ? `<div class="strategy-actions"><button class="table-action" data-edit-strategy="${item.id}">编辑</button><button class="table-action" data-strategy-id="${item.id}" data-visibility="${item.visibility}">${item.visibility === "public" ? "设为私有" : "设为开放"}</button></div>`
       : "--";
     return `<tr>
       <td class="symbol-cell"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.profile)} · ${escapeHtml(item.symbol)}</span></td>
@@ -702,6 +746,14 @@ function renderStrategies() {
   }).join("");
   body.querySelectorAll("[data-strategy-id]").forEach((button) => {
     button.addEventListener("click", () => toggleStrategyVisibility(button));
+  });
+  body.querySelectorAll("[data-edit-strategy]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const strategy = state.strategies.find(
+        (item) => String(item.id) === button.dataset.editStrategy
+      );
+      if (strategy) openStrategyDialog(strategy);
+    });
   });
 }
 
@@ -1028,17 +1080,7 @@ elements.addStockButton.addEventListener("click", () => {
   elements.stockDialog.showModal();
   elements.stockForm.elements.symbol.focus();
 });
-document.querySelector("#new-strategy-button").addEventListener("click", async () => {
-  elements.strategyError.hidden = true;
-  if (state.allStocks === null) await fetchStockCatalog();
-  populateStrategyStocks();
-  updateStrategySymbolField();
-  if (!state.allStocks.length) {
-    elements.strategyError.textContent = "请先到全部数据页面同步股票清单";
-    elements.strategyError.hidden = false;
-  }
-  elements.strategyDialog.showModal();
-});
+document.querySelector("#new-strategy-button").addEventListener("click", () => openStrategyDialog());
 elements.strategyAssetClass.addEventListener("change", updateStrategySymbolField);
 elements.authForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -1108,17 +1150,33 @@ elements.strategyForm.addEventListener("submit", async (event) => {
       ma_fast: Number(form.get("ma_fast")),
       ma_slow: Number(form.get("ma_slow")),
       rsi_period: Number(form.get("rsi_period")),
-      rsi_oversold: 30,
-      rsi_overbought: 70,
+      rsi_oversold: Number(form.get("rsi_oversold")),
+      rsi_overbought: Number(form.get("rsi_overbought")),
       bb_period: Number(form.get("bb_period")),
       bb_std: Number(form.get("bb_std")),
+      vote_threshold: Number(form.get("vote_threshold")),
     },
   };
   try {
-    await apiRequest("/api/strategies", { method: "POST", body: JSON.stringify(payload) });
+    const editing = state.editingStrategyId !== null;
+    const url = editing ? `/api/strategies/${state.editingStrategyId}` : "/api/strategies";
+    const requestPayload = editing
+      ? {
+        name: payload.name,
+        profile: payload.profile,
+        visibility: payload.visibility,
+        parameters: payload.parameters,
+      }
+      : payload;
+    await apiRequest(url, {
+      method: editing ? "PATCH" : "POST",
+      body: JSON.stringify(requestPayload),
+    });
     elements.strategyDialog.close();
+    state.editingStrategyId = null;
     elements.strategyForm.reset();
     await loadProtectedData();
+    await fetchDashboard();
   } catch (error) {
     elements.strategyError.textContent = error.message;
     elements.strategyError.hidden = false;

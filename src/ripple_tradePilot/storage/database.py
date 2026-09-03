@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable, List, Mapping
 
 
-DATABASE_SCHEMA_VERSION = 9
+DATABASE_SCHEMA_VERSION = 10
 
 
 BACKTEST_COLUMNS = {
@@ -55,6 +55,7 @@ STRATEGY_COLUMNS = {
     "visibility": "visibility TEXT DEFAULT 'private'",
     "created_at": "created_at TIMESTAMP",
     "updated_at": "updated_at TIMESTAMP",
+    "system_key": "system_key TEXT",
 }
 
 WATCHLIST_COLUMNS = {
@@ -239,6 +240,7 @@ def init_database(path: Path | None = None) -> Path:
                     CHECK(visibility IN ('public', 'private')),
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                system_key TEXT,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             )
             """
@@ -257,6 +259,10 @@ def init_database(path: Path | None = None) -> Path:
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_strategies_visibility_updated "
             "ON strategies(visibility, updated_at DESC)"
+        )
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_strategies_system_key "
+            "ON strategies(system_key) WHERE system_key IS NOT NULL"
         )
         connection.execute(
             """

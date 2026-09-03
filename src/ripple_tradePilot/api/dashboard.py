@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from ripple_tradePilot.config_loader import load_config
+from ripple_tradePilot.storage.user_store import get_system_strategy
 
 
 class DashboardDataError(RuntimeError):
@@ -88,6 +89,13 @@ class DashboardService:
             **config.get("futures_strategy_profiles", {}),
         }
         return profiles.get(symbol.get("strategy_profile", ""), {})
+
+    def _system_strategy(self, symbol: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        if not self.backtest_db.exists():
+            return None
+        return get_system_strategy(
+            symbol["code"], symbol.get("asset_class", "stock"), self.backtest_db
+        )
 
     def _read_bars(self, symbol: str) -> List[Dict[str, Any]]:
         database_bars = self._read_database_bars(symbol)
@@ -284,13 +292,20 @@ class DashboardService:
             raise DashboardDataError(f"未配置标的: {symbol_code}")
 
         bars = self._read_bars(symbol_code)
+        system_strategy = self._system_strategy(symbol)
         default_parameters = (
             symbol.get("default_strategy_parameters")
             if use_default_strategy
             else None
         )
         effective_override = (
-            profile_override if profile_override is not None else default_parameters
+            profile_override
+            if profile_override is not None
+            else default_parameters
+            if default_parameters is not None
+            else system_strategy["parameters"]
+            if system_strategy is not None
+            else None
         )
         profile = (
             effective_override
@@ -304,6 +319,7 @@ class DashboardService:
                 if use_default_strategy
                 else None
             )
+            or (system_strategy["profile"] if system_strategy is not None else None)
             or symbol.get("strategy_profile", "未配置")
         )
         parameters = self._profile_parameters(profile)
@@ -369,7 +385,11 @@ class DashboardService:
             "asset_class": symbol.get("asset_class", "stock"),
             "exchange": symbol.get("exchange", symbol_code.rsplit(".", 1)[-1] if "." in symbol_code else ""),
             "strategy_profile": effective_strategy_profile,
-            "system_strategy_profile": symbol.get("strategy_profile", "未配置"),
+            "system_strategy_profile": (
+                system_strategy["profile"]
+                if system_strategy is not None
+                else symbol.get("strategy_profile", "未配置")
+            ),
             "default_strategy_id": symbol.get("default_strategy_id"),
             "profile_kind": profile.get(
                 "kind", "combo_vote" if effective_override is not None else "unknown"
@@ -428,6 +448,7 @@ class DashboardService:
                     ).strip(),
                     "is_owner": False,
                     "is_system": True,
+                    "system_key": f"{item['asset_class']}:{item['symbol']}",
                 }
             )
         return strategies

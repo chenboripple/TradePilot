@@ -33,12 +33,14 @@ from ripple_tradePilot.storage.user_store import (
     create_strategy,
     create_user,
     delete_session,
+    ensure_system_strategies,
     list_user_backtests,
     list_user_stocks,
     list_visible_strategies,
     list_user_watchlist,
     set_watchlist_default_strategy,
     upsert_watchlist_item,
+    update_strategy,
     update_strategy_visibility,
     user_for_session,
 )
@@ -50,6 +52,7 @@ SESSION_COOKIE = "tradepilot_session"
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_database()
+    _sync_configured_system_strategies()
     yield
 
 
@@ -72,6 +75,13 @@ class StrategyCreate(BaseModel):
 
 
 class StrategyVisibilityUpdate(BaseModel):
+    visibility: Literal["public", "private"]
+
+
+class StrategyUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    profile: str = Field(min_length=1, max_length=80)
+    parameters: Dict[str, float]
     visibility: Literal["public", "private"]
 
 
@@ -166,6 +176,17 @@ def _dashboard_for_user(user: Optional[Dict]) -> DashboardService:
         symbols.append(symbol)
     excluded = [item["symbol"] for item in records if not item["is_watched"]]
     return DashboardService(extra_symbols=symbols, excluded_symbols=excluded)
+
+
+def _sync_configured_system_strategies():
+    templates = DashboardService().strategy_catalog()
+    strategies_by_owner: Dict[str, list] = {}
+    for item in templates:
+        strategies_by_owner.setdefault(item["owner"], []).append(item)
+    bound_keys = set()
+    for owner, items in strategies_by_owner.items():
+        bound_keys.update(ensure_system_strategies(owner, items))
+    return templates, bound_keys
 
 
 def _configured_stock_map() -> Dict[str, Dict]:
@@ -303,6 +324,7 @@ def register(credentials: Credentials, response: Response):
         user = create_user(username, credentials.password)
     except UsernameTakenError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+    _sync_configured_system_strategies()
     _set_session_cookie(response, create_session(user["id"]))
     return {"user": user}
 
@@ -373,9 +395,12 @@ def market_detail(
 
 @app.get("/api/strategies")
 def strategies(user: Dict = Depends(required_user)):
-    system_strategies = DashboardService().strategy_catalog()
+    system_strategies, bound_keys = _sync_configured_system_strategies()
     user_strategies = list_visible_strategies(user["id"])
-    return {"items": user_strategies + system_strategies}
+    unbound_system_strategies = [
+        item for item in system_strategies if item["system_key"] not in bound_keys
+    ]
+    return {"items": user_strategies + unbound_system_strategies}
 
 
 @app.post("/api/strategies", status_code=status.HTTP_201_CREATED)
@@ -406,6 +431,22 @@ def change_strategy_visibility(
 ):
     try:
         item = update_strategy_visibility(strategy_id, user["id"], payload.visibility)
+    except StrategyNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    return {"item": item}
+
+
+@app.patch("/api/strategies/{strategy_id}")
+def change_strategy(
+    strategy_id: int,
+    payload: StrategyUpdate,
+    user: Dict = Depends(required_user),
+):
+    strategy = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
+    strategy["name"] = strategy["name"].strip()
+    strategy["profile"] = strategy["profile"].strip()
+    try:
+        item = update_strategy(strategy_id, user["id"], strategy)
     except StrategyNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     return {"item": item}

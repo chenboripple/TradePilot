@@ -329,6 +329,8 @@ tbody tr:hover { background: rgba(0, 106, 96, .05); }
 .visibility-badge.is-public { background: var(--sell-soft); color: var(--sell); }
 .visibility-badge.is-watched { background: var(--info-soft); color: var(--info); }
 .owner-label { color: var(--muted); font-size: 11px; }
+.strategy-actions { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.strategy-actions .table-action { min-height: 32px; padding: 0 10px; }
 .stock-catalog-table { min-width: 1120px; }
 .stock-action { min-width: 72px; }
 .stock-action.is-remove { color: var(--buy); }

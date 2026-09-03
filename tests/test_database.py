@@ -176,7 +176,11 @@ class DatabaseInitializationTest(unittest.TestCase):
                 }
             self.assertTrue({"username", "password_hash", "role", "created_at"}.issubset(user_columns))
             self.assertTrue({"user_id", "token_hash", "expires_at"}.issubset(session_columns))
-            self.assertTrue({"user_id", "visibility", "parameters_json"}.issubset(strategy_columns))
+            self.assertTrue(
+                {"user_id", "visibility", "parameters_json", "system_key"}.issubset(
+                    strategy_columns
+                )
+            )
             self.assertEqual(migrated_role, "admin")
             self.assertTrue(
                 {

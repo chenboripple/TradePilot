@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable, List, Mapping
 
 
-DATABASE_SCHEMA_VERSION = 10
+DATABASE_SCHEMA_VERSION = 11
 
 
 BACKTEST_COLUMNS = {
@@ -26,6 +26,10 @@ BACKTEST_COLUMNS = {
     "created_at": "created_at TIMESTAMP",
     "user_id": "user_id INTEGER",
     "strategy_id": "strategy_id INTEGER",
+    # 记录回测入参，供前端按原参数一键重跑
+    "strategy_key": "strategy_key TEXT",
+    "bar_count": "bar_count INTEGER",
+    "execution": "execution TEXT",
 }
 
 USER_COLUMNS = {

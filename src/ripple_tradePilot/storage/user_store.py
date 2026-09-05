@@ -37,6 +37,10 @@ class WatchlistNotFoundError(UserStoreError):
     pass
 
 
+class BacktestNotFoundError(UserStoreError):
+    pass
+
+
 def _target(path: Path | None) -> Path:
     return init_database(path or database_path())
 
@@ -387,6 +391,51 @@ def update_strategy(
     return _strategy_dict(row, user_id)
 
 
+def record_user_backtest(
+    user_id: int,
+    backtest: Dict[str, Any],
+    path: Path | None = None,
+) -> int:
+    """把一次 Web 回测结果写入 backtest_results，返回新记录 id。
+
+    ``backtest`` 需提供 symbol/name/start_date/end_date 等字段；
+    数值字段缺省时写 0，保证回测记录页始终有可展示的行。
+    strategy_key/bar_count/execution 记录回测入参，供前端按原参数重跑。
+    """
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        cursor = connection.execute(
+            """
+            INSERT INTO backtest_results (
+                user_id, symbol, name, start_date, end_date,
+                initial_capital, final_capital, total_return, annual_return,
+                max_drawdown, sharpe_ratio, total_trades, win_rate,
+                created_at, strategy_id, strategy_key, bar_count, execution
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                backtest.get("symbol", ""),
+                backtest.get("name", ""),
+                backtest.get("start_date", ""),
+                backtest.get("end_date", ""),
+                backtest.get("initial_capital", 0.0),
+                backtest.get("final_capital", 0.0),
+                backtest.get("total_return", 0.0),
+                backtest.get("annual_return", 0.0),
+                backtest.get("max_drawdown", 0.0),
+                backtest.get("sharpe_ratio", 0.0),
+                backtest.get("total_trades", 0),
+                backtest.get("win_rate", 0.0),
+                backtest.get("strategy_id"),
+                backtest.get("strategy_key"),
+                backtest.get("bar_count", 0),
+                backtest.get("execution", ""),
+            ),
+        )
+        return int(cursor.lastrowid)
+
+
 def list_user_backtests(
     user_id: int, path: Path | None = None, limit: int = 100
 ) -> List[Dict[str, Any]]:
@@ -405,6 +454,23 @@ def list_user_backtests(
             (user_id, limit),
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def delete_user_backtest(
+    backtest_id: int, user_id: int, path: Path | None = None
+) -> bool:
+    """删除属于指定用户的回测记录，返回是否真正删除了行。
+
+    记录不存在或属于其他用户时不删除任何行（返回 False），
+    由调用方据此区分 204/404。
+    """
+    target = _target(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        cursor = connection.execute(
+            "DELETE FROM backtest_results WHERE id = ? AND user_id = ?",
+            (backtest_id, user_id),
+        )
+        return cursor.rowcount > 0
 
 
 def _watchlist_dict(row: sqlite3.Row) -> Dict[str, Any]:

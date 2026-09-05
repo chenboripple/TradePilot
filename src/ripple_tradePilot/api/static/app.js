@@ -5,7 +5,10 @@ const state = {
   backtests: [],
   allStocks: null,
   stockQuery: "",
-  stockLimit: 200,
+  stockSortKey: "",
+  stockSortDir: "desc",
+  stockPage: 1,
+  stockPageSize: 100,
   stockFilters: {
     exchange: "",
     board: "",
@@ -75,7 +78,10 @@ const elements = {
   stockTable: document.querySelector("#stock-table"),
   stockEmpty: document.querySelector("#stock-empty"),
   stockSearch: document.querySelector("#stock-search"),
-  stockMore: document.querySelector("#stock-more"),
+  stockPagination: document.querySelector("#stock-pagination"),
+  stockPagePrev: document.querySelector("#stock-page-prev"),
+  stockPageNext: document.querySelector("#stock-page-next"),
+  stockPageInfo: document.querySelector("#stock-page-info"),
   stockCatalogStatus: document.querySelector("#stock-catalog-status"),
   syncStocks: document.querySelector("#sync-stocks-button"),
   refreshQuotes: document.querySelector("#refresh-quotes-button"),
@@ -93,6 +99,7 @@ const elements = {
   autoRefreshInterval: document.querySelector("#auto-refresh-interval"),
   marketOverviewStatus: document.querySelector("#market-overview-status"),
   marketOverviewStale: document.querySelector("#market-overview-stale"),
+  marketOverviewRefresh: document.querySelector("#market-overview-refresh"),
   marketOverviewSource: document.querySelector("#market-overview-source"),
   marketOverviewTime: document.querySelector("#market-overview-time"),
   marketOverviewBody: document.querySelector("#market-overview-body"),
@@ -102,6 +109,10 @@ const elements = {
   marketOverviewBreadthLimits: document.querySelector("#market-overview-breadth-limits"),
   marketOverviewTurnover: document.querySelector("#market-overview-turnover"),
   marketOverviewSentiment: document.querySelector("#market-overview-sentiment"),
+  marketOverviewMovers: document.querySelector("#market-overview-movers"),
+  detailBacktest: document.querySelector("#detail-backtest-button"),
+  backtestChartLegend: document.querySelector("#backtest-chart-legend"),
+  toastContainer: document.querySelector("#toast-container"),
 };
 
 const recommendationLabels = { BUY: "偏多", SELL: "偏空", HOLD: "观望" };
@@ -140,6 +151,18 @@ function shortDate(value) {
   if (!value) return "--";
   const parts = String(value).split("-");
   return parts.length === 3 ? `${parts[1]}/${parts[2]}` : value;
+}
+
+function showToast(message, kind = "info") {
+  const toast = document.createElement("div");
+  toast.className = kind === "error" ? "toast toast-error" : "toast toast-info";
+  toast.textContent = message;
+  elements.toastContainer.appendChild(toast);
+  // 自动消失：先淡出再移除节点
+  window.setTimeout(() => {
+    toast.classList.add("toast-out");
+    window.setTimeout(() => toast.remove(), 300);
+  }, 3200);
 }
 
 async function apiRequest(url, options = {}) {
@@ -199,7 +222,21 @@ async function fetchStockCatalog() {
   state.allStocks = payload.items;
   populateStockFilters();
   populateStrategyStocks();
+  populateSymbolSuggestions();
   renderStockCatalog();
+}
+
+function populateSymbolSuggestions() {
+  const datalist = document.querySelector("#symbol-options");
+  const stocks = state.allStocks ?? [];
+  if (!datalist) return;
+  // 观察池优先，截断条目数避免 5000+ 选项拖慢浏览器联想
+  const watched = stocks.filter((item) => item.is_watched);
+  const rest = stocks.filter((item) => !item.is_watched);
+  datalist.innerHTML = [...watched, ...rest]
+    .slice(0, 1500)
+    .map((item) => `<option value="${escapeHtml(item.symbol)}">${escapeHtml(item.name)}</option>`)
+    .join("");
 }
 
 function populateStrategyStocks() {
@@ -325,12 +362,20 @@ function marketsForAsset() {
   return (state.dashboard?.markets ?? []).filter((item) => item.asset_class === state.assetClass);
 }
 
+function minutesSince(isoValue) {
+  const parsed = new Date(isoValue);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return Math.max(0, Math.round((Date.now() - parsed.getTime()) / 60000));
+}
+
 function marketOverviewSourceLabel(source) {
   if (source === null || source === undefined || source === "") return null;
-  const value = String(source);
-  if (value === "mx") return "妙想行情";
-  if (value.includes("snapshot")) return "本地快照";
-  return value;
+  const labels = { mx: "妙想行情", sina: "新浪行情", akshare: "AkShare 行情", snapshot: "本地快照" };
+  const parts = String(source)
+    .split("+")
+    .map((part) => labels[part] || part)
+    .filter(Boolean);
+  return parts.length ? parts.join(" · ") : null;
 }
 
 async function fetchMarketOverview() {
@@ -357,12 +402,23 @@ function renderMarketOverview() {
     elements.marketOverviewStale.hidden = true;
     elements.marketOverviewSource.hidden = true;
     elements.marketOverviewTime.textContent = "";
+    elements.marketOverviewMovers.hidden = true;
     return;
   }
 
   const quoteTime = data.quote_time ? String(data.quote_time).slice(11, 16) : "--";
   elements.marketOverviewTime.textContent = `数据时间 ${quoteTime}`;
   elements.marketOverviewStale.hidden = !data.stale;
+  if (data.stale) {
+    const ageMinutes = data.quote_time ? minutesSince(data.quote_time) : null;
+    elements.marketOverviewStale.textContent = ageMinutes === null
+      ? "数据较旧"
+      : ageMinutes >= 24 * 60
+        ? `数据较旧 · ${Math.round(ageMinutes / 1440)} 天前`
+        : ageMinutes >= 60
+          ? `数据较旧 · ${Math.round(ageMinutes / 60)} 小时前`
+          : `数据较旧 · ${ageMinutes} 分钟前`;
+  }
   const sourceLabel = marketOverviewSourceLabel(data.source);
   elements.marketOverviewSource.hidden = sourceLabel === null;
   elements.marketOverviewSource.textContent = sourceLabel ?? "";
@@ -370,12 +426,17 @@ function renderMarketOverview() {
   const indices = data.indices ?? [];
   elements.marketOverviewIndices.hidden = indices.length === 0;
   elements.marketOverviewIndices.innerHTML = indices.map((item) => {
-    const tone = Number(item.change_pct) >= 0 ? "rec-buy" : "rec-sell";
-    const changeSign = Number(item.change) >= 0 ? "+" : "";
+    // change_pct 已是百分点口径（0.48 = 0.48%），不能再乘 100
+    const pct = Number(item.change_pct);
+    const hasPct = Number.isFinite(pct);
+    const tone = hasPct && pct > 0 ? "rec-buy" : hasPct && pct < 0 ? "rec-sell" : "rec-hold";
+    const change = Number(item.change);
+    const changeText = Number.isFinite(change) ? `${change > 0 ? "+" : ""}${formatNumber(change)}` : "--";
+    const pctText = hasPct ? `${pct > 0 ? "+" : ""}${formatNumber(pct)}%` : "--";
     return `<div class="market-overview-index">
       <span>${escapeHtml(item.name)}</span>
       <strong>${formatNumber(item.price)}</strong>
-      <small class="${tone}">${changeSign}${formatNumber(item.change)}　${formatPercent(item.change_pct, 2, true)}</small>
+      <small class="${tone}">${changeText}　${pctText}</small>
     </div>`;
   }).join("");
 
@@ -405,7 +466,35 @@ function renderMarketOverview() {
   const sentiment = data.sentiment?.label ?? "--";
   const sentimentTone = sentiment === "偏强" ? "is-strong" : sentiment === "偏弱" ? "is-weak" : "is-neutral";
   elements.marketOverviewSentiment.className = `market-overview-value ${sentimentTone}`;
-  elements.marketOverviewSentiment.textContent = sentiment;
+  const upRatio = data.sentiment?.up_ratio;
+  elements.marketOverviewSentiment.textContent = upRatio === null || upRatio === undefined
+    ? sentiment
+    : `${sentiment} · 上涨占比 ${formatPercent(upRatio, 0)}`;
+
+  // 涨跌幅榜：领涨 / 领跌，各最多 5 条，空数组时隐藏整个区块
+  const movers = data.movers ?? {};
+  const moverLists = [
+    ["领涨", movers.gainers ?? []],
+    ["领跌", movers.losers ?? []],
+  ];
+  const hasMovers = moverLists.some(([, rows]) => rows.length > 0);
+  elements.marketOverviewMovers.hidden = !hasMovers;
+  elements.marketOverviewMovers.innerHTML = hasMovers
+    ? moverLists.map(([title, rows]) => {
+      if (!rows.length) return "";
+      return `<div class="market-overview-mover-list">
+        <h3>${title}</h3>
+        ${rows.slice(0, 5).map((row) => {
+          // change_pct 为百分点口径（5.2 = 5.2%），不能再乘 100
+          const hasPct = row.change_pct !== null && row.change_pct !== undefined && Number.isFinite(Number(row.change_pct));
+          const pct = Number(row.change_pct);
+          const tone = hasPct && pct > 0 ? "rec-buy" : hasPct && pct < 0 ? "rec-sell" : "rec-hold";
+          const pctText = hasPct ? `${pct > 0 ? "+" : ""}${formatNumber(pct)}%` : "--";
+          return `<div class="market-overview-mover-row"><span>${escapeHtml(row.name)}</span><strong class="${tone}">${pctText}</strong></div>`;
+        }).join("")}
+      </div>`;
+    }).join("")
+    : "";
 }
 
 function renderAll() {
@@ -442,11 +531,16 @@ function renderWatchlist() {
       <button class="watch-action" data-refresh-symbol="${escapeHtml(item.symbol)}" title="更新日线" aria-label="更新 ${escapeHtml(item.name)} 日线">↻</button>
       <button class="watch-action" data-remove-symbol="${escapeHtml(item.symbol)}" title="移出观察池" aria-label="移除 ${escapeHtml(item.name)}">×</button>
     </span>` : "";
+    // change_pct 为百分点口径，红涨绿跌，缺失时显示 "--"
+    const hasChangePct = item.change_pct !== null && item.change_pct !== undefined;
+    const changePct = Number(item.change_pct);
+    const changePctText = hasChangePct ? `${changePct > 0 ? "+" : ""}${formatNumber(item.change_pct)}%` : "--";
+    const changePctClass = hasChangePct && changePct > 0 ? "rec-buy" : hasChangePct && changePct < 0 ? "rec-sell" : "rec-hold";
     return `<div class="watch-row ${canManage ? "has-actions" : ""}">
       <button class="watch-item ${item.symbol === state.selectedSymbol ? "is-active" : ""}" data-symbol="${escapeHtml(item.symbol)}">
         <span class="watch-item-top">
           <strong>${escapeHtml(item.name)}</strong>
-          <span>${formatNumber(item.price)}</span>
+          <span>${formatNumber(item.price)}<span class="watch-item-change ${changePctClass}">${changePctText}</span></span>
         </span>
         <span class="watch-item-bottom">
           <span>${escapeHtml(item.symbol)}</span>
@@ -477,7 +571,7 @@ async function refreshStock(button) {
     await fetchDashboard();
     if (state.allStocks !== null) await fetchStockCatalog();
   } catch (error) {
-    window.alert(error.message);
+    showToast(error.message, "error");
   } finally {
     button.disabled = false;
     button.classList.remove("is-loading");
@@ -492,7 +586,7 @@ async function removeStock(symbol) {
     await fetchDashboard();
     if (state.allStocks !== null) await fetchStockCatalog();
   } catch (error) {
-    window.alert(error.message);
+    showToast(error.message, "error");
   }
 }
 
@@ -524,18 +618,49 @@ function renderStockCatalog() {
       && (!state.stockFilters.status || stockStatus(item) === state.stockFilters.status)
       && (!state.stockFilters.watch || watchStatus === state.stockFilters.watch);
   });
+  // 排序：名称按中文排序，价格/涨跌按数值排序，缺失值始终排在最后
+  const sortKey = state.stockSortKey;
+  if (sortKey) {
+    const sortDir = state.stockSortDir === "asc" ? 1 : -1;
+    filtered.sort((left, right) => {
+      if (sortKey === "name") {
+        return sortDir * String(left.name || "").localeCompare(String(right.name || ""), "zh-CN");
+      }
+      const leftValue = left[sortKey];
+      const rightValue = right[sortKey];
+      const leftMissing = leftValue === null || leftValue === undefined || Number.isNaN(Number(leftValue));
+      const rightMissing = rightValue === null || rightValue === undefined || Number.isNaN(Number(rightValue));
+      if (leftMissing && rightMissing) return 0;
+      if (leftMissing) return 1;
+      if (rightMissing) return -1;
+      return sortDir * (Number(leftValue) - Number(rightValue));
+    });
+  }
+  // 分页：作用在筛选与排序后的结果上，页码越界时收敛到有效范围
+  const totalPages = Math.max(1, Math.ceil(filtered.length / state.stockPageSize));
+  state.stockPage = Math.min(Math.max(1, state.stockPage), totalPages);
+  const page = state.stockPage;
+  const visible = filtered.slice((page - 1) * state.stockPageSize, page * state.stockPageSize);
+
   const hasActiveFilters = Boolean(query) || Object.values(state.stockFilters).some(Boolean);
-  const visible = filtered.slice(0, state.stockLimit);
   elements.stockEmpty.hidden = filtered.length > 0;
   elements.stockEmpty.textContent = hasActiveFilters ? "没有符合筛选条件的股票" : "暂无股票数据";
-  elements.stockMore.hidden = visible.length >= filtered.length;
-  elements.stockMore.textContent = `显示更多（${visible.length} / ${filtered.length}）`;
+  elements.stockPagination.hidden = filtered.length === 0;
+  elements.stockPageInfo.textContent = `第 ${page}/${totalPages} 页 · 共 ${filtered.length.toLocaleString("zh-CN")} 条`;
+  elements.stockPagePrev.disabled = page <= 1;
+  elements.stockPageNext.disabled = page >= totalPages;
   elements.stockCatalogStatus.textContent = stocks.length
     ? hasActiveFilters
       ? `已筛选 ${filtered.length.toLocaleString("zh-CN")} / 数据库 ${stocks.length.toLocaleString("zh-CN")} 只`
       : `数据库共 ${stocks.length.toLocaleString("zh-CN")} 只股票`
     : "尚未同步股票清单";
   elements.stockFilterReset.disabled = !hasActiveFilters;
+  // 表头排序指示：当前排序列标注升/降箭头
+  document.querySelectorAll("[data-stock-sort]").forEach((th) => {
+    const active = th.dataset.stockSort === state.stockSortKey;
+    th.classList.toggle("is-sorted-asc", active && state.stockSortDir === "asc");
+    th.classList.toggle("is-sorted-desc", active && state.stockSortDir === "desc");
+  });
   elements.stockTable.innerHTML = visible.map((item) => {
     const exchangeLabels = { SSE: "上交所", SZSE: "深交所", BSE: "北交所" };
     const hasChange = item.change_pct !== null && item.change_pct !== undefined;
@@ -639,7 +764,7 @@ async function addCatalogStock(button) {
     await fetchStockCatalog();
     await switchView("detail");
   } catch (error) {
-    window.alert(error.message);
+    showToast(error.message, "error");
   } finally {
     button.disabled = false;
   }
@@ -653,7 +778,7 @@ async function syncStockCatalog() {
     await Promise.all([fetchStockCatalog(), fetchDashboard()]);
     elements.stockCatalogStatus.textContent = `已同步 ${result.data.count.toLocaleString("zh-CN")} 只股票`;
   } catch (error) {
-    window.alert(error.message);
+    showToast(error.message, "error");
   } finally {
     elements.syncStocks.disabled = false;
     elements.syncStocks.textContent = "同步股票清单";
@@ -668,7 +793,7 @@ async function refreshStockQuotes() {
     await fetchStockCatalog();
     elements.stockCatalogStatus.textContent = `实时行情 ${result.data.count.toLocaleString("zh-CN")} 只 · ${result.data.quote_time.replace("T", " ")}`;
   } catch (error) {
-    window.alert(error.message);
+    showToast(error.message, "error");
   } finally {
     elements.refreshQuotes.disabled = false;
     elements.refreshQuotes.textContent = "刷新实时行情";
@@ -733,7 +858,7 @@ async function setDefaultStrategy() {
     });
     await fetchDashboard();
   } catch (error) {
-    window.alert(error.message);
+    showToast(error.message, "error");
     renderDetailStrategy();
   }
 }
@@ -797,6 +922,9 @@ function renderMarket() {
   const freshness = document.querySelector("#freshness-badge");
   freshness.className = `freshness-badge ${market.freshness === "stale" ? "is-stale" : ""}`;
   freshness.textContent = market.freshness === "stale" ? `滞后 ${market.lag_days} 天` : "数据正常";
+
+  // 一键回测按钮：仅登录且当前为股票标的时可见（回测表单按股票代码口径）
+  elements.detailBacktest.hidden = !state.user || market.asset_class !== "stock";
 
   const recommendation = document.querySelector("#recommendation");
   recommendation.className = recClass(market.recommendation);
@@ -894,8 +1022,39 @@ function renderBacktests() {
       <td>${formatNumber(item.win_rate)}%</td>
       <td>${escapeHtml(item.total_trades ?? 0)}</td>
       <td>${escapeHtml(item.created_at || "--")}</td>
+      <td><div class="strategy-actions">
+        <button class="table-action" data-rerun-backtest="${item.id}" title="按此记录参数重新执行回测">重跑</button>
+        <button class="table-action is-danger" data-delete-backtest="${item.id}" title="删除此回测记录">删除</button>
+      </div></td>
     </tr>
   `).join("");
+  body.querySelectorAll("[data-rerun-backtest]").forEach((button) => {
+    button.addEventListener("click", () => rerunBacktest(Number(button.dataset.rerunBacktest)));
+  });
+  body.querySelectorAll("[data-delete-backtest]").forEach((button) => {
+    button.addEventListener("click", () => deleteBacktest(Number(button.dataset.deleteBacktest)));
+  });
+}
+
+function rerunBacktest(id) {
+  const record = state.backtests.find((item) => item.id === id);
+  if (!record) return;
+  const fields = elements.backtestForm.elements;
+  fields.symbol.value = record.symbol;
+  fields.strategy.value = record.strategy_key;
+  fields.bars.value = record.bar_count;
+  fields.execution.value = record.execution;
+  elements.backtestForm.requestSubmit();
+}
+
+async function deleteBacktest(id) {
+  if (!window.confirm("确认删除这条回测记录？")) return;
+  try {
+    await apiRequest(`/api/backtests/${id}`, { method: "DELETE" });
+    await loadProtectedData();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 }
 
 async function runBacktest(event) {
@@ -911,6 +1070,7 @@ async function runBacktest(event) {
       strategy: fields.strategy.value,
       bars: Number(fields.bars.value),
       execution: fields.execution.value,
+      benchmark: fields.benchmark.checked,
     };
     const response = await apiRequest("/api/backtest", {
       method: "POST",
@@ -940,6 +1100,14 @@ function renderBacktestResult() {
   elements.backtestResult.hidden = false;
   document.querySelector("#backtest-result-title").textContent = `${data.symbol} · ${backtestStrategyLabels[data.strategy] ?? data.strategy}`;
   document.querySelector("#backtest-result-meta").textContent = `${backtestExecutionLabels[data.execution] ?? data.execution} · ${data.bar_count} 根 K 线`;
+
+  // 基准图例：仅在请求了基准且数据可用时展示（return 为小数口径，用 formatPercent）
+  const benchmark = data.benchmark;
+  const benchmarkVisible = Boolean(benchmark?.available && (benchmark.curve ?? []).length);
+  elements.backtestChartLegend.hidden = !benchmarkVisible;
+  elements.backtestChartLegend.innerHTML = benchmarkVisible
+    ? `<span class="legend-item"><i class="legend-swatch legend-equity"></i>策略净值</span><span class="legend-item"><i class="legend-swatch legend-benchmark"></i>沪深300 ${formatPercent(benchmark.return, 2, true)}</span>`
+    : "";
 
   const notes = [];
   if (data.halted_by_drawdown) {
@@ -1063,6 +1231,29 @@ function drawEquityChart() {
   context.fillStyle = "rgba(0, 106, 96, .08)";
   context.fill();
 
+  // 叠加沪深300基准：基准 value（首点 1.0）按权益首点缩放映射到同一 Y 轴；
+  // 两条曲线长度可能不同，X 轴各按 index/(len-1) 归一化对齐
+  const benchmark = state.backtest?.benchmark;
+  const benchmarkCurve = benchmark?.available ? (benchmark.curve ?? []) : [];
+  if (benchmarkCurve.length) {
+    const baseEquity = curve[0].equity;
+    const benchmarkXAt = (index) => margin.left + (benchmarkCurve.length <= 1
+      ? chartWidth / 2
+      : (index / (benchmarkCurve.length - 1)) * chartWidth);
+    context.beginPath();
+    benchmarkCurve.forEach((point, index) => {
+      const x = benchmarkXAt(index);
+      const y = yAt(baseEquity * Number(point.value));
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    });
+    context.strokeStyle = "#a8b1b9";
+    context.lineWidth = 1.3;
+    context.setLineDash([4, 3]);
+    context.stroke();
+    context.setLineDash([]);
+  }
+
   const labelCount = Math.min(5, curve.length);
   context.fillStyle = "#7d8993";
   for (let labelIndex = 0; labelIndex < labelCount; labelIndex += 1) {
@@ -1125,7 +1316,7 @@ async function toggleStrategyVisibility(button) {
     });
     await loadProtectedData();
   } catch (error) {
-    window.alert(error.message);
+    showToast(error.message, "error");
   } finally {
     button.disabled = false;
   }
@@ -1301,6 +1492,15 @@ function drawChart() {
   state.chartGeometry = { margin, chartWidth, candleStep, bars, width, height };
 }
 
+// 详情页一键回测：把当前标的填入回测表单，切到回测视图并自动提交
+async function runDetailBacktest() {
+  const symbol = state.selectedSymbol ?? state.currentMarket?.symbol;
+  if (!state.user || !symbol) return;
+  elements.backtestForm.elements.symbol.value = symbol;
+  await switchView("backtests");
+  elements.backtestForm.requestSubmit();
+}
+
 async function selectSymbol(symbol) {
   const market = marketsForAsset().find((item) => item.symbol === symbol) ?? null;
   state.selectedSymbol = symbol;
@@ -1332,6 +1532,10 @@ async function switchView(view) {
   document.querySelectorAll(".view").forEach((section) => section.classList.toggle("is-active", section.id === `view-${view}`));
   if (view === "detail") requestAnimationFrame(drawChart);
   if (view === "stocks") await fetchStockCatalog();
+  if (view === "overview") {
+    renderMarketOverview();
+    if (state.user) await fetchMarketOverview();
+  }
   if (state.user && ["strategies", "backtests"].includes(view)) await loadProtectedData();
 }
 
@@ -1371,6 +1575,22 @@ elements.refresh.addEventListener("click", async () => {
   if (state.user) await fetchMarketOverview();
   if (state.view === "stocks") await fetchStockCatalog();
 });
+elements.marketOverviewRefresh.addEventListener("click", async () => {
+  if (!state.user) return;
+  elements.marketOverviewRefresh.disabled = true;
+  elements.marketOverviewRefresh.classList.add("is-loading");
+  try {
+    await fetchMarketOverview();
+  } finally {
+    elements.marketOverviewRefresh.disabled = false;
+    elements.marketOverviewRefresh.classList.remove("is-loading");
+  }
+});
+document.querySelectorAll('input[list="symbol-options"]').forEach((input) => {
+  input.addEventListener("focus", () => {
+    if (state.allStocks === null) fetchStockCatalog().catch(() => {});
+  });
+});
 elements.autoRefreshToggle.addEventListener("change", () => {
   elements.autoRefreshInterval.disabled = !elements.autoRefreshToggle.checked;
   syncAutoRefreshTimer();
@@ -1388,23 +1608,24 @@ document.addEventListener("visibilitychange", () => {
   syncAutoRefreshTimer();
 });
 elements.backtestForm.addEventListener("submit", runBacktest);
+elements.detailBacktest.addEventListener("click", runDetailBacktest);
 elements.syncStocks.addEventListener("click", syncStockCatalog);
 elements.refreshQuotes.addEventListener("click", refreshStockQuotes);
 elements.stockSearch.addEventListener("input", () => {
   state.stockQuery = elements.stockSearch.value;
-  state.stockLimit = 200;
+  state.stockPage = 1;
   renderStockCatalog();
 });
 elements.stockFilters.forEach((select) => {
   select.addEventListener("change", () => {
     state.stockFilters[select.dataset.stockFilter] = select.value;
-    state.stockLimit = 200;
+    state.stockPage = 1;
     renderStockCatalog();
   });
 });
 elements.stockFilterReset.addEventListener("click", () => {
   state.stockQuery = "";
-  state.stockLimit = 200;
+  state.stockPage = 1;
   elements.stockSearch.value = "";
   Object.keys(state.stockFilters).forEach((key) => {
     state.stockFilters[key] = "";
@@ -1414,8 +1635,26 @@ elements.stockFilterReset.addEventListener("click", () => {
   });
   renderStockCatalog();
 });
-elements.stockMore.addEventListener("click", () => {
-  state.stockLimit += 200;
+document.querySelectorAll("[data-stock-sort]").forEach((th) => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.stockSort;
+    if (state.stockSortKey === key) {
+      state.stockSortDir = state.stockSortDir === "asc" ? "desc" : "asc";
+    } else {
+      state.stockSortKey = key;
+      // 名称默认升序，数值列默认降序
+      state.stockSortDir = key === "name" ? "asc" : "desc";
+    }
+    state.stockPage = 1;
+    renderStockCatalog();
+  });
+});
+elements.stockPagePrev.addEventListener("click", () => {
+  state.stockPage -= 1;
+  renderStockCatalog();
+});
+elements.stockPageNext.addEventListener("click", () => {
+  state.stockPage += 1;
   renderStockCatalog();
 });
 elements.accountButton.addEventListener("click", () => openAuth("login"));

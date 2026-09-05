@@ -1,9 +1,10 @@
+import logging
 import os
 import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal, Mapping, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse
@@ -20,11 +21,13 @@ from ripple_tradePilot.strategies.donchian import DonchianBreakout
 from ripple_tradePilot.strategies.macd import MACD
 from ripple_tradePilot.strategies.moving_average import MovingAverageCross
 from ripple_tradePilot.strategies.rsi import RSI
+from ripple_tradePilot.config_loader import get_tushare_token, load_config
 from ripple_tradePilot.data.stock_service import (
     InvalidStockSymbolError,
     StockDataService,
     StockDataUnavailableError,
 )
+from ripple_tradePilot.data.tushare_loader import TushareDataLoader
 from ripple_tradePilot.storage.database import (
     init_database,
     list_stock_catalog,
@@ -35,6 +38,7 @@ from ripple_tradePilot.storage.database import (
 )
 from ripple_tradePilot.storage.user_store import (
     SESSION_DAYS,
+    BacktestNotFoundError,
     StrategyNotFoundError,
     UsernameTakenError,
     WatchlistExistsError,
@@ -44,9 +48,11 @@ from ripple_tradePilot.storage.user_store import (
     create_strategy,
     create_user,
     delete_session,
+    delete_user_backtest,
     ensure_system_strategies,
     list_user_backtests,
     list_user_stocks,
+    record_user_backtest,
     list_visible_strategies,
     list_user_watchlist,
     set_watchlist_default_strategy,
@@ -58,6 +64,7 @@ from ripple_tradePilot.storage.user_store import (
 
 STATIC_DIR = Path(__file__).parent / "static"
 SESSION_COOKIE = "tradepilot_session"
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -480,6 +487,16 @@ def backtests(user: Dict = Depends(required_user)):
     return {"items": items}
 
 
+@app.delete("/api/backtests/{backtest_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_backtest(backtest_id: int, user: Dict = Depends(required_user)):
+    """删除本人的回测记录；记录不存在或属于他人时返回 404。"""
+    try:
+        if not delete_user_backtest(backtest_id, user["id"]):
+            raise BacktestNotFoundError("回测记录不存在或无权删除")
+    except BacktestNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
 @app.get("/api/watchlist")
 def watchlist(user: Dict = Depends(required_user)):
     return {"items": list_user_watchlist(user["id"])}
@@ -566,6 +583,20 @@ MARKET_OVERVIEW_MAX_AGE = timedelta(minutes=5)
 MARKET_LIMIT_PCT = 9.8
 
 
+def _in_trading_hours(moment: Optional[datetime] = None) -> bool:
+    """是否处于 A 股常规交易时段（周一到周五 09:15–15:05，含集合竞价缓冲）。
+
+    盘后/周末没有新行情，全市场快照刷新只会白白拖慢总览请求，
+    因此只在此时段内允许总览触发 ``refresh_quotes``。不识别节假日，
+    节假日当天会多触发一次刷新，但失败后会静默降级，无副作用。
+    """
+    now = moment or datetime.now()
+    if now.weekday() >= 5:  # 周六/周日
+        return False
+    minutes = now.hour * 60 + now.minute
+    return 9 * 60 + 15 <= minutes <= 15 * 60 + 5
+
+
 def _parse_quote_time(value: Any) -> Optional[datetime]:
     if not value:
         return None
@@ -591,8 +622,13 @@ def _market_overview_data() -> Dict[str, Any]:
     service = StockDataService()
     rows = load_stock_quotes()
     latest, quote_time = _latest_quote_time(rows)
-    # 快照为空或已过期：先刷新一次再重算；刷新失败时沿用旧快照并标记 stale
-    if not rows or latest is None or datetime.now() - latest > MARKET_OVERVIEW_MAX_AGE:
+    # 快照为空：无条件补一次行情；快照过期：只在交易时段内刷新，
+    # 盘后/周末直接沿用旧快照并标记 stale，避免总览请求被全市场刷新拖慢
+    snapshot_empty = not rows or latest is None
+    snapshot_stale = (
+        not snapshot_empty and datetime.now() - latest > MARKET_OVERVIEW_MAX_AGE
+    )
+    if snapshot_empty or (snapshot_stale and _in_trading_hours()):
         try:
             service.refresh_quotes()
         except StockDataUnavailableError:
@@ -647,6 +683,32 @@ def _market_overview_data() -> Dict[str, Any]:
     else:
         label = "均衡"
 
+    # 涨跌幅榜：纯本地快照计算，不触发任何网络请求；
+    # 跳过 change_pct 为 None 的行，名称取不到时回退为 symbol
+    catalog_names = stock_catalog_names()
+
+    def _mover(row: Mapping[str, Any]) -> Dict[str, Any]:
+        return {
+            "symbol": row["symbol"],
+            "name": catalog_names.get(row["symbol"], row["symbol"]),
+            "price": row.get("price"),
+            "change_pct": row["change_pct"],
+        }
+
+    quoted = [row for row in rows if row.get("change_pct") is not None]
+    movers = {
+        "gainers": [
+            _mover(row)
+            for row in sorted(
+                quoted, key=lambda item: item["change_pct"], reverse=True
+            )[:5]
+        ],
+        "losers": [
+            _mover(row)
+            for row in sorted(quoted, key=lambda item: item["change_pct"])[:5]
+        ],
+    }
+
     indices_payload = service.fetch_index_quotes()
     indices = indices_payload.get("indices", [])
     index_source = indices_payload.get("source", "")
@@ -664,6 +726,7 @@ def _market_overview_data() -> Dict[str, Any]:
         "breadth": breadth,
         "turnover": turnover,
         "sentiment": {"up_ratio": up_ratio, "label": label},
+        "movers": movers,
         "stale": stale,
         "source": source,
     }
@@ -683,6 +746,8 @@ class BacktestRequest(BaseModel):
     bars: int = Field(252, ge=60, le=2500)
     cash: float = Field(100000.0, gt=0)
     execution: Literal["next_open", "close"] = "next_open"
+    # 基准对比默认关：保持默认回测快、离线可测
+    benchmark: bool = False
 
 
 _BACKTEST_STRATEGIES = {
@@ -692,6 +757,78 @@ _BACKTEST_STRATEGIES = {
     "bollinger": BollingerBands,
     "donchian": DonchianBreakout,
 }
+
+_BENCHMARK_CODE = "000300.SH"
+_BENCHMARK_NAME = "沪深300"
+
+
+def _benchmark_unavailable() -> Dict[str, Any]:
+    return {
+        "code": _BENCHMARK_CODE,
+        "name": _BENCHMARK_NAME,
+        "available": False,
+        "return": None,
+        "curve": [],
+    }
+
+
+def _benchmark_payload(bars: list) -> Dict[str, Any]:
+    """取沪深300基准并归一化（第一个点 value=1.0），日期区间与回测 bars 对齐。
+
+    通过 Tushare 取指数日线；无 token / 无数据 / 任何异常都返回
+    available=false，绝不抛错，保证离线也能优雅降级。
+    """
+    if not bars:
+        return _benchmark_unavailable()
+    try:
+        config = load_config()
+        token = get_tushare_token(config)
+        loader = TushareDataLoader(
+            token,
+            rate_limit_delay=float(
+                config.get("tushare", {}).get("rate_limit_delay", 1.5)
+            ),
+        )
+        start_date = bars[0].timestamp.strftime("%Y%m%d")
+        end_date = bars[-1].timestamp.strftime("%Y%m%d")
+        index_df = loader.get_index_bars(_BENCHMARK_CODE, start_date, end_date)
+    except Exception:
+        logger.warning("沪深300基准获取失败，跳过基准对比", exc_info=True)
+        return _benchmark_unavailable()
+
+    if index_df is None or len(index_df) == 0 or "close" not in index_df.columns:
+        return _benchmark_unavailable()
+
+    # 过滤无效收盘价，按首个有效点归一化；日期转为 YYYY-MM-DD
+    curve = []
+    base = None
+    for _, row in index_df.iterrows():
+        trade_date = str(row.get("trade_date") or "")
+        if len(trade_date) != 8:
+            continue
+        try:
+            close = float(row.get("close"))
+        except (TypeError, ValueError):
+            continue
+        if close != close or close <= 0:
+            continue
+        if base is None:
+            base = close
+        curve.append(
+            {
+                "date": f"{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:8]}",
+                "value": round(close / base, 4),
+            }
+        )
+    if not curve:
+        return _benchmark_unavailable()
+    return {
+        "code": _BENCHMARK_CODE,
+        "name": _BENCHMARK_NAME,
+        "available": True,
+        "return": round(curve[-1]["value"] - 1, 4),
+        "curve": curve,
+    }
 
 
 @app.post("/api/backtest")
@@ -733,46 +870,74 @@ def run_web_backtest(payload: BacktestRequest, user: Dict = Depends(required_use
         )
         metrics = compute_metrics(result.equity_curve)
         stats = compute_trade_stats(result.fills)
-        return {
-            "data": {
-                "symbol": symbol,
-                "strategy": payload.strategy,
-                "execution": payload.execution,
-                "bar_count": len(bars),
-                "metrics": {
-                    "total_return": metrics.total_return,
-                    "annual_return": metrics.annual_return,
-                    "max_drawdown": metrics.max_drawdown,
-                    "sharpe": metrics.sharpe,
+        # 落库到回测记录页；记录失败不影响本次回测结果返回
+        try:
+            record_user_backtest(
+                user["id"],
+                {
+                    "symbol": symbol,
+                    "name": stock_catalog_name(symbol) or symbol,
+                    "start_date": bars[0].timestamp.strftime("%Y-%m-%d") if bars else "",
+                    "end_date": bars[-1].timestamp.strftime("%Y-%m-%d") if bars else "",
+                    "initial_capital": payload.cash,
+                    "final_capital": (
+                        result.equity_curve[-1] if result.equity_curve else payload.cash
+                    ),
+                    "total_return": metrics.total_return * 100,
+                    "annual_return": metrics.annual_return * 100,
+                    "max_drawdown": metrics.max_drawdown * 100,
+                    "sharpe_ratio": metrics.sharpe,
+                    "total_trades": stats.num_trades,
+                    "win_rate": (stats.win_rate or 0.0) * 100,
+                    "strategy_key": payload.strategy,
+                    "bar_count": len(bars),
+                    "execution": payload.execution,
                 },
-                "trades": {
-                    "num_trades": stats.num_trades,
-                    "win_rate": stats.win_rate,
-                    "avg_return_per_trade": stats.avg_return_per_trade,
-                    "best_trade": stats.best_trade,
-                    "worst_trade": stats.worst_trade,
-                    "total_fees": stats.total_fees,
-                },
-                "halted_by_drawdown": result.halted_by_drawdown,
-                "skipped_fills": len(result.skipped_fills),
-                "equity_curve": [
-                    {"date": bars[index].timestamp.strftime("%Y-%m-%d"), "equity": value}
-                    for index, value in enumerate(result.equity_curve)
-                    if index < len(bars)
-                ],
-                "fills": [
-                    {
-                        "date": fill.timestamp.strftime("%Y-%m-%d"),
-                        "side": fill.side.value,
-                        "quantity": fill.quantity,
-                        "price": fill.price,
-                        "fee": fill.fee,
-                    }
-                    for fill in result.fills
-                ],
-                "disclaimer": "样本内回测仅供参考，未经样本外验证的收益不可作为预期收益。",
-            }
+            )
+        except Exception:
+            logger.warning("回测结果落库失败：%s", symbol, exc_info=True)
+        data = {
+            "symbol": symbol,
+            "strategy": payload.strategy,
+            "execution": payload.execution,
+            "bar_count": len(bars),
+            "metrics": {
+                "total_return": metrics.total_return,
+                "annual_return": metrics.annual_return,
+                "max_drawdown": metrics.max_drawdown,
+                "sharpe": metrics.sharpe,
+            },
+            "trades": {
+                "num_trades": stats.num_trades,
+                "win_rate": stats.win_rate,
+                "avg_return_per_trade": stats.avg_return_per_trade,
+                "best_trade": stats.best_trade,
+                "worst_trade": stats.worst_trade,
+                "total_fees": stats.total_fees,
+            },
+            "halted_by_drawdown": result.halted_by_drawdown,
+            "skipped_fills": len(result.skipped_fills),
+            "equity_curve": [
+                {"date": bars[index].timestamp.strftime("%Y-%m-%d"), "equity": value}
+                for index, value in enumerate(result.equity_curve)
+                if index < len(bars)
+            ],
+            "fills": [
+                {
+                    "date": fill.timestamp.strftime("%Y-%m-%d"),
+                    "side": fill.side.value,
+                    "quantity": fill.quantity,
+                    "price": fill.price,
+                    "fee": fill.fee,
+                }
+                for fill in result.fills
+            ],
+            "disclaimer": "样本内回测仅供参考，未经样本外验证的收益不可作为预期收益。",
         }
+        # 基准对比按需附加：仅 benchmark=true 时返回该字段，取不到则优雅降级
+        if payload.benchmark:
+            data["benchmark"] = _benchmark_payload(bars)
+        return {"data": data}
     except (InvalidStockSymbolError, StockDataUnavailableError) as error:
         raise _stock_error(error) from error
 

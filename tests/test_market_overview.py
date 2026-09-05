@@ -9,7 +9,13 @@ from unittest.mock import patch
 import pandas as pd
 from fastapi.testclient import TestClient
 
+import importlib
+
 from ripple_tradePilot.api.app import app
+
+# ripple_tradePilot.api.__init__ 把 FastAPI 实例导出为 app，
+# 会遮蔽同名模块，这里用 importlib 显式拿模块本体来打补丁
+api_module = importlib.import_module("ripple_tradePilot.api.app")
 from ripple_tradePilot.data import stock_service
 from ripple_tradePilot.data.mx_loader import MXDataLoader
 from ripple_tradePilot.data.stock_service import (
@@ -140,7 +146,16 @@ class MarketOverviewTest(unittest.TestCase):
         data = response.json()["data"]
         self.assertEqual(
             set(data),
-            {"quote_time", "indices", "breadth", "turnover", "sentiment", "stale", "source"},
+            {
+                "quote_time",
+                "indices",
+                "breadth",
+                "turnover",
+                "sentiment",
+                "movers",
+                "stale",
+                "source",
+            },
         )
         self.assertEqual(data["quote_time"], quote_time)
         self.assertEqual(data["indices"], SAMPLE_INDICES)
@@ -153,6 +168,31 @@ class MarketOverviewTest(unittest.TestCase):
         self.assertFalse(data["stale"])
         self.assertEqual(data["source"], "sina+snapshot")
         refresh.assert_not_called()
+
+        # 涨跌幅榜：change_pct 为 None 的行（600004）被跳过，
+        # gainers 降序取前 5、losers 升序取前 5；名称取不到回退为 symbol
+        movers = data["movers"]
+        self.assertEqual(set(movers), {"gainers", "losers"})
+        self.assertEqual(
+            [item["change_pct"] for item in movers["gainers"]],
+            [9.9, 2.5, 0.0, -3.2, -9.85],
+        )
+        self.assertEqual(
+            [item["symbol"] for item in movers["gainers"]],
+            ["600002.SH", "600001.SH", "600003.SH", "600005.SH", "600006.SH"],
+        )
+        self.assertEqual(
+            [item["change_pct"] for item in movers["losers"]],
+            [-9.85, -3.2, 0.0, 2.5, 9.9],
+        )
+        self.assertEqual(
+            [item["symbol"] for item in movers["losers"]],
+            ["600006.SH", "600005.SH", "600003.SH", "600001.SH", "600002.SH"],
+        )
+        first_gainer = movers["gainers"][0]
+        self.assertEqual(set(first_gainer), {"symbol", "name", "price", "change_pct"})
+        self.assertEqual(first_gainer["name"], "600002.SH")
+        self.assertEqual(first_gainer["price"], 21.89)
 
     def test_overview_sentiment_labels(self):
         self.register()
@@ -223,6 +263,9 @@ class MarketOverviewTest(unittest.TestCase):
         self.seed_quotes(stale_time)
 
         with ExitStack() as stack:
+            stack.enter_context(
+                patch.object(api_module, "_in_trading_hours", return_value=True)
+            )
             refresh = self.mock_market_sources(stack)
             refresh.side_effect = StockDataUnavailableError("行情源全部不可用")
             response = self.client.get("/api/market/overview")
@@ -234,6 +277,38 @@ class MarketOverviewTest(unittest.TestCase):
         self.assertEqual(data["quote_time"], stale_time)
         self.assertEqual(data["breadth"]["total"], 6)
         self.assertEqual(data["breadth"]["up"], 2)
+
+    def test_stale_snapshot_not_refreshed_outside_trading_hours(self):
+        """盘后/周末：过期快照直接返回并标记 stale，不触发全市场刷新。"""
+        self.register()
+        stale_time = (datetime.now() - timedelta(minutes=10)).isoformat(
+            timespec="seconds"
+        )
+        self.seed_quotes(stale_time)
+
+        with ExitStack() as stack:
+            stack.enter_context(
+                patch.object(api_module, "_in_trading_hours", return_value=False)
+            )
+            refresh = self.mock_market_sources(stack)
+            response = self.client.get("/api/market/overview")
+
+        self.assertEqual(response.status_code, 200, response.text)
+        refresh.assert_not_called()
+        data = response.json()["data"]
+        self.assertTrue(data["stale"])
+        self.assertEqual(data["quote_time"], stale_time)
+
+    def test_trading_hours_guard(self):
+        from datetime import datetime as dt
+
+        self.assertTrue(api_module._in_trading_hours(dt(2026, 9, 3, 10, 0)))   # 周三盘中
+        self.assertTrue(api_module._in_trading_hours(dt(2026, 9, 3, 9, 15)))    # 集合竞价
+        self.assertTrue(api_module._in_trading_hours(dt(2026, 9, 3, 15, 5)))    # 收盘后缓冲
+        self.assertFalse(api_module._in_trading_hours(dt(2026, 9, 3, 8, 0)))    # 开盘前
+        self.assertFalse(api_module._in_trading_hours(dt(2026, 9, 3, 20, 0)))   # 夜间
+        self.assertFalse(api_module._in_trading_hours(dt(2026, 9, 5, 10, 0)))   # 周六
+        self.assertFalse(api_module._in_trading_hours(dt(2026, 9, 6, 10, 0)))   # 周日
 
     def test_stale_snapshot_is_replaced_after_successful_refresh(self):
         self.register()
@@ -260,6 +335,9 @@ class MarketOverviewTest(unittest.TestCase):
             return {"count": 3, "source": "test", "quote_time": fresh_time}
 
         with ExitStack() as stack:
+            stack.enter_context(
+                patch.object(api_module, "_in_trading_hours", return_value=True)
+            )
             refresh = self.mock_market_sources(stack)
             refresh.side_effect = fake_refresh
             response = self.client.get("/api/market/overview")

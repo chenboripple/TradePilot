@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+import pandas as pd
 from fastapi.testclient import TestClient
 
 from ripple_tradePilot.api.app import app
@@ -54,6 +55,8 @@ class WebBacktestApiTest(unittest.TestCase):
                 "TRADEPILOT_BACKTEST_DB": str(self.database),
                 "TRADEPILOT_CONFIG": str(self.config),
                 "TRADEPILOT_DATA_DIR": str(self.data_dir),
+                # 测试机不配置 tushare token，保证基准对比走优雅降级、不联网
+                "TUSHARE_TOKEN": "",
             },
         )
         self.environment.start()
@@ -107,6 +110,8 @@ class WebBacktestApiTest(unittest.TestCase):
         self.assertEqual(data["skipped_fills"], 0)
         self.assertEqual(len(data["equity_curve"]), 100)
         self.assertIn("disclaimer", data)
+        # 未请求 benchmark 时不返回该字段，保持默认回测轻量
+        self.assertNotIn("benchmark", data)
         for fill in data["fills"]:
             self.assertIn(fill["side"], ("BUY", "SELL"))
 
@@ -124,6 +129,33 @@ class WebBacktestApiTest(unittest.TestCase):
             )
         self.assertEqual(response.status_code, 503, response.text)
 
+    def test_backtest_result_recorded_for_ledger_page(self):
+        """Web 回测成功后应写入回测记录，/api/backtests 能列出。"""
+        self.register()
+        upsert_daily_bars(SYMBOL, _seed_rows(), "test", database_path())
+
+        response = self.client.post(
+            "/api/backtest", json={"symbol": SYMBOL, "strategy": "ma", "bars": 100}
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+
+        listing = self.client.get("/api/backtests")
+        self.assertEqual(listing.status_code, 200, listing.text)
+        items = listing.json()["items"]
+        self.assertEqual(len(items), 1)
+        record = items[0]
+        self.assertEqual(record["symbol"], SYMBOL)
+        self.assertEqual(record["asset_class"], "stock")
+        self.assertEqual(record["start_date"][:2], "20")
+        self.assertTrue(record["end_date"])
+        self.assertIsInstance(record["total_return"], float)
+        self.assertIsInstance(record["win_rate"], float)
+        # 扩展字段供前端"重跑"：记录回测入参
+        self.assertIsInstance(record["id"], int)
+        self.assertEqual(record["strategy_key"], "ma")
+        self.assertEqual(record["bar_count"], 100)
+        self.assertEqual(record["execution"], "next_open")
+
     def test_rejects_unknown_strategy(self):
         self.register()
         upsert_daily_bars(SYMBOL, _seed_rows(), "test", database_path())
@@ -131,6 +163,125 @@ class WebBacktestApiTest(unittest.TestCase):
             "/api/backtest", json={"symbol": SYMBOL, "strategy": "bogus"}
         )
         self.assertEqual(response.status_code, 422)
+
+    def test_backtest_benchmark_degrades_without_token(self):
+        """benchmark=true 但无 tushare token：200 + available=false，不联网。"""
+        self.register()
+        upsert_daily_bars(SYMBOL, _seed_rows(), "test", database_path())
+
+        with patch.object(
+            api_module,
+            "TushareDataLoader",
+            side_effect=AssertionError("无 token 时不应构造 TushareDataLoader"),
+        ):
+            response = self.client.post(
+                "/api/backtest",
+                json={
+                    "symbol": SYMBOL,
+                    "strategy": "ma",
+                    "bars": 100,
+                    "benchmark": True,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()["data"]
+        # 回测主体照常返回
+        self.assertEqual(data["symbol"], SYMBOL)
+        self.assertEqual(len(data["equity_curve"]), 100)
+        # 基准优雅降级：available=false、空曲线、收益为 null
+        self.assertEqual(
+            data["benchmark"],
+            {
+                "code": "000300.SH",
+                "name": "沪深300",
+                "available": False,
+                "return": None,
+                "curve": [],
+            },
+        )
+
+    def test_backtest_benchmark_curve_normalized(self):
+        """benchmark=true 且指数数据可用：归一化曲线首点 1.0，全程离线（mock）。"""
+        self.register()
+        upsert_daily_bars(SYMBOL, _seed_rows(), "test", database_path())
+
+        index_df = pd.DataFrame(
+            {
+                "trade_date": [
+                    (date(2026, 1, 1) + timedelta(days=i)).strftime("%Y%m%d")
+                    for i in range(100)
+                ],
+                "close": [3000.0 + i * 5 for i in range(100)],
+            }
+        )
+
+        class FakeLoader:
+            def __init__(self, token, rate_limit_delay=1.5):
+                self.token = token
+
+            def get_index_bars(self, index_code, start_date, end_date):
+                return index_df
+
+        with patch.object(api_module, "load_config", return_value={}), patch.object(
+            api_module, "get_tushare_token", return_value="fake-token"
+        ), patch.object(api_module, "TushareDataLoader", FakeLoader):
+            response = self.client.post(
+                "/api/backtest",
+                json={
+                    "symbol": SYMBOL,
+                    "strategy": "ma",
+                    "bars": 100,
+                    "benchmark": True,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        benchmark = response.json()["data"]["benchmark"]
+        self.assertTrue(benchmark["available"])
+        self.assertEqual(benchmark["code"], "000300.SH")
+        self.assertEqual(benchmark["name"], "沪深300")
+        self.assertEqual(len(benchmark["curve"]), 100)
+        self.assertEqual(benchmark["curve"][0], {"date": "2026-01-01", "value": 1.0})
+        self.assertAlmostEqual(
+            benchmark["curve"][-1]["value"], (3000.0 + 99 * 5) / 3000.0, places=4
+        )
+        self.assertAlmostEqual(
+            benchmark["return"], benchmark["curve"][-1]["value"] - 1, places=6
+        )
+
+    def test_delete_backtest_record_flow(self):
+        """DELETE /api/backtests/{id}：本人 204，重复删/删他人记录均 404。"""
+        self.register("alice")
+        upsert_daily_bars(SYMBOL, _seed_rows(), "test", database_path())
+        response = self.client.post(
+            "/api/backtest", json={"symbol": SYMBOL, "strategy": "ma", "bars": 100}
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        items = self.client.get("/api/backtests").json()["items"]
+        self.assertEqual(len(items), 1)
+        alice_record = items[0]
+
+        # 注册第二个用户后，无权删除 alice 的记录
+        self.register("bob")
+        response = self.client.delete(f"/api/backtests/{alice_record['id']}")
+        self.assertEqual(response.status_code, 404, response.text)
+
+        # 切回 alice：首次删除 204，同一 id 再删 404
+        login = self.client.post(
+            "/api/auth/login", json={"username": "alice", "password": PASSWORD}
+        )
+        self.assertEqual(login.status_code, 200, login.text)
+        response = self.client.delete(f"/api/backtests/{alice_record['id']}")
+        self.assertEqual(response.status_code, 204, response.text)
+        response = self.client.delete(f"/api/backtests/{alice_record['id']}")
+        self.assertEqual(response.status_code, 404, response.text)
+        self.assertIn("不存在", response.json()["detail"])
+        self.assertEqual(self.client.get("/api/backtests").json()["items"], [])
+
+    def test_delete_backtest_requires_login(self):
+        response = self.client.delete("/api/backtests/1")
+        self.assertEqual(response.status_code, 401)
 
 
 if __name__ == "__main__":

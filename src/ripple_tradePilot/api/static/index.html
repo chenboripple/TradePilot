@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=13">
+  <link rel="stylesheet" href="/assets/app.css?v=15">
 </head>
 <body>
   <header class="topbar">
@@ -72,6 +72,15 @@
 
     <main class="main-content">
       <section class="view overview-blank is-active" id="view-overview" aria-label="市场总览">
+        <section class="access-gate guest-content" id="overview-gate">
+          <span class="gate-mark">01</span>
+          <h2>登录后看市场总览</h2>
+          <p>三大指数、涨跌家数与成交额概览，行情优先取自妙想实时数据。</p>
+          <div class="gate-actions">
+            <button class="primary-button" data-auth-mode="register">注册账号</button>
+            <button class="secondary-button" data-auth-mode="login">登录</button>
+          </div>
+        </section>
         <section class="market-overview authenticated-content" id="market-overview" hidden>
           <div class="panel-heading">
             <h2>市场总览</h2>
@@ -80,6 +89,7 @@
               <span class="market-overview-stale" id="market-overview-stale" hidden>数据较旧</span>
               <span id="market-overview-source" hidden></span>
               <span id="market-overview-time"></span>
+              <button class="icon-button market-overview-refresh" id="market-overview-refresh" title="刷新市场总览" aria-label="刷新市场总览">↻</button>
             </div>
           </div>
           <div id="market-overview-body" hidden>
@@ -97,6 +107,7 @@
                 <div class="market-overview-item"><span>市场情绪</span><strong class="market-overview-value" id="market-overview-sentiment">--</strong></div>
               </div>
             </div>
+            <div class="market-overview-movers" id="market-overview-movers" hidden></div>
           </div>
         </section>
       </section>
@@ -136,6 +147,7 @@
               <label><input type="checkbox" data-indicator="bb" checked> 布林带</label>
               <label><input type="checkbox" data-indicator="volume" checked> 成交量</label>
             </div>
+            <button class="table-action detail-backtest-button authenticated-content" id="detail-backtest-button" type="button" title="用当前标的执行一次回测" hidden>回测此标的</button>
           </div>
 
           <div class="chart-frame">
@@ -198,11 +210,15 @@
         </div>
         <div class="table-panel">
           <table class="stock-catalog-table">
-            <thead><tr><th>股票</th><th>交易所 / 板块</th><th>行业 / 地域</th><th>最新价</th><th>涨跌</th><th>价格时间</th><th>数据状态</th><th>观察状态</th><th>操作</th></tr></thead>
+            <thead><tr><th class="sortable" data-stock-sort="name" title="点击按名称排序">股票</th><th>交易所 / 板块</th><th>行业 / 地域</th><th class="sortable" data-stock-sort="price" title="点击按最新价排序">最新价</th><th class="sortable" data-stock-sort="change_pct" title="点击按涨跌幅排序">涨跌</th><th>价格时间</th><th>数据状态</th><th>观察状态</th><th>操作</th></tr></thead>
             <tbody id="stock-table"></tbody>
           </table>
           <div class="table-empty" id="stock-empty" hidden>暂无股票数据</div>
-          <button class="catalog-more" id="stock-more" hidden>显示更多</button>
+          <div class="catalog-pagination" id="stock-pagination" hidden>
+            <button class="table-action pagination-button" id="stock-page-prev" type="button">上一页</button>
+            <span id="stock-page-info">第 1/1 页 · 共 0 条</span>
+            <button class="table-action pagination-button" id="stock-page-next" type="button">下一页</button>
+          </div>
         </div>
       </section>
 
@@ -252,7 +268,7 @@
             <span>统一撮合引擎 · 100 股整数倍 · 佣金 + 印花税 + 滑点</span>
           </div>
           <form id="backtest-form" class="backtest-form">
-            <label class="field"><span>股票代码</span><input name="symbol" minlength="6" maxlength="16" placeholder="600309 或 002022.SZ" autocomplete="off" required></label>
+            <label class="field"><span>股票代码</span><input name="symbol" minlength="6" maxlength="16" placeholder="600309 或 002022.SZ" autocomplete="off" list="symbol-options" required></label>
             <label class="field"><span>策略</span><select name="strategy">
               <option value="ma">均线交叉 (MA)</option>
               <option value="rsi" selected>RSI 反转</option>
@@ -265,6 +281,7 @@
               <option value="next_open" selected>次日开盘撮合</option>
               <option value="close">当日收盘撮合</option>
             </select></label>
+            <div class="field"><span>基准对比</span><label class="backtest-benchmark-toggle"><input type="checkbox" name="benchmark"> 对比沪深300</label></div>
             <button class="primary-button backtest-submit" id="backtest-submit" type="submit">开始回测</button>
           </form>
           <p class="form-error" id="backtest-error" hidden></p>
@@ -290,7 +307,7 @@
               <div class="metric"><span>最差单笔</span><strong id="bt-worst-trade">--</strong><small>亏损最大回合</small></div>
             </div>
             <section class="backtest-chart-panel">
-              <div class="panel-heading"><h2>权益曲线</h2><span id="backtest-chart-range">--</span></div>
+              <div class="panel-heading"><h2>权益曲线</h2><span class="backtest-chart-legend" id="backtest-chart-legend" hidden></span><span id="backtest-chart-range">--</span></div>
               <div class="chart-frame backtest-chart-frame">
                 <canvas id="backtest-chart" aria-label="回测权益曲线"></canvas>
                 <div class="chart-tooltip" id="backtest-chart-tooltip" hidden></div>
@@ -312,7 +329,7 @@
 
         <div class="table-panel authenticated-content" hidden>
           <table>
-            <thead><tr><th>标的 / 策略</th><th>区间</th><th>总收益</th><th>最大回撤</th><th>胜率</th><th>交易数</th><th>运行时间</th></tr></thead>
+            <thead><tr><th>标的 / 策略</th><th>区间</th><th>总收益</th><th>最大回撤</th><th>胜率</th><th>交易数</th><th>运行时间</th><th>操作</th></tr></thead>
             <tbody id="backtest-table"></tbody>
           </table>
           <div class="table-empty" id="backtest-empty" hidden>当前市场没有回测记录</div>
@@ -377,12 +394,16 @@
     <form method="dialog" class="dialog-close-form"><button class="icon-button" aria-label="关闭" title="关闭">×</button></form>
     <div class="dialog-heading"><span>WATCHLIST</span><h2>添加股票</h2></div>
     <form id="stock-form">
-      <label class="field"><span>股票代码</span><input name="symbol" minlength="6" maxlength="16" placeholder="600309 或 000001.SZ" autocomplete="off" required></label>
+      <label class="field"><span>股票代码</span><input name="symbol" minlength="6" maxlength="16" placeholder="600309 或 000001.SZ" autocomplete="off" list="symbol-options" required></label>
       <p class="form-error" id="stock-error" hidden></p>
       <button class="primary-button dialog-submit" type="submit">添加并加载日线</button>
     </form>
   </dialog>
 
-  <script src="/assets/app.js?v=13" defer></script>
+  <datalist id="symbol-options"></datalist>
+
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <script src="/assets/app.js?v=15" defer></script>
 </body>
 </html>

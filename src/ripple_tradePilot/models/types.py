@@ -11,6 +11,17 @@ class Side(str, Enum):
     SELL = "SELL"
 
 
+class FuturesDirection(str, Enum):
+    """期货多空方向。
+
+    P1 无账户持仓上下文，信号只表达**倾向**（做多倾向/做空倾向/观望），
+    不构成可执行委托；开平仓动作等订单语义在 P2 引入。
+    """
+
+    LONG = "LONG"
+    SHORT = "SHORT"
+
+
 @dataclass(frozen=True)
 class Bar:
     timestamp: datetime

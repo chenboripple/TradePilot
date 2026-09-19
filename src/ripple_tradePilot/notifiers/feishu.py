@@ -214,6 +214,10 @@ class FeishuWebhookNotifier:
         """发送已构建好的 interactive 卡片消息（监控定期报告等）。"""
         return self._post(content)
 
+    def send_text(self, text: str) -> bool:
+        """发送纯文本消息（期货扫描提醒等非卡片场景）。"""
+        return self._post({"msg_type": "text", "content": {"text": text}})
+
     def _send_text(self, content: dict) -> bool:
         """发送纯文本消息（monitor_brief / heartbeat 等根目录脚本在用）。"""
         return self._post(content)

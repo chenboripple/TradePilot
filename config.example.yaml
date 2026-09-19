@@ -35,6 +35,14 @@ strategy_profiles:
 
 futures_strategy_profiles: {}
 
+# 期货风险测算参数（P1 §5 口径；仅用于**展示**每手风险与可开手数，系统只读不下单）
+futures_risk:
+  # 可用资金（元）。可开手数 = floor(min(剩余风险预算/每手风险, 可用资金/每手保证金))。
+  capital: 100000
+  # 单笔风险预算占资金比例。剩余风险预算 = capital × risk_budget_pct；
+  # 每手风险 = 止损价差×合约乘数 + 预估往返费用与滑点。
+  risk_budget_pct: 0.01
+
 tushare:
   token: ""
   rate_limit_delay: 1.5

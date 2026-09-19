@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 
-DATABASE_SCHEMA_VERSION = 15
+DATABASE_SCHEMA_VERSION = 16
 
 
 BACKTEST_COLUMNS = {
@@ -313,6 +313,67 @@ ML_MODELS_COLUMNS = {
     "trained_at": "trained_at TIMESTAMP",
     "created_at": "created_at TIMESTAMP",
     "updated_at": "updated_at TIMESTAMP",
+}
+
+# v16（期货 P1）：合约元数据 / K 线 / 报价快照 / 通知去重。
+# 期货与股票的交易规则、账户核算分别实现（roadmap §6），故独立成表不混用 daily_bars。
+FUTURES_CONTRACT_COLUMNS = {
+    "symbol": "symbol TEXT PRIMARY KEY",  # canonical，如 RB2610.SHFE
+    "product": "product TEXT NOT NULL DEFAULT ''",
+    "exchange": "exchange TEXT NOT NULL DEFAULT ''",
+    "name": "name TEXT NOT NULL DEFAULT ''",
+    "multiplier": "multiplier REAL NOT NULL DEFAULT 0",
+    "tick_size": "tick_size REAL NOT NULL DEFAULT 0",
+    "night_start": "night_start TEXT NOT NULL DEFAULT ''",
+    "night_end": "night_end TEXT NOT NULL DEFAULT ''",
+    "listed_date": "listed_date TEXT NOT NULL DEFAULT ''",
+    # DCE 合约表接口不可用（P0 §2），到期日为近似口径时 expiry_is_approximate=1
+    "expiry_date": "expiry_date TEXT NOT NULL DEFAULT ''",
+    "expiry_is_approximate": "expiry_is_approximate INTEGER NOT NULL DEFAULT 0",
+    "rule_version": "rule_version TEXT NOT NULL DEFAULT ''",
+    "updated_at": "updated_at TIMESTAMP",
+}
+
+FUTURES_BAR_COLUMNS = {
+    "id": "id INTEGER",
+    "symbol": "symbol TEXT NOT NULL",
+    "timeframe": "timeframe TEXT NOT NULL DEFAULT '1d'",  # '1d' | '60m'
+    # 夜盘 bar 已按 P0 §4.2 规则归属到交易日（不信任新浪标签日期）
+    "trade_date": "trade_date TEXT NOT NULL DEFAULT ''",
+    "bar_time": "bar_time TEXT NOT NULL DEFAULT ''",  # '60m' 结束时刻；日线为 ''
+    "open": "open REAL",
+    "high": "high REAL",
+    "low": "low REAL",
+    "close": "close REAL",
+    "volume": "volume REAL NOT NULL DEFAULT 0",
+    "hold": "hold REAL NOT NULL DEFAULT 0",
+    "settle": "settle REAL",
+    "source": "source TEXT NOT NULL DEFAULT ''",
+    "updated_at": "updated_at TIMESTAMP",
+}
+
+FUTURES_QUOTE_COLUMNS = {
+    "symbol": "symbol TEXT PRIMARY KEY",
+    "price": "price REAL",
+    "upper_limit": "upper_limit REAL",
+    "lower_limit": "lower_limit REAL",
+    "margin_per_hand": "margin_per_hand REAL",
+    # 1=用了 futures_meta 缺省费率估算（快照缺失），展示须注明近似
+    "margin_is_estimate": "margin_is_estimate INTEGER NOT NULL DEFAULT 0",
+    "fee_per_lot": "fee_per_lot REAL",
+    "is_main": "is_main INTEGER NOT NULL DEFAULT 0",
+    "price_time": "price_time TEXT NOT NULL DEFAULT ''",
+    "source": "source TEXT NOT NULL DEFAULT ''",
+    "updated_at": "updated_at TIMESTAMP",
+}
+
+NOTIFY_LOG_COLUMNS = {
+    # 去重键 = f"{合约}|{周期}|{信号时间}|{策略版本}|{kind}"（roadmap P1：重启不重复通知）
+    "dedup_key": "dedup_key TEXT PRIMARY KEY",
+    "channel": "channel TEXT NOT NULL DEFAULT ''",
+    "kind": "kind TEXT NOT NULL DEFAULT ''",
+    "payload_json": "payload_json TEXT NOT NULL DEFAULT ''",
+    "sent_at": "sent_at TIMESTAMP",
 }
 
 
@@ -817,6 +878,79 @@ def init_database(path: Path | None = None) -> Path:
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_ml_models_status ON ml_models(status, target)"
         )
+        # ── v16（期货 P1）───────────────────────────────────────────────
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS futures_contracts (
+                symbol TEXT PRIMARY KEY,
+                product TEXT NOT NULL DEFAULT '',
+                exchange TEXT NOT NULL DEFAULT '',
+                name TEXT NOT NULL DEFAULT '',
+                multiplier REAL NOT NULL DEFAULT 0,
+                tick_size REAL NOT NULL DEFAULT 0,
+                night_start TEXT NOT NULL DEFAULT '',
+                night_end TEXT NOT NULL DEFAULT '',
+                listed_date TEXT NOT NULL DEFAULT '',
+                expiry_date TEXT NOT NULL DEFAULT '',
+                expiry_is_approximate INTEGER NOT NULL DEFAULT 0,
+                rule_version TEXT NOT NULL DEFAULT '',
+                updated_at TIMESTAMP
+            )
+            """
+        )
+        _ensure_columns(connection, "futures_contracts", FUTURES_CONTRACT_COLUMNS)
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS futures_bars (
+                id INTEGER PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                timeframe TEXT NOT NULL DEFAULT '1d',
+                trade_date TEXT NOT NULL DEFAULT '',
+                bar_time TEXT NOT NULL DEFAULT '',
+                open REAL,
+                high REAL,
+                low REAL,
+                close REAL,
+                volume REAL NOT NULL DEFAULT 0,
+                hold REAL NOT NULL DEFAULT 0,
+                settle REAL,
+                source TEXT NOT NULL DEFAULT '',
+                updated_at TIMESTAMP,
+                UNIQUE(symbol, timeframe, trade_date, bar_time)
+            )
+            """
+        )
+        _ensure_columns(connection, "futures_bars", FUTURES_BAR_COLUMNS)
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS futures_quotes (
+                symbol TEXT PRIMARY KEY,
+                price REAL,
+                upper_limit REAL,
+                lower_limit REAL,
+                margin_per_hand REAL,
+                margin_is_estimate INTEGER NOT NULL DEFAULT 0,
+                fee_per_lot REAL,
+                is_main INTEGER NOT NULL DEFAULT 0,
+                price_time TEXT NOT NULL DEFAULT '',
+                source TEXT NOT NULL DEFAULT '',
+                updated_at TIMESTAMP
+            )
+            """
+        )
+        _ensure_columns(connection, "futures_quotes", FUTURES_QUOTE_COLUMNS)
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS notify_log (
+                dedup_key TEXT PRIMARY KEY,
+                channel TEXT NOT NULL DEFAULT '',
+                kind TEXT NOT NULL DEFAULT '',
+                payload_json TEXT NOT NULL DEFAULT '',
+                sent_at TIMESTAMP
+            )
+            """
+        )
+        _ensure_columns(connection, "notify_log", NOTIFY_LOG_COLUMNS)
         integrity = connection.execute("PRAGMA integrity_check").fetchone()
         if not integrity or integrity[0] != "ok":
             raise RuntimeError(f"SQLite integrity check failed for {target}: {integrity}")
@@ -1925,3 +2059,321 @@ def list_stock_catalog(path: Path | None = None) -> List[Mapping[str, Any]]:
         item.pop("daily_source", None)
         items.append(item)
     return items
+
+
+# ── v16（期货 P1）：合约元数据 / K 线 / 报价快照 / 通知去重 ──────────────
+# 全部沿用房屋契约：每个访问函数自带 init_database（任何入口首次访问即补齐 schema）、
+# upsert 幂等、bool 落 INTEGER、时间戳走 CURRENT_TIMESTAMP。
+
+
+def upsert_futures_contracts(
+    rows: Iterable[Mapping[str, Any]], path: Path | None = None
+) -> int:
+    """写入/更新期货合约元数据（futures_meta 手维护表 + 交易所合约表合成）。
+
+    按 ``symbol``（canonical）upsert；``expiry_is_approximate`` 接受 bool/int。
+    """
+    records = list(rows)
+    if not records:
+        return 0
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.executemany(
+            """
+            INSERT INTO futures_contracts (
+                symbol, product, exchange, name, multiplier, tick_size,
+                night_start, night_end, listed_date, expiry_date,
+                expiry_is_approximate, rule_version, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(symbol) DO UPDATE SET
+                product = excluded.product,
+                exchange = excluded.exchange,
+                name = CASE WHEN excluded.name != '' THEN excluded.name
+                            ELSE futures_contracts.name END,
+                multiplier = excluded.multiplier,
+                tick_size = excluded.tick_size,
+                night_start = excluded.night_start,
+                night_end = excluded.night_end,
+                listed_date = CASE WHEN excluded.listed_date != ''
+                                   THEN excluded.listed_date
+                                   ELSE futures_contracts.listed_date END,
+                expiry_date = CASE WHEN excluded.expiry_date != ''
+                                   THEN excluded.expiry_date
+                                   ELSE futures_contracts.expiry_date END,
+                expiry_is_approximate = excluded.expiry_is_approximate,
+                rule_version = excluded.rule_version,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            [
+                (
+                    row.get("symbol"), row.get("product", ""),
+                    row.get("exchange", ""), row.get("name", ""),
+                    row.get("multiplier", 0), row.get("tick_size", 0),
+                    row.get("night_start", ""), row.get("night_end", ""),
+                    row.get("listed_date", ""), row.get("expiry_date", ""),
+                    1 if row.get("expiry_is_approximate") else 0,
+                    row.get("rule_version", ""),
+                )
+                for row in records
+            ],
+        )
+    return len(records)
+
+
+def load_futures_contracts(path: Path | None = None) -> List[Mapping[str, Any]]:
+    """全部合约元数据（按 symbol 升序）。纯 DB 读，不触发网络。"""
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            """
+            SELECT symbol, product, exchange, name, multiplier, tick_size,
+                   night_start, night_end, listed_date, expiry_date,
+                   expiry_is_approximate, rule_version, updated_at
+            FROM futures_contracts ORDER BY symbol
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def upsert_futures_bars(
+    timeframe: str,
+    rows: Iterable[Mapping[str, Any]],
+    path: Path | None = None,
+) -> int:
+    """写入/更新期货 K 线（'1d' 日线 / '60m' 小时线）。
+
+    行须含 ``symbol``（canonical）、``trade_date``（YYYYMMDD，夜盘已归属）、
+    ``bar_time``（'60m' 结束时刻；日线空串）；按
+    ``(symbol, timeframe, trade_date, bar_time)`` upsert 幂等（增量重拉不重复）。
+    """
+    records = list(rows)
+    if not records:
+        return 0
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.executemany(
+            """
+            INSERT INTO futures_bars (
+                symbol, timeframe, trade_date, bar_time,
+                open, high, low, close, volume, hold, settle, source, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(symbol, timeframe, trade_date, bar_time) DO UPDATE SET
+                open = excluded.open,
+                high = excluded.high,
+                low = excluded.low,
+                close = excluded.close,
+                volume = excluded.volume,
+                hold = excluded.hold,
+                settle = excluded.settle,
+                source = excluded.source,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            [
+                (
+                    row.get("symbol"), timeframe, row.get("trade_date", ""),
+                    row.get("bar_time", ""),
+                    row.get("open"), row.get("high"), row.get("low"),
+                    row.get("close"), row.get("volume", 0) or 0,
+                    row.get("hold", 0) or 0, row.get("settle"),
+                    row.get("source", ""),
+                )
+                for row in records
+            ],
+        )
+    return len(records)
+
+
+def load_futures_bars(
+    symbol: str,
+    timeframe: str = "1d",
+    limit: int | None = None,
+    path: Path | None = None,
+) -> List[Mapping[str, Any]]:
+    """读取某合约 K 线（按 trade_date、bar_time 升序；limit 取**最新** N 根）。"""
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        sql = (
+            "SELECT symbol, timeframe, trade_date, bar_time, open, high, low, close, "
+            "volume, hold, settle, source, updated_at FROM futures_bars "
+            "WHERE symbol = ? AND timeframe = ? ORDER BY trade_date, bar_time"
+        )
+        params: List[Any] = [symbol, timeframe]
+        if limit is not None:
+            # DESC 必须同时作用于两个排序键（只写尾部 DESC 只会倒序最后一列）
+            sql = sql.replace(
+                "ORDER BY trade_date, bar_time", "ORDER BY trade_date DESC, bar_time DESC"
+            ) + " LIMIT ?"
+            params.append(int(limit))
+            rows = connection.execute(sql, params).fetchall()
+            return [dict(row) for row in reversed(rows)]
+        rows = connection.execute(sql, params).fetchall()
+    return [dict(row) for row in rows]
+
+
+def latest_futures_bar(
+    symbol: str, timeframe: str, path: Path | None = None
+) -> Optional[Mapping[str, Any]]:
+    """最新一根 K 线（新鲜度检查用）；无数据返回 None。"""
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        row = connection.execute(
+            "SELECT symbol, timeframe, trade_date, bar_time, open, high, low, close, "
+            "volume, hold, settle, source, updated_at FROM futures_bars "
+            "WHERE symbol = ? AND timeframe = ? "
+            "ORDER BY trade_date DESC, bar_time DESC LIMIT 1",
+            (symbol, timeframe),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_futures_bar_symbols(
+    timeframe: str = "1d", path: Path | None = None
+) -> List[str]:
+    """futures_bars 中出现过日线的全部合约（主力判定取数范围用）。"""
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        rows = connection.execute(
+            "SELECT DISTINCT symbol FROM futures_bars "
+            "WHERE timeframe = ? AND symbol IS NOT NULL AND symbol != '' "
+            "ORDER BY symbol",
+            (timeframe,),
+        ).fetchall()
+    return [row[0] for row in rows]
+
+
+def upsert_futures_quotes(
+    rows: Iterable[Mapping[str, Any]], path: Path | None = None
+) -> int:
+    """写入/更新报价快照（futures_comm_info 口径，含每手保证金/涨跌停/主力标记）。"""
+    records = list(rows)
+    if not records:
+        return 0
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.executemany(
+            """
+            INSERT INTO futures_quotes (
+                symbol, price, upper_limit, lower_limit, margin_per_hand,
+                margin_is_estimate, fee_per_lot, is_main, price_time,
+                source, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(symbol) DO UPDATE SET
+                price = excluded.price,
+                upper_limit = excluded.upper_limit,
+                lower_limit = excluded.lower_limit,
+                margin_per_hand = excluded.margin_per_hand,
+                margin_is_estimate = excluded.margin_is_estimate,
+                fee_per_lot = excluded.fee_per_lot,
+                is_main = excluded.is_main,
+                price_time = excluded.price_time,
+                source = excluded.source,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            [
+                (
+                    row.get("symbol"), row.get("price"), row.get("upper_limit"),
+                    row.get("lower_limit"), row.get("margin_per_hand"),
+                    1 if row.get("margin_is_estimate") else 0,
+                    row.get("fee_per_lot"), 1 if row.get("is_main") else 0,
+                    row.get("price_time", ""), row.get("source", ""),
+                )
+                for row in records
+            ],
+        )
+    return len(records)
+
+
+def load_futures_quote(
+    symbol: str, path: Path | None = None
+) -> Optional[Mapping[str, Any]]:
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        row = connection.execute(
+            "SELECT symbol, price, upper_limit, lower_limit, margin_per_hand, "
+            "margin_is_estimate, fee_per_lot, is_main, price_time, source, updated_at "
+            "FROM futures_quotes WHERE symbol = ?",
+            (symbol,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def load_futures_quotes(path: Path | None = None) -> List[Mapping[str, Any]]:
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            "SELECT symbol, price, upper_limit, lower_limit, margin_per_hand, "
+            "margin_is_estimate, fee_per_lot, is_main, price_time, source, updated_at "
+            "FROM futures_quotes ORDER BY symbol"
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def record_notification(
+    dedup_key: str,
+    channel: str,
+    kind: str,
+    payload_json: str = "",
+    path: Path | None = None,
+) -> bool:
+    """记录一次已发送通知；**去重键已存在返回 False（消费方据此跳过重发）**。
+
+    roadmap P1：「对提醒设置持久化去重键，记录合约、周期、信号时间和策略版本，
+    保证重启后不重复通知」——键的构成由调用方负责，本函数只保证幂等落库。
+    """
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        cursor = connection.execute(
+            """
+            INSERT OR IGNORE INTO notify_log (dedup_key, channel, kind, payload_json, sent_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """,
+            (dedup_key, channel, kind, payload_json),
+        )
+        return cursor.rowcount == 1
+
+
+def list_notifications(
+    channel: str | None = None,
+    kind: str | None = None,
+    limit: int = 50,
+    path: Path | None = None,
+) -> List[Mapping[str, Any]]:
+    """最近通知记录（倒序），供复盘「连续 5 个交易日记录可追溯」验收。"""
+    target = init_database(path)
+    conditions: List[str] = []
+    params: List[Any] = []
+    if channel:
+        conditions.append("channel = ?")
+        params.append(channel)
+    if kind:
+        conditions.append("kind = ?")
+        params.append(kind)
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    params.append(int(limit))
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            f"SELECT dedup_key, channel, kind, payload_json, sent_at "
+            f"FROM notify_log {where} ORDER BY sent_at DESC, dedup_key LIMIT ?",
+            params,
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def delete_notification(dedup_key: str, path: Path | None = None) -> bool:
+    """删除一条通知记录（重新武装该去重键）。
+
+    用途：记录在先、发送在后——Webhook 投递失败时该提醒会被去重键永久压制；
+    运维排障后删掉对应行，下一轮扫描即可重新通知。返回是否有行被删除。
+    """
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        cursor = connection.execute(
+            "DELETE FROM notify_log WHERE dedup_key = ?", (dedup_key,)
+        )
+        return cursor.rowcount == 1

@@ -96,6 +96,9 @@ tradepilot monitor 002022.SZ
 # 筛选股票
 tradepilot screen 002022.SZ
 
+# 期货观察池扫描（P1：主力映射/倾向/风险测算/去重提醒；建议 cron 定时运行）
+tradepilot futures scan
+
 # 启动 Web 监控台（浏览器访问 http://127.0.0.1:8000）
 tradepilot serve
 ```
@@ -181,8 +184,9 @@ Docker 部署则由 `./scripts/docker-deploy.sh local` 启动。服务运行后�
 - K 线、均线、布林带、成交量及方向变化
 - 策略参数、当前倾向和回测记录
 - 数据新鲜度、存储与读取异常状态
+- 期货观察池（P1）：主力映射、量额、Donchian 倾向与 §5 风险测算（数据来自 `tradepilot futures scan`，倾向为参考判断而非可执行委托；期货回测在 P2 前明确显示不可用）
 
-现阶段股票读取 `data/<代码>.csv`。期货已完成页面和数据结构支持，在 `config.yaml` 的 `futures` 中配置合约，并提供同格式行情文件后即可独立展示。
+现阶段股票读取 `data/<代码>.csv`。期货行情由 `tradepilot futures scan` 从新浪源同步落库（首期 RB/HC/CU/I/M），风险预算参数在 `config.yaml` 的 `futures_risk` 中配置。
 
 ## 卸载
 

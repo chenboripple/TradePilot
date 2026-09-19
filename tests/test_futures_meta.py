@@ -10,6 +10,7 @@ from ripple_tradePilot.data.futures_meta import (
     ContractIdentity,
     PRODUCT_SPECS,
     canonical_symbol,
+    looks_like_futures_symbol,
     margin_estimate,
     notional,
     parse_contract_symbol,
@@ -73,6 +74,16 @@ class FuturesMetaTest(unittest.TestCase):
     def test_products_by_exchange_covers_both(self):
         by_exchange = products_by_exchange()
         self.assertEqual(by_exchange, {"DCE": ["I", "M"], "SHFE": ["CU", "HC", "RB"]})
+
+    def test_looks_like_futures_symbol(self):
+        # 回测入口拦截用：合约（带后缀/裸码/小写）都识别
+        for text in ("RB2610", "rb2610", "RB2610.SHFE", "i2609.DCE", "CU2612"):
+            with self.subTest(text=text):
+                self.assertTrue(looks_like_futures_symbol(text), text)
+        # 股票 / 指数 / 指数后缀 / 垃圾输入不得误伤
+        for text in ("002022", "002022.SZ", "000300.SH", "600519", "RB", "2610", ""):
+            with self.subTest(text=text):
+                self.assertFalse(looks_like_futures_symbol(text), text)
 
 
 if __name__ == "__main__":

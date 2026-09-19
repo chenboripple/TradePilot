@@ -75,6 +75,29 @@ class _CliDbTestCase(unittest.TestCase):
 
 
 class CliBacktestSaveTest(_CliDbTestCase):
+    def test_futures_symbol_rejected_with_explicit_message(self):
+        """P1 验收：期货回测入口明确显示不可用（exit 2 + 指路文案）。
+
+        拦截发生在取数之前——FakeLoader 不应被触达（不产生误导的
+        「行情数据不足」）。backtest 与 walkforward 两命令同门。
+        """
+        load_calls = []
+
+        def _spy_load(self_loader, symbol, start_date=None, end_date=None):
+            load_calls.append(symbol)
+            return []
+
+        with patch.object(FakeLoader, "load_bars", _spy_load):
+            for command in ("backtest", "walkforward"):
+                with self.subTest(command=command):
+                    result = self.runner.invoke(
+                        cli, [command, "RB2610", "-s", "ma"]
+                    )
+                    self.assertEqual(result.exit_code, 2, result.output)
+                    self.assertIn("期货", result.output)
+                    self.assertIn("尚未支持", result.output)
+        self.assertEqual(load_calls, [])  # 取数之前拦截
+
     def test_backtest_saves_by_default(self):
         result = self.runner.invoke(
             cli, ["backtest", "600000.SH", "-d", "200", "-s", "rsi"]

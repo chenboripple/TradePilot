@@ -389,6 +389,9 @@ th.sortable.is-sorted-desc::after { content: " ↓"; color: var(--info); }
 .rec-hold { color: var(--hold); }
 .rec-conflict { color: var(--hold); opacity: 0.8; }
 
+/* 表格单元格内的次级信息（期货观察池的规格/价格时间等补充行） */
+.cell-sub { display: block; margin-top: 3px; color: var(--quiet); font-size: 10px; }
+
 .auto-refresh-toggle { display: flex; align-items: center; gap: 5px; margin-left: 6px; color: var(--muted); font-size: 12px; cursor: pointer; white-space: nowrap; }
 .auto-refresh-toggle input { accent-color: var(--info); }
 .auto-refresh-interval { height: 32px; padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--muted); font-size: 11px; outline: none; }

@@ -28,6 +28,9 @@ from ripple_tradePilot.signals.backtest_profile import (
     params_schema,
     resolve_backtest_strategy,
 )
+from ripple_tradePilot.data.futures_meta import looks_like_futures_symbol
+from ripple_tradePilot.data.futures_meta import PRODUCT_SPECS as FUTURES_PRODUCT_SPECS
+from ripple_tradePilot.data.futures_meta import tick_value as futures_tick_value
 from ripple_tradePilot.data.market_service import (
     INDEX_CODES,
     aggregate_breadth,
@@ -40,8 +43,12 @@ from ripple_tradePilot.data.stock_service import (
 )
 from ripple_tradePilot.storage.database import (
     init_database,
+    latest_futures_bar,
+    list_notifications,
     list_stock_catalog,
     load_daily_bars,
+    load_futures_contracts,
+    load_futures_quotes,
     load_industry_board_bars,
     load_industry_boards,
     load_industry_membership,
@@ -548,6 +555,158 @@ def backtest_detail(backtest_id: int, user: Dict = Depends(required_user)):
     except (TypeError, ValueError):
         raise HTTPException(status_code=409, detail="回测明细解析失败，请重跑")
     return {"data": data}
+
+
+@app.get("/api/futures/overview")
+def futures_overview(user: Dict = Depends(required_user)):
+    """P1 期货观察池快照（纯读 DB，不联网）：主力映射 / 量额 / 倾向 / 风险 / 近月到期。
+
+    数据由 ``tradepilot futures scan``（monitor 期货扫描同函数）写入
+    futures_contracts / futures_quotes / futures_bars / notify_log。倾向与风险
+    在本端点用**与扫描完全相同的纯函数**从库内数据即时重算（futures_eval +
+    risk.sizing）——展示值与扫描口径天然一致，不缓存旧数字。未扫描过的
+    品种照常返回（main=null），前端据此显示「待扫描」而非报错。
+    """
+    from datetime import date as _date
+    from datetime import datetime as _datetime
+
+    from ripple_tradePilot.monitor.futures_scan import (
+        _completed_bars,
+        _risk_params,
+    )
+    from ripple_tradePilot.risk.sizing import risk_report as _risk_report
+    from ripple_tradePilot.signals.futures_eval import DonchianParams, evaluate_tilt
+
+    contracts = {row["symbol"]: dict(row) for row in load_futures_contracts()}
+    quotes = {row["symbol"]: dict(row) for row in load_futures_quotes()}
+    # 最新信号按通知日志倒序取（payload 不做 schema 假设，透传原样 JSON）
+    try:
+        signals = [dict(row) for row in list_notifications(kind="futures_signal", limit=200)]
+    except Exception:
+        signals = []
+
+    def _latest_signal(product: str):
+        for row in signals:
+            symbol = str(row.get("dedup_key", "")).split("|", 1)[0]
+            # dedup_key 形如 "RB2610.SHFE|60m|..."——取代码前缀的字母段作品种，
+            # 精确比较（startswith 会把 "I" 误配到 "IF…" 等未入库品种）
+            symbol_product = "".join(ch for ch in symbol.split(".", 1)[0] if ch.isalpha())
+            if symbol_product == product:
+                try:
+                    payload = json.loads(row.get("payload_json") or "{}")
+                except (TypeError, ValueError):
+                    payload = {}
+                return {"sent_at": row.get("sent_at"), "payload": payload}
+        return None
+
+    products = []
+    for code, spec in sorted(FUTURES_PRODUCT_SPECS.items()):
+        product_contracts = {
+            symbol: row for symbol, row in contracts.items()
+            if row.get("product") == code
+        }
+        main_symbol = next(
+            (symbol for symbol in product_contracts
+             if quotes.get(symbol, {}).get("is_main")),
+            None,
+        )
+        main_contract = product_contracts.get(main_symbol) or {}
+        quote = quotes.get(main_symbol) or {}
+        latest = latest_futures_bar(main_symbol, "1d") if main_symbol else None
+
+        days_to_expiry = None
+        expiry_text = str(main_contract.get("expiry_date") or "")
+        if expiry_text:
+            try:
+                days_to_expiry = (
+                    _date(int(expiry_text[:4]), int(expiry_text[4:6]), int(expiry_text[6:8]))
+                    - _date.today()
+                ).days
+            except ValueError:
+                days_to_expiry = None
+
+        # 倾向 + 风险：与扫描同一套纯函数从库内 60m 即时重算（同口径不漂移）
+        tilt_payload = None
+        risk_payload = None
+        if main_symbol:
+            try:
+                config = load_config()
+            except Exception:
+                config = {}
+            bars = _completed_bars(main_symbol, "60m", _datetime.now(), None)
+            tilt = evaluate_tilt(bars, DonchianParams(), symbol=main_symbol)
+            if tilt is not None:
+                tilt_payload = {
+                    "tilt": tilt.tilt,
+                    "basis": tilt.basis,
+                    "as_of": tilt.as_of,
+                    "stop_ref_price": tilt.stop_ref_price,
+                    "strategy_version": tilt.strategy_version,
+                }
+            risk = _risk_report(
+                spec,
+                symbol=main_symbol,
+                price=quote.get("price"),
+                price_time=str(quote.get("price_time") or ""),
+                atr=tilt.atr if tilt is not None else None,
+                params=_risk_params(config),
+                quote_ok=quote.get("price") is not None and bool(quote.get("price_time")),
+                margin_per_hand=quote.get("margin_per_hand"),
+            )
+            risk_payload = {
+                "executable": risk.executable,
+                "lots": risk.lots,
+                "per_hand_risk": round(risk.per_hand_risk, 2),
+                "margin_per_hand": round(risk.margin_per_hand, 2),
+                "margin_is_estimate": risk.margin_is_estimate,
+                "reasons": risk.reasons,
+            }
+
+        products.append({
+            "product": code,
+            "name": spec.name,
+            "exchange": spec.exchange,
+            "trade_unit": spec.trade_unit,
+            "tick_value": futures_tick_value(spec),
+            "rule_version": spec.rule_version,
+            "main": {
+                "symbol": main_symbol,
+                "price": quote.get("price"),
+                "price_time": quote.get("price_time"),
+                "margin_per_hand": quote.get("margin_per_hand"),
+                "margin_is_estimate": bool(quote.get("margin_is_estimate")),
+                "days_to_expiry": days_to_expiry,
+                "expiry_is_approximate": bool(main_contract.get("expiry_is_approximate")),
+                "latest_bar": {
+                    "trade_date": latest.get("trade_date"),
+                    "close": latest.get("close"),
+                    "volume": latest.get("volume"),
+                    "hold": latest.get("hold"),
+                } if latest else None,
+            } if main_symbol else None,
+            "tilt": tilt_payload,
+            "risk": risk_payload,
+            "signal": _latest_signal(code),
+        })
+
+    try:
+        risk_config = dict(load_config().get("futures_risk") or {})
+    except Exception:
+        risk_config = {}
+    return {
+        "items": products,
+        "risk": {
+            "capital": risk_config.get("capital", 100000),
+            "risk_budget_pct": risk_config.get("risk_budget_pct", 0.01),
+        },
+        "notifications": {
+            "recent": [
+                {"dedup_key": row.get("dedup_key"), "kind": row.get("kind"),
+                 "sent_at": row.get("sent_at")}
+                for row in signals[:20]
+            ],
+        },
+    }
 
 
 @app.get("/api/watchlist")
@@ -1083,6 +1242,17 @@ def _benchmark_payload(bars: list) -> Dict[str, Any]:
 @app.post("/api/backtest")
 def run_web_backtest(payload: BacktestRequest, user: Dict = Depends(required_user)):
     """统一引擎回测：次日开盘撮合、涨跌停拦截、100 股整数倍、佣金+印花税+滑点。"""
+    # P1 验收：尚未支持的期货回测入口必须**明确**显示不可用——在股票代码
+    # 校验前拦截（否则掉进「请输入 6 位股票代码」的无关文案）。422 而非 501，
+    # 与参数校验同档，前端能以 detail 文案直接展示。
+    if looks_like_futures_symbol(payload.symbol):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"{payload.symbol} 是期货合约：期货回测尚未支持（规划见 "
+                "docs/futures-roadmap.md P2），当前仅支持 A 股股票代码（如 002022）。"
+            ),
+        )
     try:
         symbol = StockDataService.normalize_symbol(payload.symbol)
         # A5：解析回测策略（params > profile > 缺省链）+ provenance；非法参数/画像名 → 422

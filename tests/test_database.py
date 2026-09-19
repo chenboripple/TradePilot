@@ -961,7 +961,7 @@ class SchemaV15MigrationTest(unittest.TestCase):
             with sqlite3.connect(target) as connection:
                 version = connection.execute("PRAGMA user_version").fetchone()[0]
             self.assertEqual(version, DATABASE_SCHEMA_VERSION)
-            self.assertEqual(version, 15)
+            # 版本钉死移至各版新增表的测试（当前 v16：tests/test_futures_storage.py）
 
     def test_legacy_v14_db_upgrades_to_v15(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1302,13 +1302,15 @@ class CrossVersionSchemaMigrationTest(unittest.TestCase):
     改一处忘一处；而"升级后 ⊇ 全新库"正是用户问的那句"新增字段是不是都会补齐"的形式化。
     """
 
-    # 终态应有的 17 张表。这里**写死**（不从全新库推）：若某张表的 CREATE 被漏掉，
+    # 终态应有的 21 张表。这里**写死**（不从全新库推）：若某张表的 CREATE 被漏掉，
     # 全新库和升级库会一起少一张表，靠 oracle 对比就发现不了。
     EXPECTED_TABLES = {
-        "backtest_results", "daily_bars", "index_daily", "industry_board_bars",
+        "backtest_results", "daily_bars", "futures_bars", "futures_contracts",
+        "futures_quotes", "index_daily", "industry_board_bars",
         "industry_boards", "industry_membership", "kv_store", "market_daily",
-        "ml_datasets", "ml_models", "signal_ledger", "stock_catalog", "stock_quotes",
-        "strategies", "user_sessions", "user_watchlist", "users",
+        "ml_datasets", "ml_models", "notify_log", "signal_ledger",
+        "stock_catalog", "stock_quotes", "strategies", "user_sessions",
+        "user_watchlist", "users",
     }
 
     # 上古库：只有几张核心表、列集远早于 v12。额外塞一列 ``legacy_only``——

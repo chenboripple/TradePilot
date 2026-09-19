@@ -105,6 +105,25 @@ def tick_value(spec: ProductSpec) -> float:
     return spec.multiplier * spec.tick_size
 
 
+#: 期货合约的交易所后缀（canonical 形态 RB2610.SHFE；app.py 历史上已有同值常量）
+FUTURES_EXCHANGE_SUFFIXES = (".CFFEX", ".SHFE", ".DCE", ".CZCE", ".INE", ".GFEX")
+
+
+def looks_like_futures_symbol(text: str) -> bool:
+    """识别期货合约代码（带交易所后缀，或裸「品种+月份」如 RB2610）。
+
+    roadmap P1 验收：「尚未支持的期货回测入口应明确显示不可用」——回测入口用
+    本谓词前置拦截并给出明确文案，而不是让股票代码校验报一句无关的
+    「请输入 6 位股票代码」。股票代码（6 位数字）不会命中任一形态。
+    """
+    upper = str(text).strip().upper()
+    if upper.endswith(FUTURES_EXCHANGE_SUFFIXES):
+        return True
+    # 裸合约形态：1-2 位字母 + 3-4 位月份码（正则本身以数字结尾，
+    # 股票 6 位纯数字 / 指数 000300.SH 不冲突）
+    return bool(_SYMBOL_RE.match(upper))
+
+
 def notional(spec: ProductSpec, price: float) -> float:
     """每手名义价值 = 价格 × 乘数。"""
     return float(price) * spec.multiplier

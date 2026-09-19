@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f8">
   <title>TradePilot 交易监控台</title>
-  <link rel="stylesheet" href="/assets/app.css?v=20">
+  <link rel="stylesheet" href="/assets/app.css?v=21">
 </head>
 <body>
   <header class="topbar">
@@ -50,7 +50,8 @@
         <button class="nav-button" data-view="stocks"><span>02</span>全部数据</button>
         <button class="nav-button" data-view="strategies"><span>03</span>策略配置</button>
         <button class="nav-button" data-view="backtests"><span>04</span>回测记录</button>
-        <button class="nav-button" data-view="system"><span>05</span>系统状态</button>
+        <button class="nav-button" data-view="futures"><span>05</span>期货观察池</button>
+        <button class="nav-button" data-view="system"><span>06</span>系统状态</button>
       </nav>
 
       <section class="watchlist-section">
@@ -353,6 +354,29 @@
         </div>
       </section>
 
+      <section class="view" id="view-futures">
+        <header class="page-heading">
+          <div><span>FUTURES WATCHPOOL</span><h1>期货观察池</h1></div>
+          <p id="futures-subtitle">首期品种 RB / HC / CU / I / M · 倾向为参考判断而非可执行委托（回测能力在 P2 提供）</p>
+        </header>
+        <section class="access-gate guest-content">
+          <span class="gate-mark">05</span>
+          <h2>注册后查看期货观察池</h2>
+          <p>主力映射、量额、倾向与风险测算按账号可见。</p>
+          <div class="gate-actions">
+            <button class="primary-button" data-auth-mode="register">注册账号</button>
+            <button class="secondary-button" data-auth-mode="login">登录</button>
+          </div>
+        </section>
+        <div class="table-panel authenticated-content" hidden>
+          <table>
+            <thead><tr><th>品种</th><th>主力合约</th><th>现价 / 时间</th><th>日线量 / 持仓</th><th>倾向</th><th>可开手数</th><th>到期 / 换月</th></tr></thead>
+            <tbody id="futures-table"></tbody>
+          </table>
+          <div class="table-empty" id="futures-empty" hidden>暂无扫描数据——运行 tradepilot futures scan 后此处显示观察池</div>
+        </div>
+      </section>
+
       <section class="view" id="view-system">
         <header class="page-heading">
           <div><span>RUNTIME STATUS</span><h1>系统状态</h1></div>
@@ -421,6 +445,6 @@
 
   <div class="toast-container" id="toast-container" aria-live="polite"></div>
 
-  <script src="/assets/app.js?v=20" defer></script>
+  <script src="/assets/app.js?v=21" defer></script>
 </body>
 </html>

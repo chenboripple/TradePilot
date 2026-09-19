@@ -33,6 +33,22 @@ def _coerce_number(text: str):
             return text
 
 
+def _reject_futures_symbol(symbol):
+    """P1 验收：期货回测入口明确显示不可用（backtest / walkforward 共用）。
+
+    命中期货合约形态 → 打印明确文案并退出码 2（用法错误），否则掉进
+    「行情数据不足」的误导提示。真正的入口在 P2 之后（roadmap）。
+    """
+    from .data.futures_meta import looks_like_futures_symbol
+    if looks_like_futures_symbol(symbol):
+        click.echo(
+            f"❌ {symbol} 是期货合约：期货回测尚未支持（规划见 docs/futures-roadmap.md P2），"
+            "当前仅支持 A 股股票代码（如 002022）。期货监控请用 tradepilot futures scan。",
+            err=True,
+        )
+        sys.exit(2)
+
+
 def _parse_cli_params(param_pairs, vote_threshold):
     """``--param key=value``（可多次）+ ``--vote-threshold`` → params dict。
 
@@ -125,6 +141,8 @@ def backtest(symbol, days, strategy, cash, execution, benchmark, ledger, no_save
     from .backtest.rules import MarketRules, price_limit_for_symbol
     from .backtest.serialize import serialize_backtest_result
     from .data.tushare_loader import TushareDataLoader
+
+    _reject_futures_symbol(symbol)
 
     try:
         config = load_config()
@@ -314,6 +332,8 @@ def walkforward(symbol, days, strategy, splits, execution, warmup, select_by, no
     from .backtest.serialize import serialize_walkforward_report
     from .backtest.walkforward import walk_forward
     from .data.tushare_loader import TushareDataLoader
+
+    _reject_futures_symbol(symbol)
 
     try:
         config = load_config()
@@ -1246,6 +1266,87 @@ def ml_pipeline(pool, symbols, start, end, horizon, aux_horizon, groups, index_c
 def version():
     """显示版本"""
     click.echo(f"TradePilot v{__version__}")
+
+
+@cli.group()
+def futures():
+    """期货观察池（P1：主力映射 / 倾向提醒 / 风险测算；回测在 P2 之后）"""
+
+
+@futures.command('scan')
+def futures_scan():
+    """跑一轮期货观察池扫描：sync → 主力判定 → 倾向 → 风险 → 去重通知。
+
+    网络全部在本命令内（新浪日线/60m + comm_info 快照）；结果落库供
+    /api/futures/overview 展示。提醒走 notify_log 持久化去重（先记录后
+    发送，重启不重发）；飞书未启用时通知只打印在本机。
+    """
+    from .monitor.futures_scan import scan_once
+
+    try:
+        config = load_config()
+    except Exception as e:
+        click.echo(f"❌ 无法加载配置：{e}", err=True)
+        sys.exit(1)
+
+    click.echo("扫描期货观察池（首期品种：RB/HC/CU/I/M）…")
+    report = scan_once(config=config)
+
+    for error in report.errors:
+        click.echo(f"❌ {error}", err=True)
+
+    click.echo(
+        f"\n📋 扫描结论（{report.started_at}）"
+        f"——倾向=倾向性判断而非可执行委托；可开手数按 config.futures_risk 预算测算"
+    )
+    for item in report.products:
+        main = item.main_symbol or "—"
+        tilt = item.tilt.tilt if item.tilt is not None else "数据不足"
+        if item.risk is not None and item.risk.executable:
+            risk_text = f"可开 {item.risk.lots} 手（每手风险 {item.risk.per_hand_risk:.0f} 元）"
+        elif item.risk is not None:
+            risk_text = "不可开仓：" + "；".join(item.risk.reasons)
+        else:
+            risk_text = "—"
+        alerts = []
+        if item.roll_alert:
+            alerts.append("换月")
+        if item.near_expiry:
+            alerts.append("临近到期")
+        click.echo(
+            f"   {item.product} {item.name}：主力 {main} · 倾向 {tilt} · {risk_text}"
+            + (f" · 提醒：{'、'.join(alerts)}" if alerts else "")
+        )
+        for error in item.errors:
+            click.echo(f"      ⚠️ {error}", err=True)
+
+    if not report.outbox:
+        click.echo("\n（本轮无新通知：倾向未变或均为观望）")
+        return
+
+    notifier = None
+    feishu_config = dict((config.get('notifiers') or {}).get('feishu') or {})
+    if feishu_config.get('enabled') and feishu_config.get('webhook'):
+        from .notifiers.feishu import FeishuWebhookNotifier
+
+        notifier = FeishuWebhookNotifier(
+            feishu_config['webhook'],
+            secret=feishu_config.get('secret'),
+            dashboard_url=feishu_config.get('dashboard_url') or None,
+        )
+    for item in report.outbox:
+        if notifier is not None:
+            delivered = notifier.send_text(item['message'])
+            click.echo(f"{'✅ 已发送' if delivered else '❌ 发送失败'}：{item['kind']} {item['dedup_key']}")
+            if not delivered:
+                # 记录在先、发送在后：失败的提醒会被去重键压制——给出重武装路径
+                click.echo(
+                    "   ⚠️ 该提醒已计入去重不会重试；排障后可用 delete_notification "
+                    f"删除 notify_log 键 {item['dedup_key']!r} 重新武装",
+                    err=True,
+                )
+        else:
+            click.echo(f"📬 未配飞书，仅记录（notify_log）：{item['message']}")
 
 
 if __name__ == '__main__':

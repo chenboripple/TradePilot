@@ -34,6 +34,7 @@ const state = {
   backtestHover: null,
   backtestChartGeometry: null,
   marketOverview: null,
+  futuresOverview: null,
   autoRefresh: { timer: null, lastRun: 0, busy: false },
 };
 
@@ -112,12 +113,17 @@ const elements = {
   marketOverviewMovers: document.querySelector("#market-overview-movers"),
   detailBacktest: document.querySelector("#detail-backtest-button"),
   backtestChartLegend: document.querySelector("#backtest-chart-legend"),
+  futuresTable: document.querySelector("#futures-table"),
+  futuresEmpty: document.querySelector("#futures-empty"),
+  futuresSubtitle: document.querySelector("#futures-subtitle"),
   toastContainer: document.querySelector("#toast-container"),
 };
 
 const recommendationLabels = { BUY: "偏多", SELL: "偏空", HOLD: "观望", CONFLICT: "分歧" };
 const voteLabels = { BUY: "偏多", SELL: "偏空", HOLD: "中性" };
 const assetLabels = { stock: "股票", future: "期货" };
+// 期货倾向（P1 语义：倾向判断而非可执行委托——文案措辞与后端口径一致）
+const tiltLabels = { LONG: "做多倾向", SHORT: "做空倾向", NEUTRAL: "观望" };
 // 回测策略/撮合模式/画像选项：由 /api/meta/backtest-options 下发（后端单一来源），
 // 这里只留与后端默认值一致的兜底项，接口失败时表单仍可用默认策略提交。
 // strategies[].params_schema 用于动态渲染参数输入（A5）。
@@ -726,6 +732,67 @@ async function removeStock(symbol) {
   } catch (error) {
     showToast(error.message, "error");
   }
+}
+
+// ── 期货观察池（P1）──────────────────────────────────────────────
+// 数据由 tradepilot futures scan 写库，本页只读 /api/futures/overview；
+// 倾向与风险是参考口径，可开手数随 config.futures_risk 预算变化。
+async function fetchFuturesOverview() {
+  try {
+    const payload = await apiRequest("/api/futures/overview");
+    state.futuresOverview = payload;
+  } catch (error) {
+    if (error.status === 401) return; // 会话过期：交给全局 401 处理
+    state.futuresOverview = null;
+    showToast(error.message, "error");
+  }
+  renderFuturesOverview();
+}
+
+function renderFuturesOverview() {
+  if (!elements.futuresTable) return;
+  const data = state.futuresOverview;
+  const items = data?.items ?? [];
+  if (elements.futuresSubtitle && data?.risk) {
+    elements.futuresSubtitle.textContent =
+      `首期品种 RB / HC / CU / I / M · 风险预算 ${Number(data.risk.risk_budget_pct * 100).toFixed(1)}% / 资金 ${Number(data.risk.capital).toLocaleString()} 元 · 倾向为参考判断而非可执行委托（回测能力在 P2 提供）`;
+  }
+  elements.futuresTable.replaceChildren(
+    ...items.map((item) => {
+      const row = document.createElement("tr");
+      const main = item.main;
+      const cells = [
+        `${item.name}<small class="cell-sub">${item.product} · ${item.exchange} · ${item.trade_unit}</small>`,
+        main ? `${main.symbol}<small class="cell-sub">每跳 ${item.tick_value} 元</small>` : "待扫描",
+        main?.price != null
+          ? `${Number(main.price).toLocaleString()}<small class="cell-sub">${main.price_time || "--"}</small>`
+          : "--",
+        main?.latest_bar
+          ? `${Number(main.latest_bar.volume ?? 0).toLocaleString()} 手 / ${Number(main.latest_bar.hold ?? 0).toLocaleString()}<small class="cell-sub">${main.latest_bar.trade_date || "--"}</small>`
+          : "--",
+        item.tilt
+          ? `<span class="${item.tilt.tilt === "LONG" ? "rec-buy" : item.tilt.tilt === "SHORT" ? "rec-sell" : "rec-hold"}">${tiltLabels[item.tilt.tilt] || item.tilt.tilt}</span><small class="cell-sub">${item.tilt.as_of || ""}</small>`
+          : "数据不足",
+        item.risk
+          ? item.risk.executable
+            ? `${item.risk.lots} 手<small class="cell-sub">每手风险 ${item.risk.per_hand_risk.toLocaleString()} 元</small>`
+            : `不可开<small class="cell-sub">${(item.risk.reasons || [])[0] || ""}</small>`
+          : "--",
+        main?.days_to_expiry != null
+          ? `${main.days_to_expiry} 天${main.expiry_is_approximate ? "（近似）" : ""}`
+          : "--",
+      ];
+      cells.forEach((html) => {
+        const cell = document.createElement("td");
+        cell.innerHTML = html;
+        row.appendChild(cell);
+      });
+      // 倾向依据放 title 提示，避免表格过宽
+      if (item.tilt?.basis) row.title = item.tilt.basis;
+      return row;
+    }),
+  );
+  elements.futuresEmpty.hidden = items.length > 0 && items.some((item) => item.main);
 }
 
 function renderStockCatalog() {
@@ -1750,6 +1817,7 @@ async function switchView(view) {
   document.querySelectorAll(".view").forEach((section) => section.classList.toggle("is-active", section.id === `view-${view}`));
   if (view === "detail") requestAnimationFrame(drawChart);
   if (view === "stocks") await fetchStockCatalog();
+  if (view === "futures" && state.user) await fetchFuturesOverview();
   if (view === "overview") {
     renderMarketOverview();
     if (state.user) await fetchMarketOverview();

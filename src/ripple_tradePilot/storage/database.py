@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 
-DATABASE_SCHEMA_VERSION = 16
+DATABASE_SCHEMA_VERSION = 17
 
 
 BACKTEST_COLUMNS = {
@@ -374,6 +374,62 @@ NOTIFY_LOG_COLUMNS = {
     "kind": "kind TEXT NOT NULL DEFAULT ''",
     "payload_json": "payload_json TEXT NOT NULL DEFAULT ''",
     "sent_at": "sent_at TIMESTAMP",
+}
+
+# v17（期货 P2）：订单 / 成交 / 账户逐日快照——「能重现报告」的审计底账。
+# 列名用 open_close 而非 offset（OFFSET 是 SQLite 保留字，避免全链路引号转义）。
+FUTURES_ORDER_COLUMNS = {
+    "id": "id INTEGER PRIMARY KEY",
+    "run_id": "run_id TEXT NOT NULL DEFAULT ''",  # 一次回测运行一个 id（报告重放键）
+    "symbol": "symbol TEXT NOT NULL",
+    "direction": "direction TEXT NOT NULL",  # LONG | SHORT
+    "open_close": "open_close TEXT NOT NULL",  # OPEN | CLOSE | CLOSE_TODAY | CLOSE_YESTERDAY
+    "lots": "lots INTEGER NOT NULL",
+    "price": "price REAL",  # None = 市价单（下一可交易时点撮合）
+    "status": "status TEXT NOT NULL",  # PENDING/PARTIALLY_FILLED/FILLED/CANCELLED/REJECTED
+    "filled_lots": "filled_lots INTEGER NOT NULL DEFAULT 0",
+    "avg_fill_price": "avg_fill_price REAL",
+    "trade_date": "trade_date TEXT NOT NULL DEFAULT ''",
+    "bar_time": "bar_time TEXT NOT NULL DEFAULT ''",
+    # 拒单/撤单原因：limit_up|volume_cap|fee_missing|margin_shortfall|close_overdraft…
+    "reason": "reason TEXT NOT NULL DEFAULT ''",
+    "created_at": "created_at TIMESTAMP",
+    "updated_at": "updated_at TIMESTAMP",
+}
+
+FUTURES_TRADE_COLUMNS = {
+    "id": "id INTEGER PRIMARY KEY AUTOINCREMENT",
+    "run_id": "run_id TEXT NOT NULL DEFAULT ''",
+    "order_id": "order_id TEXT NOT NULL DEFAULT ''",
+    "symbol": "symbol TEXT NOT NULL",
+    "direction": "direction TEXT NOT NULL",
+    "open_close": "open_close TEXT NOT NULL",
+    "price": "price REAL NOT NULL",
+    "lots": "lots INTEGER NOT NULL",
+    "fee": "fee REAL NOT NULL DEFAULT 0",
+    "trade_date": "trade_date TEXT NOT NULL DEFAULT ''",
+    "bar_time": "bar_time TEXT NOT NULL DEFAULT ''",
+    "realized_pnl": "realized_pnl REAL",  # 平仓成交的已实现盈亏；开仓为 NULL
+    # plain CLOSE 跨今昨拆分（P2 验收「逐笔核对」要能对上账本 CloseBreakdown）
+    "close_from_yesterday": "close_from_yesterday INTEGER",
+    "close_from_today": "close_from_today INTEGER",
+    "created_at": "created_at TIMESTAMP",
+}
+
+FUTURES_ACCOUNT_DAILY_COLUMNS = {
+    "run_id": "run_id TEXT NOT NULL",
+    "trade_date": "trade_date TEXT NOT NULL",
+    # 结算后 balance == equity 是逐日盯市不变式；盘中另存快照时两者可分离
+    "balance": "balance REAL NOT NULL DEFAULT 0",
+    "equity": "equity REAL",
+    "available": "available REAL",
+    "margin_occupied": "margin_occupied REAL NOT NULL DEFAULT 0",
+    "realized_pnl_today": "realized_pnl_today REAL NOT NULL DEFAULT 0",
+    "position_pnl_today": "position_pnl_today REAL NOT NULL DEFAULT 0",
+    "fees_today": "fees_today REAL NOT NULL DEFAULT 0",
+    "exposure_value": "exposure_value REAL",  # 名义敞口（多空合计绝对值）
+    "settlement_errors": "settlement_errors TEXT NOT NULL DEFAULT ''",  # JSON 数组
+    "updated_at": "updated_at TIMESTAMP",
 }
 
 
@@ -951,6 +1007,71 @@ def init_database(path: Path | None = None) -> Path:
             """
         )
         _ensure_columns(connection, "notify_log", NOTIFY_LOG_COLUMNS)
+        # ── v17（期货 P2）───────────────────────────────────────────────
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS futures_orders (
+                id INTEGER PRIMARY KEY,
+                run_id TEXT NOT NULL DEFAULT '',
+                symbol TEXT NOT NULL,
+                direction TEXT NOT NULL,
+                open_close TEXT NOT NULL,
+                lots INTEGER NOT NULL,
+                price REAL,
+                status TEXT NOT NULL,
+                filled_lots INTEGER NOT NULL DEFAULT 0,
+                avg_fill_price REAL,
+                trade_date TEXT NOT NULL DEFAULT '',
+                bar_time TEXT NOT NULL DEFAULT '',
+                reason TEXT NOT NULL DEFAULT '',
+                created_at TIMESTAMP,
+                updated_at TIMESTAMP
+            )
+            """
+        )
+        _ensure_columns(connection, "futures_orders", FUTURES_ORDER_COLUMNS)
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS futures_trades (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL DEFAULT '',
+                order_id TEXT NOT NULL DEFAULT '',
+                symbol TEXT NOT NULL,
+                direction TEXT NOT NULL,
+                open_close TEXT NOT NULL,
+                price REAL NOT NULL,
+                lots INTEGER NOT NULL,
+                fee REAL NOT NULL DEFAULT 0,
+                trade_date TEXT NOT NULL DEFAULT '',
+                bar_time TEXT NOT NULL DEFAULT '',
+                realized_pnl REAL,
+                close_from_yesterday INTEGER,
+                close_from_today INTEGER,
+                created_at TIMESTAMP
+            )
+            """
+        )
+        _ensure_columns(connection, "futures_trades", FUTURES_TRADE_COLUMNS)
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS futures_account_daily (
+                run_id TEXT NOT NULL,
+                trade_date TEXT NOT NULL,
+                balance REAL NOT NULL DEFAULT 0,
+                equity REAL,
+                available REAL,
+                margin_occupied REAL NOT NULL DEFAULT 0,
+                realized_pnl_today REAL NOT NULL DEFAULT 0,
+                position_pnl_today REAL NOT NULL DEFAULT 0,
+                fees_today REAL NOT NULL DEFAULT 0,
+                exposure_value REAL,
+                settlement_errors TEXT NOT NULL DEFAULT '',
+                updated_at TIMESTAMP,
+                PRIMARY KEY (run_id, trade_date)
+            )
+            """
+        )
+        _ensure_columns(connection, "futures_account_daily", FUTURES_ACCOUNT_DAILY_COLUMNS)
         integrity = connection.execute("PRAGMA integrity_check").fetchone()
         if not integrity or integrity[0] != "ok":
             raise RuntimeError(f"SQLite integrity check failed for {target}: {integrity}")
@@ -2377,3 +2498,165 @@ def delete_notification(dedup_key: str, path: Path | None = None) -> bool:
             "DELETE FROM notify_log WHERE dedup_key = ?", (dedup_key,)
         )
         return cursor.rowcount == 1
+
+
+def insert_futures_orders(
+    rows: Iterable[Mapping[str, Any]], path: Path | None = None
+) -> int:
+    """追加写入期货回测订单生命周期记录（P2 审计底账，run_id 关联一次运行）。
+
+    订单是不可变历史事件（含被拒/被撤），只追加不覆盖；重放报告按 run_id 读取。
+    """
+    records = list(rows)
+    if not records:
+        return 0
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.executemany(
+            """
+            INSERT INTO futures_orders (
+                id, run_id, symbol, direction, open_close, lots, price, status,
+                filled_lots, avg_fill_price, trade_date, bar_time, reason,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            [
+                (
+                    row.get("id"), row.get("run_id", ""), row.get("symbol"),
+                    row.get("direction"), row.get("open_close"), row.get("lots"),
+                    row.get("price"), row.get("status"), row.get("filled_lots", 0),
+                    row.get("avg_fill_price"), row.get("trade_date", ""),
+                    row.get("bar_time", ""), row.get("reason", ""),
+                )
+                for row in records
+            ],
+        )
+    return len(records)
+
+
+def load_futures_orders(
+    run_id: str, path: Path | None = None
+) -> List[Mapping[str, Any]]:
+    """按 run_id 读取订单全生命周期（升序），报告重放与逐笔核对用。"""
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            "SELECT id, run_id, symbol, direction, open_close, lots, price, status, "
+            "filled_lots, avg_fill_price, trade_date, bar_time, reason, "
+            "created_at, updated_at "
+            "FROM futures_orders WHERE run_id = ? ORDER BY id",
+            (run_id,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def insert_futures_trades(
+    rows: Iterable[Mapping[str, Any]], path: Path | None = None
+) -> int:
+    """追加写入期货回测成交明细（含费用与平仓盈亏、今昨拆分）。"""
+    records = list(rows)
+    if not records:
+        return 0
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.executemany(
+            """
+            INSERT INTO futures_trades (
+                run_id, order_id, symbol, direction, open_close, price, lots,
+                fee, trade_date, bar_time, realized_pnl,
+                close_from_yesterday, close_from_today, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """,
+            [
+                (
+                    row.get("run_id", ""), row.get("order_id", ""),
+                    row.get("symbol"), row.get("direction"),
+                    row.get("open_close"), row.get("price"), row.get("lots"),
+                    row.get("fee", 0), row.get("trade_date", ""),
+                    row.get("bar_time", ""), row.get("realized_pnl"),
+                    row.get("close_from_yesterday"), row.get("close_from_today"),
+                )
+                for row in records
+            ],
+        )
+    return len(records)
+
+
+def load_futures_trades(
+    run_id: str, path: Path | None = None
+) -> List[Mapping[str, Any]]:
+    """按 run_id 读取成交明细（升序），P2 验收「逐笔账目核对」的原始凭据。"""
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            "SELECT id, run_id, order_id, symbol, direction, open_close, price, "
+            "lots, fee, trade_date, bar_time, realized_pnl, "
+            "close_from_yesterday, close_from_today, created_at "
+            "FROM futures_trades WHERE run_id = ? ORDER BY id",
+            (run_id,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def upsert_futures_account_daily(
+    rows: Iterable[Mapping[str, Any]], path: Path | None = None
+) -> int:
+    """写入/更新账户逐日快照（幂等：同 (run_id, trade_date) 覆盖最新口径）。"""
+    records = list(rows)
+    if not records:
+        return 0
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.executemany(
+            """
+            INSERT INTO futures_account_daily (
+                run_id, trade_date, balance, equity, available, margin_occupied,
+                realized_pnl_today, position_pnl_today, fees_today,
+                exposure_value, settlement_errors, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(run_id, trade_date) DO UPDATE SET
+                balance = excluded.balance,
+                equity = excluded.equity,
+                available = excluded.available,
+                margin_occupied = excluded.margin_occupied,
+                realized_pnl_today = excluded.realized_pnl_today,
+                position_pnl_today = excluded.position_pnl_today,
+                fees_today = excluded.fees_today,
+                exposure_value = excluded.exposure_value,
+                settlement_errors = excluded.settlement_errors,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            [
+                (
+                    row.get("run_id", ""), row.get("trade_date", ""),
+                    row.get("balance", 0), row.get("equity"),
+                    row.get("available"), row.get("margin_occupied", 0),
+                    row.get("realized_pnl_today", 0),
+                    row.get("position_pnl_today", 0),
+                    row.get("fees_today", 0), row.get("exposure_value"),
+                    row.get("settlement_errors", ""),
+                )
+                for row in records
+            ],
+        )
+    return len(records)
+
+
+def load_futures_account_daily(
+    run_id: str, path: Path | None = None
+) -> List[Mapping[str, Any]]:
+    """按 run_id 读取账户逐日快照（按交易日升序），权益曲线与回撤计算源。"""
+    target = init_database(path)
+    with sqlite3.connect(target, timeout=30) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            "SELECT run_id, trade_date, balance, equity, available, "
+            "margin_occupied, realized_pnl_today, position_pnl_today, "
+            "fees_today, exposure_value, settlement_errors, updated_at "
+            "FROM futures_account_daily WHERE run_id = ? ORDER BY trade_date",
+            (run_id,),
+        ).fetchall()
+    return [dict(row) for row in rows]

@@ -69,18 +69,18 @@
 
 ### P2：可信的期货回测
 
-- [ ] 扩展订单和持仓模型，区分方向、开平、平今/平昨、今仓/昨仓和成交状态。
-- [ ] 实现期货账户账本：余额、权益、可用资金、持仓及冻结保证金、费用、已实现与未实现盈亏。
-- [ ] 处理按结算价逐日盯市和成本重置，避免结算盈亏与平仓盈亏重复计入。
-- [ ] 实现按手或按成交额收费，支持开仓、平今、平昨差异及规则按日期生效。
-- [ ] 支持真实合约撮合、多空、最小手数和价位、滑点、成交量约束、涨跌停与部分成交。
-- [ ] 使用真实合约计算成交与盈亏；连续序列仅用于明确口径的研究，换月显式记录平旧开新及成本。
-- [ ] 模拟信号后下一可交易时点成交；同一根 K 线触发止盈止损等路径不明情况采用保守且可复现的规则。
-- [ ] 加入保证金不足、保证金调整和临近到期处理；强平尝试仍受成交限制，不假定必然成交。
-- [ ] 输出账户权益口径的收益、回撤、费用、交易次数、风险敞口、保证金占用和换月影响。
-- [ ] 开展滚动样本外验证，保留最终未参与调参的数据，记录数据、参数和策略版本。
+- [x] 扩展订单和持仓模型，区分方向、开平、平今/平昨、今仓/昨仓和成交状态。（`models/types.py` FuturesOffset/FuturesOrderStatus + `backtest/futures_account.py` PositionState）
+- [x] 实现期货账户账本：余额、权益、可用资金、持仓及冻结保证金、费用、已实现与未实现盈亏。（`backtest/futures_account.py`，逐日结算后 equity==balance 不变式）
+- [x] 处理按结算价逐日盯市和成本重置，避免结算盈亏与平仓盈亏重复计入。（结算盯市入账后成本重置为结算价；黄金总账测试钉死「结算+平仓+费用 == 全程价差」）
+- [x] 实现按手或按成交额收费，支持开仓、平今、平昨差异及规则按日期生效。（`backtest/futures_rules.py` 区间规则 + 构造期重叠/格式校验；近似口径必须 approximate=True 透出）
+- [x] 支持真实合约撮合、多空、最小手数和价位、滑点、成交量约束、涨跌停与部分成交。（`backtest/futures_engine.py`；规则缺失/资金不足即拒单，普通单余量当 bar 撤销）
+- [x] 使用真实合约计算成交与盈亏；连续序列仅用于明确口径的研究，换月显式记录平旧开新及成本。（`build_roll_schedule` 无前视主力序列；换月腿 is_roll 单列，roll 影响进报告与指标）
+- [x] 模拟信号后下一可交易时点成交；同一根 K 线触发止盈止损等路径不明情况采用保守且可复现的规则。（信号在 bar 收盘产生 → 下一根 bar 开盘 ± 滑点，滑点按 tick 网格向吃亏方向取整）
+- [x] 加入保证金不足、保证金调整和临近到期处理；强平尝试仍受成交限制，不假定必然成交。（结算后可用为负 → 次日强平全部持仓，跨 bar 重试至数据结束；末日残仓按最后收盘 ± 滑点强平后统一结算）
+- [x] 输出账户权益口径的收益、回撤、费用、交易次数、风险敞口、保证金占用和换月影响。（`FuturesBacktestReport.metrics` + futures_account_daily 逐日快照）
+- [x] 开展滚动样本外验证，保留最终未参与调参的数据，记录数据、参数和策略版本。（`backtest/futures_walkforward.py` 锚定扩展训练 + 等分测试块 + 20% 保留集；manifest 记数据范围/参数网格/预热/近似标记/策略版本）
 
-验收：多头、空头、平今/平昨、逐日结算、换月、保证金不足及无法成交等固定案例逐笔核对通过；能重现报告。策略收益另行评估，账务正确不代表策略有效。
+验收：多头、空头、平今/平昨、逐日结算、换月、保证金不足及无法成交等固定案例逐笔核对通过；能重现报告。策略收益另行评估，账务正确不代表策略有效。（`tests/test_futures_rules.py` 25 + `test_futures_account.py` 17 + `test_futures_engine.py` 19 + `test_futures_walkforward.py` 8 + `test_futures_runner.py` 11 固定案例全部手算核对；`tradepilot futures backtest` 每次运行按 run_id 落 futures_orders / futures_trades / futures_account_daily 三表，可完整重放。**已知近似口径如实标注**：费率/保证金取 futures_quotes 快照推导（approximate=True），历史区间缺交易所逐日官方规则；数据依赖 `tradepilot futures scan` 落库的 60m/日线，观察池积累不足时回测区间相应受限）
 
 ### P3：实时模拟与策略评估
 
@@ -155,8 +155,7 @@
 
 - [x] P0：范围与技术验证完成。（2026-09-19；验证记录 `docs/futures-p0-verification.md`，探针 `experiments/futures/p0_probe.py`；遗留：郑商所源待修复后扩池、60m 历史深度 ~8.5 个月）
 - [x] P1：监控 MVP 实现完成，进入运行观察。（2026-09-19；模块：`data/futures_calendar.py`、`data/futures_service.py`、`signals/futures_eval.py`、`risk/sizing.py`、`monitor/futures_scan.py`、存储 v16 四表、`/api/futures/overview` + Web 期货观察池页、CLI `tradepilot futures scan`、股票回测入口期货拦截（API 422 / CLI exit 2 明确文案）。全部离线测试 996 项通过。「连续 5 个交易日记录可追溯」验收待 `futures scan` 实际运行积累；到期日为到期月首日近似锚，SHFE 精确到期留 P2）
-- [ ] P2：期货回测账务及撮合验收通过。
-- [ ] P2：期货回测账务及撮合验收通过。
+- [x] P2：期货回测账务及撮合验收通过。（2026-09-19；模块：`backtest/futures_rules.py` 费用/保证金区间规则、`backtest/futures_account.py` 逐日盯市账本、`backtest/futures_engine.py` 真实合约撮合（下一时点成交/涨跌停/量约束/部分成交/换月/强平）、`backtest/futures_walkforward.py` 滚动样本外 + 保留集、`backtest/futures_runner.py` + CLI `tradepilot futures backtest` 入口、存储 v17 审计三表（futures_orders / futures_trades / futures_account_daily）。80 项期货回测专项测试通过，全量回归见当次提交。遗留：费率/保证金为快照近似口径（官方逐日规则待 futures_settle_* 接入后替换）；观察池数据积累不足，实盘级长区间回测待 scan 运行积累）
 - [ ] P3：实时模拟与策略评估完成。
 - [ ] P4：受控实盘验收并启用。
 

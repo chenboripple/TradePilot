@@ -1,4 +1,4 @@
-"""期货 P1 存储层测试（v16 四表：合约元数据 / K 线 / 报价快照 / 通知去重）。
+"""期货 P1/P2 存储层测试（v16 四表：合约/K线/快照/通知去重；v17 三表：订单/成交/账户快照）。
 
 沿房屋契约：tmp DB 全链路 upsert→load 往返、幂等、v15 旧库升级、去重键防重发
 （roadmap P1「保证重启后不重复通知」的持久化基础）。
@@ -13,14 +13,20 @@ from ripple_tradePilot.storage import init_database
 from ripple_tradePilot.storage.database import (
     DATABASE_SCHEMA_VERSION,
     delete_notification,
+    insert_futures_orders,
+    insert_futures_trades,
     latest_futures_bar,
     list_futures_bar_symbols,
     list_notifications,
+    load_futures_account_daily,
     load_futures_bars,
     load_futures_contracts,
     load_futures_quote,
     load_futures_quotes,
+    load_futures_orders,
+    load_futures_trades,
     record_notification,
+    upsert_futures_account_daily,
     upsert_futures_bars,
     upsert_futures_contracts,
     upsert_futures_quotes,
@@ -28,9 +34,9 @@ from ripple_tradePilot.storage.database import (
 
 
 class FuturesStorageSchemaTest(unittest.TestCase):
-    def test_fresh_db_has_v16_tables(self):
+    def test_fresh_db_has_v17_tables(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            target = Path(temp_dir) / "f16.db"
+            target = Path(temp_dir) / "f17.db"
             init_database(target)
             with sqlite3.connect(target) as connection:
                 tables = {
@@ -42,21 +48,24 @@ class FuturesStorageSchemaTest(unittest.TestCase):
                 version = connection.execute("PRAGMA user_version").fetchone()[0]
             self.assertTrue(
                 {"futures_contracts", "futures_bars", "futures_quotes",
-                 "notify_log"}.issubset(tables)
+                 "notify_log", "futures_orders", "futures_trades",
+                 "futures_account_daily"}.issubset(tables)
             )
-            self.assertEqual(version, 16)
+            self.assertEqual(version, 17)
             self.assertEqual(version, DATABASE_SCHEMA_VERSION)
 
-    def test_legacy_v15_db_upgrades_to_v16(self):
+    def test_legacy_v15_db_upgrades_to_v17(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir) / "legacy15.db"
             init_database(target)
             with sqlite3.connect(target) as connection:
                 for table in ("futures_contracts", "futures_bars",
-                              "futures_quotes", "notify_log"):
+                              "futures_quotes", "notify_log",
+                              "futures_orders", "futures_trades",
+                              "futures_account_daily"):
                     connection.execute(f"DROP TABLE {table}")
                 connection.execute("PRAGMA user_version=15")
-            init_database(target)  # 重新初始化应补建 v16 四表
+            init_database(target)  # 重新初始化应补建 v16/v17 七表
             with sqlite3.connect(target) as connection:
                 tables = {
                     row[0] for row in connection.execute(
@@ -67,7 +76,8 @@ class FuturesStorageSchemaTest(unittest.TestCase):
                 version = connection.execute("PRAGMA user_version").fetchone()[0]
             self.assertTrue(
                 {"futures_contracts", "futures_bars", "futures_quotes",
-                 "notify_log"}.issubset(tables)
+                 "notify_log", "futures_orders", "futures_trades",
+                 "futures_account_daily"}.issubset(tables)
             )
             self.assertEqual(version, DATABASE_SCHEMA_VERSION)
 
@@ -197,6 +207,71 @@ class FuturesQuoteStoreTest(unittest.TestCase):
             self.assertEqual(row["margin_is_estimate"], 0)
             self.assertEqual(len(load_futures_quotes(target)), 1)
             self.assertIsNone(load_futures_quote("CU2610.SHFE", target))
+
+
+class FuturesBacktestAuditStoreTest(unittest.TestCase):
+    """v17 审计三表：一次回测运行（run_id）的订单→成交→账户快照可完整重放。"""
+
+    def test_orders_trades_roundtrip_by_run(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "audit.db"
+            self.assertEqual(insert_futures_orders([
+                # 一拒一成：拒单（涨跌停）与成交单都要留痕，重放报告才完整
+                {"id": 1, "run_id": "run-a", "symbol": "RB2610.SHFE",
+                 "direction": "LONG", "open_close": "OPEN", "lots": 2,
+                 "price": None, "status": "REJECTED", "filled_lots": 0,
+                 "avg_fill_price": None, "trade_date": "20260921",
+                 "bar_time": "2026-09-21 10:30:00", "reason": "limit_up"},
+                {"id": 2, "run_id": "run-a", "symbol": "RB2610.SHFE",
+                 "direction": "LONG", "open_close": "OPEN", "lots": 2,
+                 "price": None, "status": "FILLED", "filled_lots": 2,
+                 "avg_fill_price": 3102.0, "trade_date": "20260921",
+                 "bar_time": "2026-09-21 11:30:00", "reason": ""},
+            ], target), 2)
+            self.assertEqual(insert_futures_trades([
+                {"run_id": "run-a", "order_id": "2", "symbol": "RB2610.SHFE",
+                 "direction": "LONG", "open_close": "OPEN", "price": 3102.0,
+                 "lots": 2, "fee": 6.2, "trade_date": "20260921",
+                 "bar_time": "2026-09-21 11:30:00", "realized_pnl": None,
+                 "close_from_yesterday": None, "close_from_today": None},
+            ], target), 1)
+            orders = load_futures_orders("run-a", target)
+            self.assertEqual([o["id"] for o in orders], [1, 2])  # 升序
+            self.assertEqual(orders[0]["status"], "REJECTED")
+            self.assertEqual(orders[0]["reason"], "limit_up")
+            self.assertEqual(orders[1]["avg_fill_price"], 3102.0)
+            trades = load_futures_trades("run-a", target)
+            self.assertEqual(len(trades), 1)
+            self.assertEqual(trades[0]["fee"], 6.2)
+            self.assertIsNone(trades[0]["realized_pnl"])  # 开仓无已实现盈亏
+            # run_id 隔离：另一次运行互不可见
+            self.assertEqual(load_futures_orders("run-b", target), [])
+            self.assertEqual(load_futures_trades("run-b", target), [])
+
+    def test_account_daily_upsert_idempotent(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "acct.db"
+            row = {"run_id": "run-a", "trade_date": "20260921",
+                   "balance": 200496.9, "equity": 200496.9,
+                   "available": 196401.9, "margin_occupied": 4095.0,
+                   "realized_pnl_today": 0.0, "position_pnl_today": 500.0,
+                   "fees_today": 3.1, "exposure_value": 31500.0,
+                   "settlement_errors": "[]"}
+            self.assertEqual(upsert_futures_account_daily([row], target), 1)
+            # 同日重写（盘中→结算后口径更新）→ 覆盖不重复
+            upsert_futures_account_daily(
+                [{**row, "balance": 200496.9, "position_pnl_today": 500.0}],
+                target,
+            )
+            rows = load_futures_account_daily("run-a", target)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["margin_occupied"], 4095.0)
+            # 多日快照按交易日升序（权益曲线顺序敏感）
+            upsert_futures_account_daily(
+                [{**row, "trade_date": "20260922", "balance": 200600.0}], target
+            )
+            dates = [r["trade_date"] for r in load_futures_account_daily("run-a", target)]
+            self.assertEqual(dates, ["20260921", "20260922"])
 
 
 class NotifyLogTest(unittest.TestCase):

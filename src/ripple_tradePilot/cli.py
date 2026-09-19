@@ -42,8 +42,9 @@ def _reject_futures_symbol(symbol):
     from .data.futures_meta import looks_like_futures_symbol
     if looks_like_futures_symbol(symbol):
         click.echo(
-            f"❌ {symbol} 是期货合约：期货回测尚未支持（规划见 docs/futures-roadmap.md P2），"
-            "当前仅支持 A 股股票代码（如 002022）。期货监控请用 tradepilot futures scan。",
+            f"❌ {symbol} 是期货合约：本入口仅支持 A 股股票代码（如 002022）。"
+            "期货回测请用 tradepilot futures backtest，"
+            "期货监控请用 tradepilot futures scan。",
             err=True,
         )
         sys.exit(2)
@@ -1270,7 +1271,7 @@ def version():
 
 @cli.group()
 def futures():
-    """期货观察池（P1：主力映射 / 倾向提醒 / 风险测算；回测在 P2 之后）"""
+    """期货观察池与回测（P1 主力/倾向/风险；P2 撮合回测 + 样本外验证）"""
 
 
 @futures.command('scan')
@@ -1347,6 +1348,107 @@ def futures_scan():
                 )
         else:
             click.echo(f"📬 未配飞书，仅记录（notify_log）：{item['message']}")
+
+
+@futures.command('backtest')
+@click.option('--product', '-p', default='RB', show_default=True,
+              help='品种代码（首期 RB/HC/CU/I/M），回测其全部已扫描合约')
+@click.option('--entry-window', default=20, show_default=True,
+              help='Donchian 入场窗口（bar 数）')
+@click.option('--cash', default=200000.0, show_default=True, help='初始资金（元）')
+@click.option('--lots', default=1, show_default=True, help='每信号手数')
+@click.option('--slippage', default=1, show_default=True, help='滑点跳数')
+@click.option('--walkforward', 'mode_walkforward', is_flag=True,
+              help='滚动样本外验证（锚定扩展训练 + 3 测试块 + 20% 保留集）')
+@click.option('--no-save', is_flag=True, help='不落库（默认写审计三表 + backtest_results）')
+def futures_backtest(product, entry_window, cash, lots, slippage,
+                     mode_walkforward, no_save):
+    """期货回测（P2）：库内 60m/日线数据 → 撮合引擎 → 报告落库。
+
+    数据来自 tradepilot futures scan 落库的 futures_bars（本命令不联网）；
+    费率/保证金为快照近似口径，报告如实标注。默认单次全时间线回测
+    （换月平旧开新、逐日盯市、强平受成交约束）；--walkforward 切换
+    滚动样本外验证并记录参数网格与策略版本（保留集不参与选参）。
+    """
+    from .backtest.futures_engine import EngineConfig
+    from .backtest.futures_runner import (
+        FuturesDataUnavailableError,
+        run_product_backtest,
+        run_product_walkforward,
+    )
+
+    config = EngineConfig(initial_cash=cash, lots_per_signal=lots,
+                          slippage_ticks=slippage)
+    try:
+        if mode_walkforward:
+            report, notes = run_product_walkforward(
+                product, config=config, save=not no_save)
+        else:
+            report, notes = run_product_backtest(
+                product, entry_window=entry_window, config=config,
+                save=not no_save)
+    except FuturesDataUnavailableError as error:
+        click.echo(f"❌ {error}", err=True)
+        sys.exit(1)
+    except ValueError as error:
+        click.echo(f"❌ {error}", err=True)
+        sys.exit(1)
+
+    for note in notes:
+        click.echo(f"ℹ️ {note}")
+    if mode_walkforward:
+        click.echo(f"\n📋 滚动样本外验证（{product}）")
+        for segment in report.segments:
+            kind = "保留集" if segment.kind == "holdout" else f"测试块{segment.index}"
+            click.echo(
+                f"   {kind} [{segment.test_start}~{segment.test_end}]"
+                f" 训练权 {segment.chosen_entry_window}"
+                f" → 段收益 {segment.test_return:+.2%}（{segment.fills} 笔）"
+            )
+        summary = report.summary
+        click.echo(
+            f"   OOS 复利总收益 {summary['oos_total_return']:+.2%} · "
+            f"保留集收益 {summary['holdout_return']:+.2%}"
+        )
+        manifest = report.manifest
+        click.echo(
+            f"   数据 [{manifest['data_start']}~{manifest['data_end']}]"
+            f"（保留集自 {manifest['holdout_start']} 起）· "
+            f"策略版本 {manifest['strategy_version']} · 预热 {manifest['warmup_bars']} bar"
+        )
+        if no_save:
+            click.echo("（--no-save：本次运行未落库）")
+        else:
+            click.echo("汇总与 manifest 已写入 backtest_results（run_kind=futures_backtest_walkforward）")
+        return
+
+    metrics = report.metrics
+    click.echo(f"\n📊 回测报告（run_id={report.run_id}）")
+    click.echo(
+        f"   期末权益 {metrics['final_equity']:.2f}"
+        f"（初始 {metrics['initial_cash']:.0f}，"
+        f"总收益 {metrics['total_return']:+.2%}）· 最大回撤 {metrics['max_drawdown']:.2%}"
+    )
+    click.echo(
+        f"   成交 {metrics['fills']} 笔 · 费用 {metrics['fees_total']:.2f} 元"
+        f" · 换月 {metrics['rolls']} 次 · 强平 {metrics['forced_liquidations']} 笔"
+        f" · 结算异常 {metrics['settlement_error_days']} 天"
+    )
+    click.echo(
+        f"   平均保证金占用 {metrics['margin_occupied_mean']:.0f} 元"
+        f"（峰值 {metrics['margin_occupied_max']:.0f}）· "
+        f"平均风险敞口 {metrics['exposure_mean']:.0f} 元"
+        f"（峰值 {metrics['exposure_max']:.0f}）"
+    )
+    for warning in report.warnings:
+        click.echo(f"   ⚠️ {warning}")
+    if no_save:
+        click.echo("（--no-save：本次运行未落库）")
+    else:
+        click.echo(
+            f"审计已落库：按 run_id={report.run_id} 可重放"
+            "（futures_orders / futures_trades / futures_account_daily）"
+        )
 
 
 if __name__ == '__main__':

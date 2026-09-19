@@ -1242,15 +1242,16 @@ def _benchmark_payload(bars: list) -> Dict[str, Any]:
 @app.post("/api/backtest")
 def run_web_backtest(payload: BacktestRequest, user: Dict = Depends(required_user)):
     """统一引擎回测：次日开盘撮合、涨跌停拦截、100 股整数倍、佣金+印花税+滑点。"""
-    # P1 验收：尚未支持的期货回测入口必须**明确**显示不可用——在股票代码
-    # 校验前拦截（否则掉进「请输入 6 位股票代码」的无关文案）。422 而非 501，
-    # 与参数校验同档，前端能以 detail 文案直接展示。
+    # P1 验收：期货回测入口必须**明确**指路——在股票代码校验前拦截（否则掉进
+    # 「请输入 6 位股票代码」的无关文案）。422 而非 501，与参数校验同档，前端能
+    # 以 detail 文案直接展示；P2 起期货回测走 tradepilot futures backtest（CLI）。
     if looks_like_futures_symbol(payload.symbol):
         raise HTTPException(
             status_code=422,
             detail=(
-                f"{payload.symbol} 是期货合约：期货回测尚未支持（规划见 "
-                "docs/futures-roadmap.md P2），当前仅支持 A 股股票代码（如 002022）。"
+                f"{payload.symbol} 是期货合约：本接口仅支持 A 股股票代码（如 002022）。"
+                "期货回测请用 tradepilot futures backtest（CLI），"
+                "期货监控请用 tradepilot futures scan。"
             ),
         )
     try:

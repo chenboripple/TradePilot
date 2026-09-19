@@ -76,7 +76,7 @@ class _CliDbTestCase(unittest.TestCase):
 
 class CliBacktestSaveTest(_CliDbTestCase):
     def test_futures_symbol_rejected_with_explicit_message(self):
-        """P1 验收：期货回测入口明确显示不可用（exit 2 + 指路文案）。
+        """P1/P2 验收：股票入口对期货码明确指路（exit 2 + futures backtest 文案）。
 
         拦截发生在取数之前——FakeLoader 不应被触达（不产生误导的
         「行情数据不足」）。backtest 与 walkforward 两命令同门。
@@ -95,7 +95,7 @@ class CliBacktestSaveTest(_CliDbTestCase):
                     )
                     self.assertEqual(result.exit_code, 2, result.output)
                     self.assertIn("期货", result.output)
-                    self.assertIn("尚未支持", result.output)
+                    self.assertIn("tradepilot futures backtest", result.output)
         self.assertEqual(load_calls, [])  # 取数之前拦截
 
     def test_backtest_saves_by_default(self):

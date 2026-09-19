@@ -1302,15 +1302,16 @@ class CrossVersionSchemaMigrationTest(unittest.TestCase):
     改一处忘一处；而"升级后 ⊇ 全新库"正是用户问的那句"新增字段是不是都会补齐"的形式化。
     """
 
-    # 终态应有的 21 张表。这里**写死**（不从全新库推）：若某张表的 CREATE 被漏掉，
+    # 终态应有的 24 张表。这里**写死**（不从全新库推）：若某张表的 CREATE 被漏掉，
     # 全新库和升级库会一起少一张表，靠 oracle 对比就发现不了。
     EXPECTED_TABLES = {
-        "backtest_results", "daily_bars", "futures_bars", "futures_contracts",
-        "futures_quotes", "index_daily", "industry_board_bars",
-        "industry_boards", "industry_membership", "kv_store", "market_daily",
-        "ml_datasets", "ml_models", "notify_log", "signal_ledger",
-        "stock_catalog", "stock_quotes", "strategies", "user_sessions",
-        "user_watchlist", "users",
+        "backtest_results", "daily_bars", "futures_account_daily",
+        "futures_bars", "futures_contracts", "futures_orders",
+        "futures_quotes", "futures_trades", "index_daily",
+        "industry_board_bars", "industry_boards", "industry_membership",
+        "kv_store", "market_daily", "ml_datasets", "ml_models", "notify_log",
+        "signal_ledger", "stock_catalog", "stock_quotes", "strategies",
+        "user_sessions", "user_watchlist", "users",
     }
 
     # 上古库：只有几张核心表、列集远早于 v12。额外塞一列 ``legacy_only``——

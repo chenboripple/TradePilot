@@ -83,7 +83,7 @@ class WebBacktestApiTest(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_futures_symbol_rejected_with_explicit_message(self):
-        """P1 验收：尚未支持的期货回测入口必须明确显示不可用（422 + 指路文案）。
+        """P1/P2 验收：股票回测入口对期货码明确指路（422 + futures backtest 文案）。
 
         期货码（带后缀/裸码）在股票校验前拦截——否则掉进「请输入 6 位股票
         代码」的无关提示。登录态下断言，未登录是 401（门在鉴权之后）。
@@ -102,7 +102,7 @@ class WebBacktestApiTest(unittest.TestCase):
                 self.assertEqual(response.status_code, 422, response.text)
                 detail = response.json()["detail"]
                 self.assertIn("期货", detail)
-                self.assertIn("尚未支持", detail)
+                self.assertIn("tradepilot futures backtest", detail)
 
     def _seed_system_strategy(self, parameters, symbol=SYMBOL):
         """在 tmp DB 预置一条系统策略（system_key=stock:<symbol>），供 profile=system 解析。"""

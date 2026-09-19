@@ -22,6 +22,34 @@ class FuturesDirection(str, Enum):
     SHORT = "SHORT"
 
 
+class FuturesOffset(str, Enum):
+    """期货开平方向（P2）。
+
+    国内商品期货的费用与盈亏口径随开平不同：开仓、平今（平当日新开仓）、
+    平昨（平历史持仓）费率可各自独立；plain CLOSE 由引擎按「昨仓优先」
+    的保守可复现规则拆分（撮合层负责，账户层只接受显式四态）。
+    """
+
+    OPEN = "OPEN"
+    CLOSE = "CLOSE"
+    CLOSE_TODAY = "CLOSE_TODAY"
+    CLOSE_YESTERDAY = "CLOSE_YESTERDAY"
+
+
+class FuturesOrderStatus(str, Enum):
+    """期货回测订单生命周期状态（P2）。
+
+    部分成交（PARTIALLY_FILLED）是常态路径：涨跌停、成交量约束都会
+    让订单只成交一部分，剩余量按撮合规则取消或挂起，不假定必然成交。
+    """
+
+    PENDING = "PENDING"
+    PARTIALLY_FILLED = "PARTIALLY_FILLED"
+    FILLED = "FILLED"
+    CANCELLED = "CANCELLED"
+    REJECTED = "REJECTED"
+
+
 @dataclass(frozen=True)
 class Bar:
     timestamp: datetime

@@ -99,6 +99,11 @@ tradepilot screen 002022.SZ
 # 期货观察池扫描（P1：主力映射/倾向/风险测算/去重提醒；建议 cron 定时运行）
 tradepilot futures scan
 
+# 期货回测（P2：读取 scan 落库数据，真实合约撮合 + 逐日盯市 + 换月 + 强平；
+# --walkforward 切换滚动样本外验证；订单/成交/账户逐日快照按 run_id 落库可重放）
+tradepilot futures backtest -p RB
+tradepilot futures backtest -p RB --walkforward
+
 # 启动 Web 监控台（浏览器访问 http://127.0.0.1:8000）
 tradepilot serve
 ```
@@ -184,9 +189,10 @@ Docker 部署则由 `./scripts/docker-deploy.sh local` 启动。服务运行后�
 - K 线、均线、布林带、成交量及方向变化
 - 策略参数、当前倾向和回测记录
 - 数据新鲜度、存储与读取异常状态
-- 期货观察池（P1）：主力映射、量额、Donchian 倾向与 §5 风险测算（数据来自 `tradepilot futures scan`，倾向为参考判断而非可执行委托；期货回测在 P2 前明确显示不可用）
+- 期货观察池（P1）：主力映射、量额、Donchian 倾向与 §5 风险测算（数据来自 `tradepilot futures scan`，倾向为参考判断而非可执行委托）
+- 期货回测（P2）：`tradepilot futures backtest`——真实合约撮合（信号后下一时点成交、滑点、涨跌停与成交量约束、部分成交）、逐日盯市账本（平今/平昨分档、保证金与强平）、显式换月、滚动样本外验证（保留集不参与选参）；费率/保证金为快照近似口径，报告如实标注（股票回测入口对期货码指路本命令）
 
-现阶段股票读取 `data/<代码>.csv`。期货行情由 `tradepilot futures scan` 从新浪源同步落库（首期 RB/HC/CU/I/M），风险预算参数在 `config.yaml` 的 `futures_risk` 中配置。
+现阶段股票读取 `data/<代码>.csv`。期货行情由 `tradepilot futures scan` 从新浪源同步落库（首期 RB/HC/CU/I/M），风险预算参数在 `config.yaml` 的 `futures_risk` 中配置；期货回测消费 scan 落库的 60m/日线数据，不联网补数。
 
 ## 卸载
 

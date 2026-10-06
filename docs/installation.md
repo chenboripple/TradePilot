@@ -8,69 +8,39 @@
 
 ## 安装方法
 
-### 方法一：使用安装脚本（推荐）
+依赖声明的唯一来源是 `pyproject.toml`；`requirements.txt` 是由它生成的锁定快照
+（`uv pip freeze`），用于 Docker 构建与可复现安装，请勿手改。
 
-#### macOS / Linux
+### 方法一：使用 uv（推荐）
 
 ```bash
-# 克隆仓库
 git clone https://github.com/chenboripple/TradePilot.git
 cd TradePilot
 
-# 运行安装脚本
-python3 install.py
+# uv 会自动下载并使用对应版本的 Python（推荐 3.11）
+uv venv --python 3.11 .venv
+uv pip install -e .
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 ```
 
-#### Windows
+### 方法二：使用 pip
 
-```powershell
-# 克隆仓库
+```bash
 git clone https://github.com/chenboripple/TradePilot.git
 cd TradePilot
 
-# 运行安装脚本
-python install.py
-```
-
-### 方法二：使用 pip 安装
-
-```bash
-# 克隆仓库
-git clone https://github.com/chenboripple/TradePilot.git
-cd TradePilot
-
-# 安装
-pip install -e .
-```
-
-### 方法三：使用虚拟环境
-
-#### macOS / Linux
-
-```bash
-# 创建虚拟环境
 python3 -m venv .venv
-
-# 激活虚拟环境
-source .venv/bin/activate
-
-# 安装依赖
-pip install -r requirements.txt
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e .
 ```
 
-#### Windows
+### 方法三：按锁定快照安装（可复现）
 
-```powershell
-# 创建虚拟环境
-python -m venv .venv
-
-# 激活虚拟环境
-.venv\Scripts\activate
-
-# 安装依赖
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-pip install -e .
+pip install --no-deps -e .
 ```
 
 ## 配置
@@ -152,13 +122,17 @@ tradepilot --help
 ## 更新
 
 ```bash
-python install.py --update
+git pull
+pip install -e .        # 依赖有变时重新解析；或 uv pip install -e .
 ```
 
 ## 卸载
 
+安装只涉及仓库目录、虚拟环境与 `~/.tradepilot/`（配置），
+删除这三处即完成卸载：
+
 ```bash
-python install.py --uninstall
+rm -rf .venv ~/.tradepilot
 ```
 
 ## 常见问题
@@ -190,7 +164,9 @@ export PATH="$HOME/.local/bin:$PATH"
 ```powershell
 # 以管理员身份运行 PowerShell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-python install.py
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e .
 ```
 
 ### 4. 依赖冲突

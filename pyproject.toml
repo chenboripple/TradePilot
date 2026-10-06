@@ -31,7 +31,9 @@ dependencies = [
   "tushare>=1.2",
   "akshare>=1.10",
   "pyyaml>=6.0",
-  "httpx>=0.24",
+  # mx_loader 直接 import requests，此前靠 tushare/akshare 传递依赖侥幸可用
+  "requests>=2.31",
+  "httpx[socks]>=0.24",
   "click>=8.0",
   # ML 信号质量模型（D 阶段，懒加载）：训练/校准用工，import 全部惰性化，
   # 未安装时 dashboard/monitor 的信号链路照常运行（仅 ml train/promote 报清晰错误）。

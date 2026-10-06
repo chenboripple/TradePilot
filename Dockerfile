@@ -14,9 +14,14 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends tzdata \
     && rm -rf /var/lib/apt/lists/*
 
+# 依赖热层：requirements.txt 是 pyproject 的 freeze 快照，只有它变化时才重装
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 源码冷层：改代码不触发依赖重装，--no-deps 保证以快照版本为准
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN pip install --no-cache-dir . \
+RUN pip install --no-cache-dir --no-deps . \
     && addgroup --system tradepilot \
     && adduser --system --ingroup tradepilot --home /home/tradepilot tradepilot \
     && mkdir -p /app/data /app/output /var/lib/tradepilot \

@@ -12,18 +12,14 @@
 
 ## 快速安装
 
-### 方式一：使用安装脚本（推荐）
+### 方式一：使用 uv（推荐）
 
 ```bash
-# macOS / Linux
 git clone https://github.com/chenboripple/TradePilot.git
 cd TradePilot
-python3 install.py
-
-# Windows
-git clone https://github.com/chenboripple/TradePilot.git
-cd TradePilot
-python install.py
+uv venv --python 3.11 .venv   # uv 自动下载对应 Python
+uv pip install -e .
+source .venv/bin/activate     # Windows: .venv\Scripts\activate
 ```
 
 ### 方式二：使用 pip
@@ -31,18 +27,13 @@ python install.py
 ```bash
 git clone https://github.com/chenboripple/TradePilot.git
 cd TradePilot
-pip install -e .
-```
-
-### 方式三：使用虚拟环境
-
-```bash
 python3 -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate  # Windows
-pip install -r requirements.txt
+source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -e .
 ```
+
+> 依赖声明唯一来源是 `pyproject.toml`；`requirements.txt` 是生成的锁定快照
+> （`uv pip freeze | grep -v '^-e' > requirements.txt`），用于 Docker 构建与可复现安装。
 
 ## 配置
 
@@ -135,9 +126,8 @@ TradePilot/
 │   ├── config_loader.py      # 配置加载
 │   └── cli.py                # 命令行工具
 ├── examples/                 # 示例脚本
-├── docs/                     # 文档
-├── install.py                # 安装脚本
-├── pyproject.toml            # 项目配置
+├── docs/                     # 文档（history/ 为归档的过程报告）
+├── pyproject.toml            # 项目配置（依赖唯一来源）
 └── README.md                 # 本文件
 ```
 
@@ -196,8 +186,10 @@ Docker 部署则由 `./scripts/docker-deploy.sh local` 启动。服务运行后�
 
 ## 卸载
 
+安装只涉及仓库目录、虚拟环境与 `~/.tradepilot/`（配置），删除这三处即完成卸载：
+
 ```bash
-python install.py --uninstall
+rm -rf .venv ~/.tradepilot
 ```
 
 ## 许可证

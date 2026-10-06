@@ -30,4 +30,5 @@ PYTHONPATH=src python3 experiments/<script>.py
 
 - `monitor_brief.py` — 盘前/盘中简报（docker 部署文档引用）
 - `heartbeat_tradepilot.py` — 心跳监控闭环（近期仍在维护）
-- `install.py` / `setup.py` — 安装与打包入口
+
+安装与打包已收敛到 `pyproject.toml`（`pip install -e .` / uv），旧 `install.py`/`setup.py` 已删除。

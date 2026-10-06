@@ -454,7 +454,12 @@ def record_backtest_run(
                 report_json,
             ),
         )
-        return int(cursor.lastrowid)
+        # sqlite3 对 INSERT ... RETURN ROWID 的 lastrowid 理论上可为 None（驱动类型标注），
+        # 实际插入必给行 id；None 即异常状态，转成 TypeError 早暴露
+        row_id = cursor.lastrowid
+        if row_id is None:
+            raise TypeError("backtest_results 插入未返回 rowid（lastrowid=None）")
+        return row_id
 
 
 def list_backtest_runs(

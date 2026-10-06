@@ -217,12 +217,16 @@ def evaluate_tilt(
         return None  # ATR 周期不够：倾向必须有止损距离才有意义，否则"没法算"
 
     # 通道：rolling_max/min 的倒数第二位 = 不含当前 bar 的此前 N 根极值
+    channel_high = rolling_max(highs, params.entry_window)[-2]
+    channel_low = rolling_min(lows, params.entry_window)[-2]
+    if channel_high is None or channel_low is None:
+        return None  # 窗口未满（长度门控之外的防御位）
     return _build_tilt(
         bars, len(bars) - 1, params,
         symbol=symbol, timeframe=timeframe,
         highs=highs, lows=lows, closes=closes, atr=atr,
-        channel_high=rolling_max(highs, params.entry_window)[-2],
-        channel_low=rolling_min(lows, params.entry_window)[-2],
+        channel_high=channel_high,
+        channel_low=channel_low,
     )
 
 
@@ -265,11 +269,15 @@ def tilt_series(
         atr = atr_all[index]
         if atr is None:
             continue  # 该位 ATR 周期未满 = 前缀评估会返回 None
+        channel_high = channel_high_all[index - 1]
+        channel_low = channel_low_all[index - 1]
+        if channel_high is None or channel_low is None:
+            continue
         result[index] = _build_tilt(
             bars, index, params,
             symbol=symbol, timeframe=timeframe,
             highs=highs, lows=lows, closes=closes, atr=atr,
-            channel_high=channel_high_all[index - 1],
-            channel_low=channel_low_all[index - 1],
+            channel_high=channel_high,
+            channel_low=channel_low,
         )
     return result

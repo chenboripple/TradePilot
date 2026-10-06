@@ -14,3 +14,8 @@ __pycache__/
 .DS_Store
 /reports/
 /build/
+
+# 测试覆盖率产物（CI 中 --cov 生成）
+.coverage
+coverage.xml
+htmlcov/

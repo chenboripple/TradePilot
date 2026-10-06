@@ -254,7 +254,7 @@ def list_stock_catalog(path: Path | None = None) -> List[Mapping[str, Any]]:
             """
         ).fetchall()
 
-    items = []
+    items: List[Mapping[str, Any]] = []
     for row in rows:
         item = dict(row)
         quote_price = item.pop("quote_price")

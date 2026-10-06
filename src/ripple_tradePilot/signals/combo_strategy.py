@@ -26,7 +26,7 @@ from ..models.types import Bar, Signal, Side
 from ..strategies.base import Strategy
 from .components import ComponentStateEngine, make_engine
 from .profile import ProfileSpec, parse_profile
-from .voting import REC_BUY, REC_HOLD, REC_SELL, decide
+from .voting import REC_BUY, REC_HOLD, REC_SELL, VoteDecision, decide
 
 
 class ComboVoteStateStrategy(Strategy):
@@ -53,7 +53,7 @@ class ComboVoteStateStrategy(Strategy):
             make_engine(component) for component in self.spec.components
         ]
         self._previous_recommendation = REC_HOLD
-        self._last_decision = None
+        self._last_decision: Optional[VoteDecision] = None
 
     # -- Strategy 接口 ------------------------------------------------------
 

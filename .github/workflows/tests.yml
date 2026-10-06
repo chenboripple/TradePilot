@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pytest:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -26,8 +26,58 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install package
-        run: pip install . pytest
+      - name: Install ruff
+        run: pip install ruff
 
-      - name: Run test suite
-        run: pytest tests/ -q
+      - name: Ruff lint（E4/E7/E9/F/T201，规则见 pyproject [tool.ruff]）
+        run: ruff check src/ tests/
+
+  mypy:
+    # 渐进收紧：先只查 storage/ + signals/（P5 拆分后最干净），不阻塞发布
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package + mypy
+        run: pip install . mypy
+
+      - name: Mypy type check（storage/ + signals/，范围见 pyproject [tool.mypy].files）
+        run: mypy
+
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package
+        run: pip install . pytest pytest-cov
+
+      - name: Run test suite（coverage 只出报告，不设门槛）
+        run: pytest tests/ -q --cov=ripple_tradePilot --cov-report=term
+
+      - name: Upload coverage artifact
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: .coverage
+          retention-days: 14

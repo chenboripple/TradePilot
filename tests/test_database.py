@@ -612,7 +612,7 @@ class SchemaV13MigrationTest(unittest.TestCase):
                 connection.execute("PRAGMA user_version=12")
             self.assertNotIn("signal_ledger", self._tables(target))
 
-            init_database(target)  # 重新初始化应补建 v13 表
+            init_database(target, force=True)  # 强制重跑引导，补建 v13 表
 
             tables = self._tables(target)
             self.assertIn("signal_ledger", tables)
@@ -628,6 +628,23 @@ class SchemaV13MigrationTest(unittest.TestCase):
             init_database(target)
             init_database(target)  # 第二次不得抛错或重复建表
             self.assertIn("signal_ledger", self._tables(target))
+            self.assertIn("kv_store", self._tables(target))
+
+    def test_init_once_skips_rebootstrap_within_process(self):
+        # init-once：同进程同路径已引导后，后续调用直接返回（不重跑 DDL）。
+        # 证明方式：外部 DROP 一张表后再 init（无 force）——若真的重跑引导，
+        # 表会被补回来；早退则保持缺失。force=True 才会补建。
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "init-once.db"
+            init_database(target)
+            with sqlite3.connect(target) as connection:
+                connection.execute("DROP TABLE kv_store")
+            self.assertNotIn("kv_store", self._tables(target))
+
+            init_database(target)  # 缓存命中，不重跑
+            self.assertNotIn("kv_store", self._tables(target))
+
+            init_database(target, force=True)  # 强制重跑，补建
             self.assertIn("kv_store", self._tables(target))
 
     def test_ledger_unique_constraint_present(self):
@@ -733,7 +750,7 @@ class SchemaV14MigrationTest(unittest.TestCase):
             self.assertNotIn("index_daily", self._tables(target))
             self.assertNotIn("industry_boards", self._tables(target))
 
-            init_database(target)  # 重新初始化应补建 v14 表
+            init_database(target, force=True)  # 强制重跑引导，补建 v14 表
 
             tables = self._tables(target)
             self.assertIn("index_daily", tables)
@@ -972,7 +989,7 @@ class SchemaV15MigrationTest(unittest.TestCase):
                 connection.execute("PRAGMA user_version=14")
             self.assertNotIn("ml_datasets", self._tables(target))
 
-            init_database(target)  # 重新初始化应补建 v15 表
+            init_database(target, force=True)  # 强制重跑引导，补建 v15 表
 
             self.assertIn("ml_datasets", self._tables(target))
             with sqlite3.connect(target) as connection:
@@ -1135,7 +1152,7 @@ class SchemaV15ModelsTest(unittest.TestCase):
                 connection.execute("PRAGMA user_version=14")
             self.assertNotIn("ml_models", self._tables(target))
 
-            init_database(target)  # 重新初始化补建 v15 ml_models
+            init_database(target, force=True)  # 强制重跑引导，补建 v15 ml_models
 
             self.assertIn("ml_models", self._tables(target))
             self.assertTrue(self.ML_MODELS_COLS.issubset(self._columns(target, "ml_models")))
@@ -1148,7 +1165,7 @@ class SchemaV15ModelsTest(unittest.TestCase):
             with sqlite3.connect(target) as connection:
                 connection.execute("ALTER TABLE ml_models DROP COLUMN oos_ece")
             self.assertNotIn("oos_ece", self._columns(target, "ml_models"))
-            init_database(target)
+            init_database(target, force=True)  # 外部改表后强制重跑补列
             self.assertIn("oos_ece", self._columns(target, "ml_models"))
 
     def test_ml_models_primary_key_is_model_id(self):

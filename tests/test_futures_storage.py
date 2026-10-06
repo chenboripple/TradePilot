@@ -65,7 +65,7 @@ class FuturesStorageSchemaTest(unittest.TestCase):
                               "futures_account_daily"):
                     connection.execute(f"DROP TABLE {table}")
                 connection.execute("PRAGMA user_version=15")
-            init_database(target)  # 重新初始化应补建 v16/v17 七表
+            init_database(target, force=True)  # 强制重跑引导，补建 v16/v17 七表
             with sqlite3.connect(target) as connection:
                 tables = {
                     row[0] for row in connection.execute(

@@ -9,6 +9,9 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 DATABASE_SCHEMA_VERSION = 17
 
+# 进程内已完成 schema 引导的库路径（init-once 缓存，见 init_database 文档）
+_INIT_DONE: set[Path] = set()
+
 
 BACKTEST_COLUMNS = {
     "id": "id INTEGER",
@@ -452,8 +455,20 @@ def _ensure_columns(connection: sqlite3.Connection, table_name: str, columns: Ma
             connection.execute(f'ALTER TABLE "{table_name}" ADD COLUMN {definition}')
 
 
-def init_database(path: Path | None = None) -> Path:
+def init_database(path: Path | None = None, *, force: bool = False) -> Path:
+    """确保 schema 就绪并返回库路径。
+
+    进程内 init-once：同一进程对同一路径只有首次调用会真正跑 DDL/迁移
+    （全量 schema 引导约 628 行 + 每表 PRAGMA + 全库 integrity_check 是
+    一次性的引导成本，CRUD 每次重跑是纯浪费）。schema 不会被本进程改坏：
+    引导是幂等的，且 ``_INIT_DONE`` 只在引导成功后登记。
+    逃生口：``force=True`` 强制重跑（升级/测试 DROP 表后重建场景）。
+    跨进程语义不变：每个进程首访各跑一次，与现状一致。
+    """
     target = path or database_path()
+    resolved = target.resolve()
+    if not force and resolved in _INIT_DONE:
+        return target
     target.parent.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(target, timeout=30) as connection:
@@ -1072,11 +1087,26 @@ def init_database(path: Path | None = None) -> Path:
             """
         )
         _ensure_columns(connection, "futures_account_daily", FUTURES_ACCOUNT_DAILY_COLUMNS)
-        integrity = connection.execute("PRAGMA integrity_check").fetchone()
-        if not integrity or integrity[0] != "ok":
-            raise RuntimeError(f"SQLite integrity check failed for {target}: {integrity}")
         connection.execute(f"PRAGMA user_version={DATABASE_SCHEMA_VERSION}")
 
+    _INIT_DONE.add(resolved)
+    return target
+
+
+def check_database_integrity(path: Path | None = None) -> Path:
+    """显式全库完整性校验（容器启动/部署升级时调用）。
+
+    ``PRAGMA integrity_check`` 是全库扫描，随 init-once 从常规引导中移出——
+    原先每次 CRUD 都会跑一遍，对大库是秒级纯开销。部署脚本
+    （docker-entrypoint / update_from_github.sh）已在每次启动/升级时显式
+    跑 ``python -m ripple_tradePilot.storage``，校验频率从"每次读写"合理化为
+    "每次部署"，且对损坏库的检测时机（部署时 fail-fast）反而更早暴露问题。
+    """
+    target = path or database_path()
+    with sqlite3.connect(target, timeout=30) as connection:
+        integrity = connection.execute("PRAGMA integrity_check").fetchone()
+    if not integrity or integrity[0] != "ok":
+        raise RuntimeError(f"SQLite integrity check failed for {target}: {integrity}")
     return target
 
 

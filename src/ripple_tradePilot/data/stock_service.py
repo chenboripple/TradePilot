@@ -745,9 +745,18 @@ class StockDataService:
             token,
             rate_limit_delay=float(tushare.get("rate_limit_delay", 1.5)),
         )
-        return loader.get_daily_bars(
+        frame = loader.get_daily_bars(
             symbol, start_date=start_date, end_date=end_date
         )
+        # 二道闸：loader 默认对 qfq 失败 fail-loud，但若上游显式请求了
+        # allow_unadjusted=True（attrs 标记 "none"），非 qfq 帧一律拒绝进入
+        # refresh 的 overlap 合并——不复权数据接进 qfq 库会整体切换复权基准。
+        if len(frame) and frame.attrs.get("adjust", "qfq") != "qfq":
+            raise StockDataUnavailableError(
+                f"{symbol} 返回非前复权日线（adjust="
+                f"{frame.attrs.get('adjust')}），拒绝混入 qfq 库存"
+            )
+        return frame
 
     @staticmethod
     def _fetch_akshare(

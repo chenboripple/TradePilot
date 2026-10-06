@@ -568,3 +568,168 @@ class StockDataServiceTest(unittest.TestCase):
 
         self.assertEqual(result["name"], "ST测试")
         self.assertEqual(FakeTushareLoader.catalog_requests, 0)
+
+
+class TushareLoaderAdjustGateTest(unittest.TestCase):
+    """C2 回归：qfq 失败默认 fail-loud，显式请求才回退不复权并带标记。"""
+
+    def _loader(self, daily_frame=None):
+        from unittest.mock import MagicMock
+
+        from ripple_tradePilot.data.tushare_loader import TushareDataLoader
+
+        with patch(
+            "ripple_tradePilot.data.tushare_loader.ts.set_token"
+        ), patch(
+            "ripple_tradePilot.data.tushare_loader.ts.pro_api"
+        ) as pro_api:
+            loader = TushareDataLoader("TESTTOKEN")
+            if daily_frame is not None:
+                pro_api.return_value.daily = MagicMock(return_value=daily_frame)
+                loader.pro = pro_api.return_value
+        return loader
+
+    def test_qfq_failure_raises_by_default(self):
+        from ripple_tradePilot.data.tushare_loader import (
+            AdjustedDataUnavailableError,
+        )
+
+        loader = self._loader(
+            daily_frame=pd.DataFrame(
+                [{"trade_date": "20260901", "open": 10, "high": 11,
+                  "low": 9, "close": 10.5, "vol": 100}]
+            )
+        )
+        with patch(
+            "ripple_tradePilot.data.tushare_loader.ts.pro_bar",
+            side_effect=RuntimeError("qfq 接口异常"),
+        ):
+            with self.assertRaises(AdjustedDataUnavailableError):
+                loader.get_daily_bars("600000.SH", "20260101", "20260131")
+
+    def test_qfq_empty_result_also_raises(self):
+        from ripple_tradePilot.data.tushare_loader import (
+            AdjustedDataUnavailableError,
+        )
+
+        loader = self._loader()
+        with patch(
+            "ripple_tradePilot.data.tushare_loader.ts.pro_bar",
+            return_value=pd.DataFrame(),
+        ):
+            with self.assertRaises(AdjustedDataUnavailableError):
+                loader.get_daily_bars("600000.SH", "20260101", "20260131")
+
+    def test_explicit_unadjusted_fallback_marks_frame(self):
+        loader = self._loader(
+            daily_frame=pd.DataFrame(
+                [
+                    {"trade_date": "20260902", "open": 10, "high": 11,
+                     "low": 9, "close": 10.5, "vol": 100},
+                    {"trade_date": "20260901", "open": 10, "high": 11,
+                     "low": 9, "close": 10.5, "vol": 100},
+                ]
+            )
+        )
+        with patch(
+            "ripple_tradePilot.data.tushare_loader.ts.pro_bar",
+            side_effect=RuntimeError("qfq 接口异常"),
+        ):
+            df = loader.get_daily_bars(
+                "600000.SH", "20260101", "20260131", allow_unadjusted=True)
+        self.assertEqual(len(df), 2)
+        self.assertEqual(df.iloc[0]["trade_date"], "20260901")  # 清洗后升序
+        self.assertEqual(df.attrs.get("adjust"), "none")
+
+    def test_qfq_success_marks_frame(self):
+        loader = self._loader()
+        with patch(
+            "ripple_tradePilot.data.tushare_loader.ts.pro_bar",
+            return_value=pd.DataFrame(
+                [{"trade_date": "20260901", "open": 10, "high": 11,
+                  "low": 9, "close": 10.5, "vol": 100}]
+            ),
+        ):
+            df = loader.get_daily_bars("600000.SH", "20260101", "20260131")
+        self.assertEqual(df.attrs.get("adjust"), "qfq")
+
+
+class AdjustFallbackRefreshTest(unittest.TestCase):
+    """C2 回归：tushare qfq 失败 → akshare qfq 兜底，数据照常入库。"""
+
+    def test_refresh_falls_back_to_akshare_qfq(self):
+        from ripple_tradePilot.data.tushare_loader import (
+            AdjustedDataUnavailableError,
+        )
+
+        class QfqBrokenService(StockDataService):
+            def _fetch_tushare(self, symbol, start_date, end_date):
+                raise AdjustedDataUnavailableError("前复权日线不可用")
+
+        akshare_frame = pd.DataFrame(
+            [
+                {"trade_date": "20260831", "open": 10, "high": 11,
+                 "low": 9, "close": 10.5, "vol": 100},
+                {"trade_date": "20260901", "open": 10.5, "high": 12,
+                 "low": 10, "close": 11.8, "vol": 120},
+            ]
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = root / "config.yaml"
+            config.write_text(
+                "symbols:\n  - code: 600000.SH\n    name: 测试银行\n",
+                encoding="utf-8",
+            )
+            database = root / "market.db"
+            service = QfqBrokenService(config_path=config, database=database)
+            with patch.object(
+                StockDataService, "_fetch_akshare", return_value=akshare_frame
+            ) as ak_fetch:
+                result = service.refresh("600000", initial_days=365)
+
+            ak_fetch.assert_called_once()
+            self.assertEqual(result["source"], "akshare")
+            rows = load_daily_bars("600000.SH", database)
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[-1]["adjust"], "qfq")  # 落库仍是 qfq 口径
+
+    def test_unadjusted_frame_rejected_before_write(self):
+        """loader 返回 attrs["adjust"]="none" 帧 → 真实 _fetch_tushare 闸门拒收。"""
+
+        class MarkedUnadjustedLoader:
+            def __init__(self, token, rate_limit_delay=1.5):
+                pass
+
+            def get_daily_bars(self, symbol, start_date, end_date):
+                frame = pd.DataFrame(
+                    [{"trade_date": "20260901", "open": 10, "high": 11,
+                      "low": 9, "close": 10.5, "vol": 100}]
+                )
+                frame.attrs["adjust"] = "none"
+                return frame
+
+        akshare_frame = pd.DataFrame(
+            [{"trade_date": "20260901", "open": 10.5, "high": 12,
+              "low": 10, "close": 11.8, "vol": 120}]
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = root / "config.yaml"
+            config.write_text(
+                "tushare:\n  token: test-token\n"
+                "symbols:\n  - code: 600000.SH\n    name: 测试银行\n",
+                encoding="utf-8",
+            )
+            database = root / "market.db"
+            service = StockDataService(config_path=config, database=database)
+            with patch(
+                "ripple_tradePilot.data.stock_service.TushareDataLoader",
+                MarkedUnadjustedLoader,
+            ), patch.object(
+                StockDataService, "_fetch_akshare", return_value=akshare_frame
+            ) as ak_fetch:
+                result = service.refresh("600000", initial_days=365)
+
+            ak_fetch.assert_called_once()
+            self.assertEqual(result["source"], "akshare")

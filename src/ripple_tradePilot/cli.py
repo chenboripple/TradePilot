@@ -141,7 +141,7 @@ def backtest(symbol, days, strategy, cash, execution, benchmark, ledger, no_save
     from .backtest.report import compute_metrics, compute_trade_stats
     from .backtest.rules import MarketRules, price_limit_for_symbol
     from .backtest.serialize import serialize_backtest_result
-    from .data.tushare_loader import TushareDataLoader
+    from .data.tushare_loader import AdjustedDataUnavailableError, TushareDataLoader
 
     _reject_futures_symbol(symbol)
 
@@ -157,7 +157,11 @@ def backtest(symbol, days, strategy, cash, execution, benchmark, ledger, no_save
     start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
 
     click.echo(f"加载行情：{symbol} {start_date} ~ {end_date}（前复权）")
-    bars = list(loader.load_bars(symbol, start_date=start_date, end_date=end_date))
+    try:
+        bars = list(loader.load_bars(symbol, start_date=start_date, end_date=end_date))
+    except AdjustedDataUnavailableError as e:
+        click.echo(f"❌ {e}", err=True)
+        sys.exit(1)
     if len(bars) < 30:
         click.echo(f"❌ 行情数据不足（{len(bars)} 条），请检查 token 权限或股票代码", err=True)
         sys.exit(1)
@@ -332,7 +336,7 @@ def walkforward(symbol, days, strategy, splits, execution, warmup, select_by, no
     from .backtest.rules import MarketRules, price_limit_for_symbol
     from .backtest.serialize import serialize_walkforward_report
     from .backtest.walkforward import walk_forward
-    from .data.tushare_loader import TushareDataLoader
+    from .data.tushare_loader import AdjustedDataUnavailableError, TushareDataLoader
 
     _reject_futures_symbol(symbol)
 
@@ -346,7 +350,11 @@ def walkforward(symbol, days, strategy, splits, execution, warmup, select_by, no
     loader = TushareDataLoader(token)
     end_date = datetime.now().strftime('%Y%m%d')
     start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
-    bars = list(loader.load_bars(symbol, start_date=start_date, end_date=end_date))
+    try:
+        bars = list(loader.load_bars(symbol, start_date=start_date, end_date=end_date))
+    except AdjustedDataUnavailableError as e:
+        click.echo(f"❌ {e}", err=True)
+        sys.exit(1)
     if len(bars) < splits * 60:
         click.echo(f"❌ 数据不足（{len(bars)} 根 K 线），walk-forward 建议至少 {splits * 60} 根", err=True)
         sys.exit(1)
@@ -593,7 +601,7 @@ def config():
 @click.argument('symbol')
 def screen(symbol):
     """趋势筛选：均线多头排列 + 近 20 日涨幅"""
-    from .data.tushare_loader import TushareDataLoader
+    from .data.tushare_loader import AdjustedDataUnavailableError, TushareDataLoader
 
     try:
         cfg = load_config()
@@ -603,7 +611,11 @@ def screen(symbol):
         sys.exit(1)
 
     loader = TushareDataLoader(token)
-    bars = list(loader.load_bars(symbol, start_date=(datetime.now() - timedelta(days=90)).strftime('%Y%m%d')))
+    try:
+        bars = list(loader.load_bars(symbol, start_date=(datetime.now() - timedelta(days=90)).strftime('%Y%m%d')))
+    except AdjustedDataUnavailableError as e:
+        click.echo(f"❌ {e}", err=True)
+        sys.exit(1)
     if len(bars) < 25:
         click.echo(f"❌ 行情数据不足（{len(bars)} 条）", err=True)
         sys.exit(1)

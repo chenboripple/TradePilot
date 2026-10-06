@@ -26,7 +26,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from ripple_tradePilot.data.tushare_loader import TushareDataLoader
+from ripple_tradePilot.data.tushare_loader import AdjustedDataUnavailableError, TushareDataLoader
 from ripple_tradePilot.models.types import Bar, Side
 from ripple_tradePilot.notifiers.feishu import FeishuWebhookNotifier
 from ripple_tradePilot.strategies.bollinger import BollingerBands
@@ -294,6 +294,16 @@ def fetch_bars(loader: TushareDataLoader, ts_code: str, days: int = 365, refresh
 
     newer_df = pd.DataFrame()
     older_df = pd.DataFrame()
+
+    def _safe_load(start: str, end: str) -> List[Bar]:
+        # qfq 不可用时 loader 会 fail-loud（AdjustedDataUnavailableError）：
+        # 单标的失败只记为该标的无数据，不炸整个扫描循环（回落本地缓存）。
+        try:
+            return list(loader.load_bars(ts_code, start, end))
+        except AdjustedDataUnavailableError as e:
+            print(f"[行情拉取失败] {ts_code}: {e}")
+            return []
+
     if not cached_df.empty and not cache_is_stale:
         cached_df["trade_date_dt"] = pd.to_datetime(cached_df["trade_date"], format="%Y%m%d", errors="coerce")
         cached_df = cached_df.dropna(subset=["trade_date_dt"]).sort_values("trade_date_dt")
@@ -302,12 +312,9 @@ def fetch_bars(loader: TushareDataLoader, ts_code: str, days: int = 365, refresh
 
         newer_start = max(window_start, latest_cached + timedelta(days=1))
         if newer_start <= end_date:
-            newer_bars = list(
-                loader.load_bars(
-                    ts_code,
-                    newer_start.strftime("%Y%m%d"),
-                    end_date.strftime("%Y%m%d"),
-                )
+            newer_bars = _safe_load(
+                newer_start.strftime("%Y%m%d"),
+                end_date.strftime("%Y%m%d"),
             )
             if newer_bars:
                 newer_df = _bars_to_dataframe(newer_bars)
@@ -315,22 +322,16 @@ def fetch_bars(loader: TushareDataLoader, ts_code: str, days: int = 365, refresh
         if earliest_cached > window_start:
             older_end = earliest_cached - timedelta(days=1)
             if window_start <= older_end:
-                older_bars = list(
-                    loader.load_bars(
-                        ts_code,
-                        window_start.strftime("%Y%m%d"),
-                        older_end.strftime("%Y%m%d"),
-                    )
+                older_bars = _safe_load(
+                    window_start.strftime("%Y%m%d"),
+                    older_end.strftime("%Y%m%d"),
                 )
                 if older_bars:
                     older_df = _bars_to_dataframe(older_bars)
     else:
-        all_bars = list(
-            loader.load_bars(
-                ts_code,
-                window_start.strftime("%Y%m%d"),
-                end_date.strftime("%Y%m%d"),
-            )
+        all_bars = _safe_load(
+            window_start.strftime("%Y%m%d"),
+            end_date.strftime("%Y%m%d"),
         )
         if all_bars:
             newer_df = _bars_to_dataframe(all_bars)

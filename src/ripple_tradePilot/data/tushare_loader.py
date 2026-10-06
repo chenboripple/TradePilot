@@ -9,6 +9,7 @@ Tushare 数据加载器
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -19,6 +20,18 @@ import tushare as ts
 import akshare as ak
 
 from ripple_tradePilot.models.types import Bar
+
+logger = logging.getLogger(__name__)
+
+
+class AdjustedDataUnavailableError(RuntimeError):
+    """前复权日线不可用。
+
+    不复权序列在除权除息日有假跳空，静默降级会污染信号与库内 qfq 存量
+    （overlap 合并把不复权新数据接进 qfq 历史，复权基准被整体切换）。
+    需要不复权数据时显式传 ``allow_unadjusted=True``，返回帧带
+    ``attrs["adjust"] = "none"`` 标记供调用方拒收。
+    """
 
 
 def _is_valid_ohlc(open_price: float, high: float, low: float, close: float) -> bool:
@@ -108,20 +121,26 @@ class TushareDataLoader:
         ts_code: str,
         start_date: str | None = None,
         end_date: str | None = None,
+        *,
+        allow_unadjusted: bool = False,
     ) -> pd.DataFrame:
         """
         获取日线数据（限流：50 次/分钟）
-        
+
         Args:
             ts_code: 股票代码，如 '002022.SZ'
             start_date: 开始日期，格式 'YYYYMMDD'，默认 30 天前
             end_date: 结束日期，格式 'YYYYMMDD'，默认今天
-        
+            allow_unadjusted: 显式允许 qfq 失败时回退不复权（返回帧
+                ``attrs["adjust"] = "none"``；默认 False 即拒绝降级）
+
         Returns:
             DataFrame with columns: trade_date, open, high, low, close, vol, amount
+            成功路径带 ``attrs["adjust"] = "qfq"`` 标记。
 
         默认取前复权（qfq）数据：不复权序列在除权除息日会产生假跳空，
-        污染信号与盈亏。pro_bar 不可用时退回不复权 daily 并明确提示。
+        污染信号与盈亏。qfq 不可用时**抛** :class:`AdjustedDataUnavailableError`
+        而非静默回退——由调用方决定降级链（如 tushare→akshare 的 qfq→qfq）。
         """
         self._rate_limit()
         if end_date is None:
@@ -130,6 +149,8 @@ class TushareDataLoader:
             start_date = (datetime.now() - timedelta(days=365)).strftime('%Y%m%d')
 
         df = None
+        adjust = "qfq"
+        qfq_error: Exception | None = None
         try:
             df = ts.pro_bar(
                 ts_code=ts_code,
@@ -138,22 +159,34 @@ class TushareDataLoader:
                 adj='qfq',
             )
         except Exception as e:
-            print(f"前复权日线获取失败，回退不复权数据：{e}")
+            qfq_error = e
 
         if df is None or len(df) == 0:
+            if not allow_unadjusted:
+                raise AdjustedDataUnavailableError(
+                    f"{ts_code} 前复权日线不可用"
+                    f"（pro_bar(adj='qfq') {'失败：' + str(qfq_error) if qfq_error else '返回为空'}），"
+                    "拒绝静默降级为不复权数据（除权日假跳空会污染信号与 qfq 库存）；"
+                    "确需不复权数据请显式传 allow_unadjusted=True"
+                )
+            if qfq_error is not None:
+                logger.warning(
+                    "%s 前复权日线失败，按显式请求回退不复权：%s", ts_code, qfq_error)
             df = self.pro.daily(
                 ts_code=ts_code,
                 start_date=start_date,
                 end_date=end_date
             )
-
-        if df is None or len(df) == 0:
-            return pd.DataFrame()
+            if df is None or len(df) == 0:
+                return pd.DataFrame()
+            adjust = "none"
 
         # 数据清洗
         df = df.sort_values('trade_date', ascending=True)
         df = df.reset_index(drop=True)
-
+        # 标记放在全部变换之后：pandas 部分操作不保证保留 attrs，
+        # "none" 标记若丢失会让 stock_service 的拒收闸失效
+        df.attrs["adjust"] = adjust
         return df
 
     def get_index_bars(
@@ -247,8 +280,14 @@ class TushareDataLoader:
                 period = '1'
             try:
                 df = ak.stock_zh_a_hist_min_em(symbol=ak_symbol, period=period, adjust='qfq')
-            except Exception:
+                df.attrs["adjust"] = "qfq"
+            except Exception as qfq_error:
+                # 分钟线仅用于盘中展示/监控，不落 qfq 日线库——回退可接受，
+                # 但要留痕（attrs 标记 + 日志），不允许静默混口径。
+                logger.warning("%s 分钟线前复权失败，回退不复权（仅盘中用）：%s",
+                               ak_symbol, qfq_error)
                 df = ak.stock_zh_a_hist_min_em(symbol=ak_symbol, period=period, adjust='')
+                df.attrs["adjust"] = "none"
             df = self._normalize_ak_minute_df(df)
             if len(df) > 0:
                 start_ts = pd.to_datetime(start_dt)

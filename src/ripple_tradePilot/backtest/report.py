@@ -23,6 +23,9 @@ class Metrics:
     max_drawdown: float
     sharpe: float
     annual_return: float = 0.0
+    # 夏普年化用的持仓覆盖率（持仓日数 / 总收益样本数）；1.0 = 全样本口径。
+    # 序列化侧以此标注「held-coverage-scaled-v2」年化口径，历史记录不可直接对比。
+    sharpe_coverage: float = 1.0
 
 
 @dataclass
@@ -58,6 +61,12 @@ def compute_metrics(
     的收益计算夏普。空仓日的 0 收益会同时稀释均值与波动率，把全样本夏普向 0
     拉低并混入仓位管理的影响；持仓日口径衡量的是策略"在场内"的每持仓日风险
     调整收益，便于横向比较信号质量。不传 ``positions`` 时退回全样本口径（向后兼容）。
+
+    年化缩放（held-coverage-scaled-v2）：持仓日是稀疏子集，按 √252 年化等于
+    假设每年有 252 个持仓日——低覆盖策略的夏普被系统性高估，且越少持仓越虚高，
+    会带偏 ``select_by="sharpe"`` 的选参（偏向少持仓日的参数）。修正为
+    ``√(252 × 覆盖率)``，覆盖率 = 持仓日数/总收益样本数（``Metrics.sharpe_coverage``）：
+    满仓策略覆盖率 1 → 与全样本口径完全一致；低覆盖按 √覆盖率 收缩。
     """
     eq = np.array(equity_curve, dtype=float)
     if len(eq) < 2:
@@ -72,14 +81,17 @@ def compute_metrics(
 
     # 夏普用的收益序列：默认全样本；给了持仓序列则只取持仓日（returns[i] 对应 positions[i]）
     sharpe_returns = returns
+    coverage = 1.0
     if positions is not None:
         held = np.asarray(list(positions), dtype=float)[: len(returns)] > 0
         if held.any():
             sharpe_returns = returns[held]
+            coverage = float(held.sum()) / len(returns)
 
     if len(sharpe_returns) >= 2 and sharpe_returns.std() != 0:
         sharpe = float(
-            sharpe_returns.mean() / sharpe_returns.std() * np.sqrt(trading_days_per_year)
+            sharpe_returns.mean() / sharpe_returns.std()
+            * np.sqrt(trading_days_per_year * coverage)
         )
     else:
         sharpe = 0.0
@@ -97,6 +109,7 @@ def compute_metrics(
         max_drawdown=max_drawdown,
         sharpe=sharpe,
         annual_return=annual_return,
+        sharpe_coverage=coverage,
     )
 
 

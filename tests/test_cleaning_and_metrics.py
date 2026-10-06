@@ -57,16 +57,41 @@ class PositionAwareSharpeTest(unittest.TestCase):
         self.positions = [0, 0, 100, 100, 0, 200]
 
     def test_positions_sharpe_uses_only_held_days(self):
+        # held-coverage-scaled-v2：持仓日 mean/std × √(252 × 覆盖率)。
+        # 覆盖率 = 持仓日数/总收益样本数（本夹具 2/5=0.4）。
         returns = np.diff(self.equity) / np.array(self.equity[:-1])
         held = np.array(self.positions[: len(returns)]) > 0
+        coverage = held.sum() / len(returns)
         expected = float(returns[held].mean() / returns[held].std()
-                         * np.sqrt(252))
+                         * np.sqrt(252 * coverage))
         metrics = compute_metrics(self.equity, positions=self.positions)
         self.assertAlmostEqual(metrics.sharpe, expected, places=10)
-        # 空仓 0 收益同时稀释均值与波动率，把全样本夏普向 0 拉低；
-        # 持仓日口径剔除了这种稀释（对盈利策略恒有 held ≥ full）
+        self.assertAlmostEqual(metrics.sharpe_coverage, coverage, places=10)
+        # 低覆盖策略按 √覆盖率 收缩：稀疏持仓日的夏普不再虚高于全样本口径
         full = compute_metrics(self.equity)
-        self.assertGreater(metrics.sharpe, full.sharpe)
+        self.assertEqual(full.sharpe_coverage, 1.0)
+        self.assertLess(metrics.sharpe, full.sharpe)
+
+    def test_full_coverage_matches_full_sample_exactly(self):
+        # 满仓（覆盖率 1）→ 与全样本口径逐位一致（向后兼容最好情况）
+        positions = [100] * len(self.equity)
+        metrics = compute_metrics(self.equity, positions=positions)
+        self.assertAlmostEqual(metrics.sharpe,
+                               compute_metrics(self.equity).sharpe, places=10)
+        self.assertEqual(metrics.sharpe_coverage, 1.0)
+
+    def test_alternating_coverage_shrinks_by_sqrt(self):
+        # 隔日持仓（覆盖率 0.5）→ 持仓日夏普 × √(252×0.5)，
+        # 恰为「持仓日序列 × √252」结果的 √0.5 倍
+        rng = np.random.default_rng(7)
+        equity = 100.0 * np.cumprod(1.0 + rng.normal(0.001, 0.02, 101))
+        positions = [100 if i % 2 == 0 else 0 for i in range(len(equity))]
+        returns = np.diff(equity) / equity[:-1]
+        held = np.array(positions[:-1]) > 0
+        legacy = float(returns[held].mean() / returns[held].std() * np.sqrt(252))
+        metrics = compute_metrics(list(equity), positions=positions)
+        self.assertAlmostEqual(metrics.sharpe_coverage, 0.5, places=10)
+        self.assertAlmostEqual(metrics.sharpe, legacy * np.sqrt(0.5), places=10)
 
     def test_no_positions_falls_back_to_full_sample(self):
         # 全空仓时 held.any() 为 False，退回全样本口径（不抛错、不归零）

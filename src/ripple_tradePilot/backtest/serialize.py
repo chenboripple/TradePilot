@@ -54,6 +54,10 @@ def serialize_backtest_result(
             "annual_return": metrics.annual_return,
             "max_drawdown": metrics.max_drawdown,
             "sharpe": metrics.sharpe,
+            # 口径标注（诚实披露）：持仓日夏普按 √(252×覆盖率) 年化，
+            # 与 v0.5.x 之前的 ×√252 记录不可直接对比
+            "sharpe_annualization": "held-coverage-scaled-v2",
+            "sharpe_coverage": getattr(metrics, "sharpe_coverage", 1.0),
         },
         "trades": {
             "num_trades": stats.num_trades,
@@ -97,6 +101,7 @@ def _metrics_dict(metrics: Any) -> Dict[str, float]:
         "annual_return": metrics.annual_return,
         "max_drawdown": metrics.max_drawdown,
         "sharpe": metrics.sharpe,
+        "sharpe_coverage": getattr(metrics, "sharpe_coverage", 1.0),
     }
 
 

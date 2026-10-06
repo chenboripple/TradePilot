@@ -2,7 +2,7 @@
 
 ## ✅ 当前状态
 
-- **App ID**: `cli_a93f27f7f4789bca` ✅
+- **App ID**: `REDACTED_APP_ID` ✅
 - **App Secret**: 正确 ✅
 - **Token 获取**: 成功 ✅
 - **权限状态**: ❌ 需要开通
@@ -13,13 +13,13 @@
 
 ### 步骤 1: 打开飞书开放平台
 
-访问：https://open.feishu.cn/app/cli_a93f27f7f4789bca/auth
+访问：https://open.feishu.cn/app/REDACTED_APP_ID/auth
 
 或者直接：
 1. 打开 https://open.feishu.cn/
 2. 登录企业账号
 3. 点击「应用管理」
-4. 找到应用 `cli_a93f27f7f4789bca`
+4. 找到应用 `REDACTED_APP_ID`
 
 ---
 
@@ -29,7 +29,7 @@
 
 点击链接直接申请权限：
 ```
-https://open.feishu.cn/app/cli_a93f27f7f4789bca/auth?q=im:chat:readonly,im:chat,im:chat.group_info:readonly,im:chat:read&op_from=openapi&token_type=tenant
+https://open.feishu.cn/app/REDACTED_APP_ID/auth?q=im:chat:readonly,im:chat,im:chat.group_info:readonly,im:chat:read&op_from=openapi&token_type=tenant
 ```
 
 **方式 B: 手动开通**
@@ -51,7 +51,7 @@ https://open.feishu.cn/app/cli_a93f27f7f4789bca/auth?q=im:chat:readonly,im:chat,
 2. 点击群设置（右上角 ⚙️）
 3. 点击「机器人」
 4. 点击「添加机器人」
-5. 选择你的应用 `cli_a93f27f7f4789bca`
+5. 选择你的应用 `REDACTED_APP_ID`
 6. 点击「完成」
 
 ---
@@ -85,7 +85,7 @@ PYTHONPATH=src python3 experiments/test_feishu_direct.py
 notifiers:
   feishu:
     enabled: true
-    app_id: "cli_a93f27f7f4789bca"
+    app_id: "REDACTED_APP_ID"
     app_secret: "jyq6w22xNvN8QL9lyxHXDeBpTopzBKxR"
     chat_id: "oc_XXXXXXXXXXXXXXXX"  # ← 填入你的群聊 ID
 ```
@@ -141,5 +141,5 @@ PYTHONPATH=src python3 experiments/test_feishu.py
 
 **快速链接：**
 - [飞书开放平台](https://open.feishu.cn/)
-- [权限管理](https://open.feishu.cn/app/cli_a93f27f7f4789bca/auth)
+- [权限管理](https://open.feishu.cn/app/REDACTED_APP_ID/auth)
 - [机器人文档](https://open.feishu.cn/document/ukTMukTMukTM/uYjNwYjL2YDM14SMzATN)

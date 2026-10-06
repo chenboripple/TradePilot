@@ -34,5 +34,5 @@ else:
     print("❌ 发送失败")
     print(f"\n错误信息：{result.get('msg', 'Unknown')}")
     print("\n💡 请在飞书开放平台关闭签名校验:")
-    print("   https://open.feishu.cn/app/cli_a93f27f7f4789bca")
+    print("   https://open.feishu.cn/app/REDACTED_APP_ID")
     print("   应用管理 → 机器人 → 安全设置 → 关闭签名校验")

@@ -19,7 +19,7 @@ import httpx
 from ripple_tradePilot.models.types import Bar, Side
 
 # 配置
-APP_ID = "cli_a93f27f7f4789bca"
+APP_ID = "REDACTED_APP_ID"
 APP_SECRET = "jyq6w22xNvN8QL9lyxHXDeBpTopzBKxR"
 
 print("="*70)
@@ -110,7 +110,7 @@ try:
             print("   1. 在飞书中创建一个群聊")
             print("   2. 添加机器人到群:")
             print("      - 群设置 → 机器人 → 添加机器人")
-            print("      - 选择你的应用 (cli_a93f27f7f4789bca)")
+            print("      - 选择你的应用 (REDACTED_APP_ID)")
             print("   3. 重新运行此脚本")
     else:
         print(f"⚠️  获取群聊失败：{result}")

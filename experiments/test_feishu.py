@@ -49,7 +49,7 @@ if not WEBHOOK_URL:
     print("\n❌ 错误：未配置 Webhook URL")
     print("\n📝 获取 Webhook 步骤：")
     print("   1. 打开飞书开放平台：https://open.feishu.cn/")
-    print("   2. 进入「应用管理」→ 选择你的应用 (cli_a93f27f7f4789bca)")
+    print("   2. 进入「应用管理」→ 选择你的应用 (REDACTED_APP_ID)")
     print("   3. 点击「机器人」或「Webhook」")
     print("   4. 复制 Webhook 地址")
     print("   5. 运行：echo 'WEBHOOK_URL=你的 webhook' >> .env")

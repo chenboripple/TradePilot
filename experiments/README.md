@@ -14,7 +14,7 @@
 - 窗口选择偏差：只展示表现好的区间（同一标的换窗口可从 +49% 变 -49.9%）。
 
 当前唯一可信口径：Web「回测记录」/ `tradepilot backtest`（统一撮合引擎）
-与 walk-forward 样本外验证。详见根目录 `BACKTEST_SUMMARY.md` 等报告顶部的可信度提示。
+与 walk-forward 样本外验证。详见 `docs/history/BACKTEST_SUMMARY.md` 等归档报告顶部的可信度提示。
 
 ## 重新运行
 

@@ -96,7 +96,7 @@ msg: sign match fail or timestamp is not within one hour from current time
 
 **方案 1: 关闭签名校验（推荐）**
 
-1. 访问：https://open.feishu.cn/app/cli_a93f27f7f4789bca
+1. 访问：https://open.feishu.cn/app/REDACTED_APP_ID
 2. 应用管理 → 机器人 → 安全设置
 3. 关闭「签名校验」开关
 4. 保存后测试：

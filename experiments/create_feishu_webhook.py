@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 import httpx
 from datetime import datetime
 
-APP_ID = "cli_a93f27f7f4789bca"
+APP_ID = "REDACTED_APP_ID"
 APP_SECRET = "jyq6w22xNvN8QL9lyxHXDeBpTopzBKxR"
 
 print("="*70)
@@ -54,7 +54,7 @@ print("📋 飞书机器人配置指南")
 print("="*70)
 print("""
 你的应用信息:
-  App ID:     cli_a93f27f7f4789bca
+  App ID:     REDACTED_APP_ID
   Token 状态：✅ 有效
 
 ⚠️  当前问题：应用缺少必要的权限
@@ -63,7 +63,7 @@ print("""
 
 1️⃣  开通权限
    点击以下链接直接申请：
-   https://open.feishu.cn/app/cli_a93f27f7f4789bca/auth?q=im:chat&op_from=openapi
+   https://open.feishu.cn/app/REDACTED_APP_ID/auth?q=im:chat&op_from=openapi
 
    或者手动操作：
    - 飞书开放平台 → 应用管理 → 权限管理
@@ -73,7 +73,7 @@ print("""
 2️⃣ 添加机器人到群
    - 在飞书中打开一个群聊
    - 群设置 → 机器人 → 添加机器人
-   - 选择你的应用 (cli_a93f27f7f4789bca)
+   - 选择你的应用 (REDACTED_APP_ID)
 
 3️⃣ 重新测试
    运行：python3 test_feishu_direct.py

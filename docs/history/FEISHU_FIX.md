@@ -20,7 +20,7 @@ msg: sign match fail or timestamp is not within one hour from current time
 
 1. **访问飞书开放平台**
    ```
-   https://open.feishu.cn/app/cli_a93f27f7f4789bca
+   https://open.feishu.cn/app/REDACTED_APP_ID
    ```
 
 2. **进入安全设置**

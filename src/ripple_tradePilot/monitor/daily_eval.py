@@ -20,7 +20,7 @@ recommendation **进入** BUY/SELL 的转移点；"当日新事件" = 转移点�
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 

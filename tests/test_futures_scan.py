@@ -22,7 +22,6 @@ from ripple_tradePilot.storage.database import (
     list_notifications,
     load_futures_bars,
     load_futures_quote,
-    load_futures_quotes,
     upsert_futures_quotes,
 )
 

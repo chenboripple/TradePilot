@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
-from typing import Any, Iterable, List, Mapping, Optional
+from typing import Any, Iterable, List, Mapping
 
 from .schema import init_database
 

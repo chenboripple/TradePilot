@@ -5,7 +5,6 @@ P1 验收相关：端点纯读 DB 装配观察池快照（主力映射/量额/�
 前端显示「待扫描」而非报错。
 """
 
-import json
 import os
 import tempfile
 import unittest

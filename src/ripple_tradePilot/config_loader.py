@@ -9,9 +9,10 @@ TradePilot 配置加载器
 注意：不提供代码默认值，必须由用户配置
 """
 
+import copy
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 import yaml
 
@@ -19,6 +20,33 @@ import yaml
 # 用户配置目录
 USER_CONFIG_DIR = Path.home() / ".tradepilot"
 USER_CONFIG_FILE = USER_CONFIG_DIR / "config.yaml"
+
+# yaml 解析缓存：{路径: (mtime_ns, 配置 dict 深拷贝基线)}。
+# monitor/api 每次信号评估都 load_config，反复 yaml.safe_load 同一文件纯属浪费；
+# mtime_ns 变化（用户改配置）自动失效，环境变量覆盖与结构归一每次照常重放。
+_CONFIG_CACHE: Dict[Path, Tuple[int, Dict[str, Any]]] = {}
+
+
+def clear_config_cache() -> None:
+    """清空配置缓存。改写配置文件靠 mtime 自动失效；本函数供测试隔离与
+    「原地覆写但 mtime 不变」的极端场景手动逃生。"""
+    _CONFIG_CACHE.clear()
+
+
+def _read_yaml_config(path: Path) -> Dict[str, Any]:
+    """读 yaml 并按 (path, mtime_ns) 缓存；返回深拷贝，调用方改写不污染缓存。"""
+    try:
+        mtime_ns = path.stat().st_mtime_ns
+    except OSError:
+        _CONFIG_CACHE.pop(path, None)
+        return {}
+    cached = _CONFIG_CACHE.get(path)
+    if cached is not None and cached[0] == mtime_ns:
+        return copy.deepcopy(cached[1])
+    with open(path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f) or {}
+    _CONFIG_CACHE[path] = (mtime_ns, copy.deepcopy(config))
+    return copy.deepcopy(config)
 
 
 def resolve_config_path(explicit_path: Optional[str] = None) -> Path:
@@ -85,12 +113,9 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     Raises:
         FileNotFoundError: 配置文件不存在且未设置对应环境变量
     """
-    # 1. 加载用户配置
+    # 1. 加载用户配置（yaml 解析按 mtime 缓存；env 覆盖与归一每次重放）
     target_path = resolve_config_path(config_path)
-    config = {}
-    if target_path.exists():
-        with open(target_path, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f) or {}
+    config = _read_yaml_config(target_path)
     
     # 2. 环境变量覆盖
     env_mappings = {

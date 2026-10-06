@@ -7,7 +7,6 @@
 4. approximate 近似口径标记在两个 Schedule 的透出（无规则 → False）。
 """
 
-import math
 import unittest
 
 from ripple_tradePilot.backtest.futures_rules import (

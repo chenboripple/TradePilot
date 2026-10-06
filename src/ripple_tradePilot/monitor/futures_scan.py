@@ -33,7 +33,6 @@ from ripple_tradePilot.config_loader import load_config
 from ripple_tradePilot.data.futures_calendar import TradingCalendar
 from ripple_tradePilot.data.futures_meta import (
     PRODUCT_SPECS,
-    parse_contract_symbol,
 )
 from ripple_tradePilot.data.futures_service import (
     TIMEFRAME_60M,

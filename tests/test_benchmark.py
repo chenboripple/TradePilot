@@ -115,7 +115,6 @@ def make_loader(pro) -> TushareDataLoader:
     loader = object.__new__(TushareDataLoader)
     loader.pro = pro
     loader._rate_limit_delay = 0.0
-    loader._last_request_time = 0.0
     return loader
 
 
@@ -140,8 +139,8 @@ class GetIndexBarsTest(unittest.TestCase):
         self.assertEqual(pro.calls[0]['ts_code'], '000300.SH')
         self.assertEqual(pro.calls[0]['start_date'], '20260101')
         self.assertEqual(pro.calls[0]['end_date'], '20260103')
-        # 确认走过限流（_rate_limit 会刷新最近请求时间）
-        self.assertGreater(loader._last_request_time, 0.0)
+        # 确认走过限流（P7 起最近请求时刻是类属性——跨实例共享限流窗）
+        self.assertGreater(TushareDataLoader._last_request_time, 0.0)
 
     def test_api_error_returns_empty_dataframe(self):
         loader = make_loader(FakeProApi(error=RuntimeError('network down')))

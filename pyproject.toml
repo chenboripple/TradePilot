@@ -3,7 +3,7 @@ name = "ripple_tradePilot"
 version = "0.5.0"
 description = "Wave trading system with shared strategy core"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
   { name = "Ripple" }
 ]
@@ -13,7 +13,6 @@ classifiers = [
   "Topic :: Office/Business :: Financial :: Investment",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -57,3 +56,28 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# P7 首批（先宽后紧）：语法/未定义名/未用导入/裸 print。
+# 收紧（完整 E/W/I/UP/B 等）待 print→logger 与命名清理完成后再做。
+select = ["E4", "E7", "E9", "F", "T201"]
+
+[tool.ruff.lint.per-file-ignores]
+# 永久 facade：整个文件的存在意义就是 re-export，"未使用导入"是功能不是问题
+"src/ripple_tradePilot/storage/database.py" = ["F401"]
+# __main__ 是 CLI 入口，print 即用户界面
+"src/ripple_tradePilot/storage/__main__.py" = ["T201"]
+# importlib 显式取模块本体的打桩手法在注释之后，import 位置是刻意的
+"tests/test_market_overview.py" = ["E402"]
+
+[tool.mypy]
+# P7 渐进类型检查：只查 P5 拆分后最干净的域，先不 block CI
+files = ["src/ripple_tradePilot/storage", "src/ripple_tradePilot/signals"]
+ignore_missing_imports = true
+explicit_package_bases = true
+check_untyped_defs = true

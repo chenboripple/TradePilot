@@ -11,7 +11,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ripple_tradePilot.backtest.futures_account import FuturesAccount
 from ripple_tradePilot.backtest.futures_engine import (
     ContractInput,
     EngineConfig,

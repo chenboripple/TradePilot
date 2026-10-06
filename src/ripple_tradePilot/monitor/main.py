@@ -31,7 +31,7 @@ from ..data.tushare_loader import TushareDataLoader
 from ..models.types import Bar, Side, Signal
 from ..notifiers.feishu import FeishuWebhookNotifier
 from ..signals.backtest_profile import default_profile
-from ..signals.profile import ProfileSpec, UnsupportedProfileKindError, parse_profile
+from ..signals.profile import UnsupportedProfileKindError, parse_profile
 from ..storage.database import load_daily_bars, load_stock_quotes, stock_catalog_names
 from ..storage.signal_ledger import kv_get, kv_set, record_decision
 from ..storage.user_store import get_system_strategy
@@ -257,7 +257,6 @@ class SignalNotifier:
         import httpx
 
         webhook = self.config['wechat']['webhook']
-        color = "warning" if side == Side.BUY else "comment"
         payload = {
             "msgtype": "markdown",
             "markdown": {

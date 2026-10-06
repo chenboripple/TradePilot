@@ -27,7 +27,7 @@ from ripple_tradePilot.monitor.daily_eval import (
 )
 from ripple_tradePilot.signals.components import ComponentVote
 from ripple_tradePilot.signals.voting import VoteDecision, VoteEvent
-from ripple_tradePilot.storage.database import init_database, load_daily_bars, upsert_daily_bars
+from ripple_tradePilot.storage.database import init_database, upsert_daily_bars
 
 SYMBOL = "600000.SH"
 TS = datetime(2024, 1, 2)

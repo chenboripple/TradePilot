@@ -555,7 +555,6 @@ def heartbeat(allow_refit, days, symbol):
     data/backtest/heartbeat_strategy_state.json 路径与 schema 兼容存量。
     网格再拟合默认停用——须 --allow-refit 或 TRADEPILOT_AUTOFIT=1。
     """
-    import os
 
     from .monitor import heartbeat as hb
 

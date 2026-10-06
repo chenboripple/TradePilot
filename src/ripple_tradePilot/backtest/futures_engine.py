@@ -27,7 +27,6 @@ from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 from ..models.types import FuturesDirection, FuturesOffset, FuturesOrderStatus
 from ..signals.futures_eval import (
     TILT_LONG,
-    TILT_NEUTRAL,
     TILT_SHORT,
     DonchianParams,
     tilt_series,

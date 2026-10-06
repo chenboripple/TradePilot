@@ -50,12 +50,12 @@ def load_csv(path: str | Path) -> Iterable[Bar]:
     vol_col = next((c for c in VOLUME_COLUMNS if c in df.columns), None)
     volumes: Iterator[float] = (float(v) for v in df[vol_col]) if vol_col else itertools.repeat(0.0)
 
-    for ts, o, h, l, c, v in zip(timestamps, df["open"], df["high"], df["low"], df["close"], volumes):
+    for ts, o, h, low, c, v in zip(timestamps, df["open"], df["high"], df["low"], df["close"], volumes):
         yield Bar(
             timestamp=ts.to_pydatetime(),
             open=float(o),
             high=float(h),
-            low=float(l),
+            low=float(low),
             close=float(c),
             volume=v,
         )

@@ -92,8 +92,6 @@ from .futures_store import (
     insert_futures_trades,
     latest_futures_bar,
     list_futures_bar_symbols,
-    load_futures_orders,
-    load_futures_trades,
     list_notifications,
     load_futures_account_daily,
     load_futures_bars,

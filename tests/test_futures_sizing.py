@@ -22,7 +22,7 @@ from ripple_tradePilot.risk.sizing import (
 
 RB = PRODUCT_SPECS["RB"]
 CU = PRODUCT_SPECS["CU"]
-I = PRODUCT_SPECS["I"]
+IRON = PRODUCT_SPECS["I"]
 
 # 手算基准参数：止损倍数取 1，使止损距离 = ATR = 60（数字最干净）
 BASE_PARAMS = SizingParams(
@@ -42,7 +42,7 @@ class PerHandRiskFormulaTest(unittest.TestCase):
             # cu：乘数 5、每跳 50 → 100×5 + 164.2 + 2×1×50 = 764.2
             (CU, 100.0, 164.2, 1.0, 764.2),
             # i：乘数 100、每跳 50 → 30×100 + 28.6 + 2×2×50 = 3228.6
-            (I, 30.0, 28.6, 2.0, 3228.6),
+            (IRON, 30.0, 28.6, 2.0, 3228.6),
         ]
         for spec, stop, fee, slip, expected in cases:
             with self.subTest(spec=spec.code):

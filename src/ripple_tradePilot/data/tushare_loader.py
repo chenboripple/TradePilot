@@ -42,11 +42,21 @@ def _is_valid_ohlc(open_price: float, high: float, low: float, close: float) -> 
 
 class TushareDataLoader:
     """数据加载器：日线走 Tushare，当日分钟线/快照优先走 AkShare。"""
-    
+
+    # tushare 限频按 token 计——实例化多少个 loader 都是同一账号同一配额，
+    # 上次请求时刻提为类属性，跨实例共享限流窗（旧行为：每实例独立计时，
+    # 并发建多个 loader 会各自打满 50 次/分钟）
+    _last_request_time: float = 0.0
+    # 全市场 spot 快照昂贵（5000+ 行 HTTP 拉取），盘中间隔查询完全可共享：
+    # 10s TTL 内重复取同一张表直接复用（快照本来就是延迟行情，10s 足够新鲜）
+    _SPOT_TTL_SECONDS = 10.0
+    _spot_cache_df: Optional[pd.DataFrame] = None
+    _spot_cache_at: float = 0.0
+
     def __init__(self, token: str, rate_limit_delay: float = 1.5):
         """
         初始化数据加载器
-        
+
         Args:
             token: Tushare Token
             rate_limit_delay: 请求间隔秒数，默认 1.5 秒（确保不超过 50 次/分钟）
@@ -55,7 +65,6 @@ class TushareDataLoader:
         self.pro = ts.pro_api()
         self._token = token
         self._rate_limit_delay = rate_limit_delay
-        self._last_request_time = 0
     
     @staticmethod
     def _ts_to_ak_symbol(ts_code: str) -> str:
@@ -90,18 +99,25 @@ class TushareDataLoader:
         return data[['datetime', 'open', 'high', 'low', 'close', 'vol']].dropna()
 
     def _get_ak_realtime_df(self) -> pd.DataFrame:
+        """全市场 spot 快照（10s 类级 TTL 缓存，见类属性注释）。"""
+        now = time.monotonic()
+        cached = TushareDataLoader._spot_cache_df
+        if cached is not None and now - TushareDataLoader._spot_cache_at < self._SPOT_TTL_SECONDS:
+            return cached
         df = ak.stock_zh_a_spot_em()
         if df is None or len(df) == 0:
             return pd.DataFrame()
+        TushareDataLoader._spot_cache_df = df
+        TushareDataLoader._spot_cache_at = now
         return df
     
     def _rate_limit(self):
-        """限流保护：确保请求间隔不低于设定值"""
+        """限流保护：确保请求间隔不低于设定值（时刻存类属性，跨实例生效）"""
         now = time.time()
-        elapsed = now - self._last_request_time
+        elapsed = now - TushareDataLoader._last_request_time
         if elapsed < self._rate_limit_delay:
             time.sleep(self._rate_limit_delay - elapsed)
-        self._last_request_time = time.time()
+        TushareDataLoader._last_request_time = time.time()
     
     def get_stock_list(self) -> pd.DataFrame:
         """获取 A 股股票列表（限流：50 次/分钟）"""
@@ -343,8 +359,10 @@ class TushareDataLoader:
         加载日线为 Bar 迭代器（兼容回测引擎）
         """
         df = self.get_daily_bars(ts_code, start_date, end_date)
-        
-        for _, row in df.iterrows():
+
+        # to_dict(records) 而非 iterrows：后者逐行构造 Series（类型上抛+装箱），
+        # 全历史日线（数千行）时是回测取数热路径的主要浪费
+        for row in df.to_dict(orient="records"):
             try:
                 trade_date = datetime.strptime(row['trade_date'], '%Y%m%d')
                 open_price, high = float(row['open']), float(row['high'])
@@ -374,7 +392,8 @@ class TushareDataLoader:
         """加载分钟线为 Bar 迭代器（用于实时监控）。"""
         df = self.get_minute_bars(ts_code, start_dt, end_dt, freq=freq)
 
-        for _, row in df.iterrows():
+        # 同 load_bars：分钟线行数更大，避开 iterrows 的逐行 Series 构造
+        for row in df.to_dict(orient="records"):
             try:
                 open_price, high = float(row['open']), float(row['high'])
                 low, close = float(row['low']), float(row['close'])
@@ -452,7 +471,7 @@ if __name__ == "__main__":
     print("📈 获取科华生物 (002022.SZ) 日线数据...")
     df = loader.get_daily_bars('002022.SZ', start_date='20260101')
     print(f"   共 {len(df)} 条数据")
-    print(f"\n最近 5 个交易日:")
+    print("\n最近 5 个交易日:")
     print(df[['trade_date', 'open', 'high', 'low', 'close', 'vol']].tail())
     
     # 缓存到 CSV

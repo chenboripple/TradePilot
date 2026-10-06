@@ -109,8 +109,8 @@ class TrendFilteredStrategy(Strategy):
         self.name = f"{strategy.name}_tf"
 
     def on_bar(self, bar: Bar) -> Signal:
-        # 先更新趋势过滤
-        tf_signal = self.trend_filter.on_bar(bar)
+        # 先更新趋势过滤（返回值不用于本根判定，过滤状态在内部维持）
+        self.trend_filter.on_bar(bar)
         
         # 再更新基础策略
         base_signal = self.strategy.on_bar(bar)

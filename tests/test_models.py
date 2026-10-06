@@ -25,7 +25,7 @@ import numpy as np
 import synth
 
 from ripple_tradePilot.ml import calibration, evaluate, models, pipeline, registry, scoring
-from ripple_tradePilot.ml.models import TrainResult, _summarize, train_model
+from ripple_tradePilot.ml.models import _summarize, train_model
 from ripple_tradePilot.ml.splits import rolling_splits
 
 

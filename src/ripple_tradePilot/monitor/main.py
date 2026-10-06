@@ -203,9 +203,9 @@ class SignalNotifier:
 ━━━━━━━━━━━━━━━━
 """
 
-        # 控制台输出
+        # 控制台输出（print 即本通道的接口：由 console.enabled 门控，与 logger 双轨）
         if self.config.get('console', {}).get('enabled', True):
-            print(message)
+            print(message)  # noqa: T201 — 控制台通知通道本体，非日志
             logger.info(f"信号：{symbol} {side.value} @ {price:.2f}（{'盘中' if provisional else '收盘'}）")
 
         # 飞书信号通知（个股信号必须进飞书，而不仅是定期汇总）
@@ -244,7 +244,7 @@ class SignalNotifier:
     def send_price_alert(self, alert: PriceAlert):
         """发送价格预警（非交易信号，独立通道；前缀已在 alert.message 内）。"""
         if self.config.get('console', {}).get('enabled', True):
-            print(alert.message)
+            print(alert.message)  # noqa: T201 — 控制台通知通道本体，非日志
             logger.info(f"价格预警：{alert.symbol} {alert.kind} @ {alert.price:.2f}")
         if self.feishu is not None:
             try:

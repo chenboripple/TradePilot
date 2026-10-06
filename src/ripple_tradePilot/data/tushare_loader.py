@@ -237,11 +237,11 @@ class TushareDataLoader:
                 end_date=end_date,
             )
         except Exception as e:
-            print(f"获取指数日线失败（{index_code}）：{e}")
+            logger.warning("获取指数日线失败（%s）：%s", index_code, e)
             return pd.DataFrame()
 
         if df is None or len(df) == 0:
-            print(f"警告：指数日线为空（{index_code}），无法进行基准对比")
+            logger.warning("指数日线为空（%s），无法进行基准对比", index_code)
             return pd.DataFrame()
 
         df = df.sort_values('trade_date', ascending=True).reset_index(drop=True)
@@ -273,7 +273,7 @@ class TushareDataLoader:
                 'timestamp': datetime.now(),
             }
         except Exception as e:
-            print(f"获取实时行情失败（AkShare）：{e}")
+            logger.warning("获取实时行情失败（AkShare）：%s", e)
             return None
 
     def get_minute_bars(
@@ -312,7 +312,7 @@ class TushareDataLoader:
                 if len(df) > 0:
                     return df
         except Exception as e:
-            print(f"获取分钟线失败（AkShare）：{e}")
+            logger.warning("获取分钟线失败（AkShare）：%s", e)
 
         # AkShare 不可用时，回退到 Tushare，避免监控链路断掉
         self._rate_limit()
@@ -333,7 +333,7 @@ class TushareDataLoader:
                     freq=freq,
                 )
             except Exception as e:
-                print(f"获取分钟线失败（Tushare fallback）：{e}")
+                logger.warning("获取分钟线失败（Tushare fallback）：%s", e)
                 return pd.DataFrame()
 
         if df is None or len(df) == 0:
@@ -368,7 +368,7 @@ class TushareDataLoader:
                 open_price, high = float(row['open']), float(row['high'])
                 low, close = float(row['low']), float(row['close'])
                 if not _is_valid_ohlc(open_price, high, low, close):
-                    print(f"跳过异常 K 线（价格不合理）：{ts_code} {row['trade_date']} close={close}")
+                    logger.warning("跳过异常 K 线（价格不合理）：%s %s close=%s", ts_code, row['trade_date'], close)
                     continue
                 yield Bar(
                     timestamp=trade_date,
@@ -379,7 +379,7 @@ class TushareDataLoader:
                     volume=float(row.get('vol', 0)) * 100,  # 手转股
                 )
             except Exception as e:
-                print(f"解析 K 线失败：{row}, 错误：{e}")
+                logger.warning("解析 K 线失败：%r，错误：%s", row, e)
                 continue
 
     def load_minute_bars(
@@ -398,7 +398,7 @@ class TushareDataLoader:
                 open_price, high = float(row['open']), float(row['high'])
                 low, close = float(row['low']), float(row['close'])
                 if not _is_valid_ohlc(open_price, high, low, close):
-                    print(f"跳过异常分钟 K 线（价格不合理）：{ts_code} {row['datetime']} close={close}")
+                    logger.warning("跳过异常分钟 K 线（价格不合理）：%s %s close=%s", ts_code, row['datetime'], close)
                     continue
                 yield Bar(
                     timestamp=row['datetime'].to_pydatetime() if hasattr(row['datetime'], 'to_pydatetime') else row['datetime'],
@@ -409,7 +409,7 @@ class TushareDataLoader:
                     volume=float(row.get('vol', 0)) * 100,
                 )
             except Exception as e:
-                print(f"解析分钟 K 线失败：{row}, 错误：{e}")
+                logger.warning("解析分钟 K 线失败：%r，错误：%s", row, e)
                 continue
 
     def is_trade_day(self, date: datetime | None = None) -> bool:
@@ -432,7 +432,7 @@ class TushareDataLoader:
             if cal is not None and len(cal) > 0:
                 return str(cal.iloc[0].get('is_open', '0')) == '1'
         except Exception as e:
-            print(f"获取交易日历失败，回退到工作日判断：{e}")
+            logger.warning("获取交易日历失败，回退到工作日判断：%s", e)
 
         return date.weekday() < 5
     
@@ -459,34 +459,3 @@ class TushareDataLoader:
         
         return len(df)
 
-
-# 使用示例
-if __name__ == "__main__":
-    import time
-    
-    TOKEN = "your_tushare_token_here"
-    loader = TushareDataLoader(TOKEN)
-    
-    # 获取科华生物日线数据
-    print("📈 获取科华生物 (002022.SZ) 日线数据...")
-    df = loader.get_daily_bars('002022.SZ', start_date='20260101')
-    print(f"   共 {len(df)} 条数据")
-    print("\n最近 5 个交易日:")
-    print(df[['trade_date', 'open', 'high', 'low', 'close', 'vol']].tail())
-    
-    # 缓存到 CSV
-    print("\n💾 缓存到 data/002022.SZ.csv...")
-    count = loader.cache_to_csv('002022.SZ', 'data/002022.SZ.csv', start_date='20260101')
-    print(f"   缓存 {count} 条数据")
-    
-    # 测试 Bar 迭代器
-    print("\n🔁 测试 Bar 迭代器...")
-    bars = list(loader.load_bars('002022.SZ', start_date='20260101'))
-    print(f"   共 {len(bars)} 个 Bar")
-    if bars:
-        print(f"   最新 Bar: 日期={bars[-1].timestamp}, 收盘价={bars[-1].close}")
-    
-    print("\n" + "="*50)
-    print("✅ Tushare 数据加载器测试完成！")
-    print("="*50)
-    print("\n💡 提示：股票列表接口有限频，建议缓存使用")

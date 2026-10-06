@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import base64
 import hashlib
 import hmac
@@ -16,6 +18,8 @@ from typing import Optional
 import httpx
 
 from ripple_tradePilot.models.types import Bar, Side
+
+logger = logging.getLogger(__name__)
 
 
 class FeishuWebhookNotifier:
@@ -66,14 +70,14 @@ class FeishuWebhookNotifier:
 
             code = result.get("code", result.get("StatusCode", 0))
             if code != 0:
-                print(f"飞书 Webhook 发送失败：{result}")
+                logger.warning("飞书 Webhook 发送失败：%s", result)
                 return False
 
-            print("✅ 飞书消息发送成功")
+            logger.info("飞书消息发送成功")
             return True
 
         except Exception as e:
-            print(f"发送飞书通知异常：{e}")
+            logger.warning("发送飞书通知异常：%s", e)
             return False
     
     def send(self, symbol: str, name: str, side: Side, price: float,

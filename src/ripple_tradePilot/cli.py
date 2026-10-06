@@ -109,10 +109,13 @@ def cli():
 def init(config):
     """初始化配置文件"""
     config_path = Path(config) if config else None
-    init_config(config_path)
+    created = init_config(config_path)
     target = config_path or Path.home() / ".tradepilot" / "config.yaml"
-    click.echo(f"✅ 配置文件已创建: {target}")
-    click.echo("请编辑配置文件设置您的 API Key")
+    if created:
+        click.echo(f"✅ 配置文件已创建: {target}")
+        click.echo("请编辑配置文件设置您的 API Key")
+    else:
+        click.echo(f"⚠️  配置文件已存在，未做改动: {target}")
 
 
 @cli.command()

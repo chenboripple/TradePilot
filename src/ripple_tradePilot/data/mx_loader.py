@@ -368,7 +368,7 @@ class MXDataLoader:
                     volume=float(volume) if volume is not None else 0.0,
                 ))
             except Exception as e:
-                print(f"解析 K 线失败：{row}, 错误：{e}")
+                logger.warning("解析 K 线失败：%r，错误：%s", row, e)
                 continue
 
         # 量纲脏数据防护：妙想自然语言接口偶发返回与真实价相差数量级的价格
@@ -398,43 +398,8 @@ class MXDataLoader:
                     volume=float(row.get('vol', 0)),
                 ))
             except Exception as e:
-                print(f"解析分钟 K 线失败：{row}, 错误：{e}")
+                logger.warning("解析分钟 K 线失败：%r，错误：%s", row, e)
                 continue
 
         yield from reject_price_outliers(parsed)
 
-
-if __name__ == "__main__":
-    # 测试代码
-    print("🧪 测试东方财富妙想数据加载器...")
-    
-    try:
-        loader = MXDataLoader()
-        
-        # 测试日线数据
-        print("\n📈 测试日线数据：东方财富 (300059.SZ)")
-        df_daily = loader.get_daily_bars("300059.SZ", start_date="20250401", end_date="20250407")
-        print(f"   获取到 {len(df_daily)} 条日线数据")
-        if len(df_daily) > 0:
-            print(df_daily[['datetime', 'open', 'high', 'low', 'close', 'vol']].head())
-        
-        # 测试分钟数据
-        print("\n⏱️ 测试分钟数据：东方财富 (300059.SZ)")
-        df_minute = loader.get_minute_bars("300059.SZ", start_date="20250407", end_date="20250407")
-        print(f"   获取到 {len(df_minute)} 条分钟数据")
-        if len(df_minute) > 0:
-            print(df_minute[['datetime', 'open', 'high', 'low', 'close', 'vol']].head(10))
-        
-        # 测试 Bar 迭代器
-        print("\n🔁 测试 Bar 迭代器...")
-        bars = list(loader.load_minute_bars("300059.SZ", start_date="20250407", end_date="20250407"))
-        print(f"   共 {len(bars)} 个 Bar")
-        if bars:
-            print(f"   最新 Bar: 时间={bars[-1].timestamp}, 收盘价={bars[-1].close}")
-        
-        print("\n✅ 测试完成！")
-        
-    except Exception as e:
-        print(f"\n❌ 测试失败: {e}")
-        import traceback
-        traceback.print_exc()

@@ -10,11 +10,14 @@ TradePilot 配置加载器
 """
 
 import copy
+import logging
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 
 # 用户配置目录
@@ -167,18 +170,21 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     return config
 
 
-def init_config(config_path: Optional[Path] = None):
+def init_config(config_path: Optional[Path] = None) -> bool:
     """初始化用户配置文件
 
     Args:
         config_path: 可选，指定生成位置；默认 ~/.tradepilot/config.yaml
+
+    Returns:
+        True 表示新建了配置文件；False 表示文件已存在、未做改动。
     """
     target = Path(config_path) if config_path else USER_CONFIG_FILE
     target.parent.mkdir(parents=True, exist_ok=True)
 
     if target.exists():
-        print(f"⚠️  配置文件已存在: {target}")
-        return
+        logger.info("配置文件已存在，跳过初始化：%s", target)
+        return False
 
     default_config = """# TradePilot 用户配置
 # 设置环境变量或使用此配置文件
@@ -232,8 +238,8 @@ symbols:
 """
 
     target.write_text(default_config, encoding='utf-8')
-    print(f"✅ 配置文件已创建: {target}")
-    print("请编辑配置文件设置您的 API Key")
+    logger.info("配置文件已创建：%s", target)
+    return True
 
 
 def get_vote_threshold(config: Dict[str, Any]) -> int:

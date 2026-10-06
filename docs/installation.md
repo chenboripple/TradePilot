@@ -2,7 +2,7 @@
 
 ## 系统要求
 
-- **Python**: 3.9 或更高版本
+- **Python**: 3.10 或更高版本
 - **操作系统**: macOS、Linux、Windows
 - **网络**: 需要访问 Tushare、AkShare 等数据接口
 
@@ -189,11 +189,11 @@ pip install -e .
 
 ### Linux
 
-- 需要 Python 3.9+ 和 pip
+- 需要 Python 3.10+ 和 pip
 - 某些发行版需要安装 `python3-dev` 包
 
 ### Windows
 
-- 需要 Python 3.9+（从 python.org 安装）
+- 需要 Python 3.10+（从 python.org 安装）
 - 建议使用 PowerShell 或命令提示符
 - 可能需要安装 Microsoft C++ Build Tools

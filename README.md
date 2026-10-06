@@ -27,7 +27,7 @@ source .venv/bin/activate     # Windows: .venv\Scripts\activate
 ```bash
 git clone https://github.com/chenboripple/TradePilot.git
 cd TradePilot
-python3 -m venv .venv
+python3 -m venv .venv          # 需要 Python 3.10+（CI 矩阵：3.10/3.11/3.12）
 source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -e .
 ```
@@ -95,6 +95,11 @@ tradepilot futures scan
 tradepilot futures backtest -p RB
 tradepilot futures backtest -p RB --walkforward
 
+# 心跳参数巡检（统一回测引擎口径：next_open/印花税/T+1/涨跌停）。
+# 自动参数再拟合默认停用（过拟合风险，见 docs/project-analysis.md），
+# 需显式开启：tradepilot heartbeat --allow-refit
+tradepilot heartbeat
+
 # 启动 Web 监控台（浏览器访问 http://127.0.0.1:8000）
 tradepilot serve
 ```
@@ -121,7 +126,9 @@ TradePilot/
 │   ├── execution/            # 执行模块
 │   ├── risk/                 # 风控模块
 │   ├── notifiers/            # 通知模块
-│   ├── monitor/              # 监控模块
+│   ├── monitor/              # 监控模块（含 heartbeat 参数巡检）
+│   ├── storage/              # SQLite 存储层（schema/market/ml/futures/catalog，database.py 为 facade）
+│   ├── signals/              # 信号评估（投票组合、期货倾向）
 │   ├── api/                  # API 服务
 │   ├── config_loader.py      # 配置加载
 │   └── cli.py                # 命令行工具

@@ -61,6 +61,7 @@ class SegmentResult:
     test_equity: float
     test_return: float               # test_equity / initial_cash − 1
     fills: int = 0
+    rolls: int = 0                   # 段内换月次数（主力切换平旧开新）
 
 
 @dataclass
@@ -184,31 +185,34 @@ def futures_walkforward(
         return segments
 
     def run_segment(train_start: str, train_end: str,
-                    test_start: str, test_end: str) -> Tuple[int, float, float, int]:
+                    test_start: str, test_end: str) -> Tuple[int, float, float, int, int]:
         """训练段选参 → 测试段用选中参数独立跑一遍。"""
         chosen, train_equity = _select_window(
             bars_by_symbol, main_by_date, config, fee_schedule, margin_schedule,
-            train_start, train_end, params.entry_windows, warmup)
+            train_start, train_end, params.entry_windows, warmup, contracts,
+            roll_schedule)
         report = _run_once(bars_by_symbol, main_by_date, config, fee_schedule,
                            margin_schedule, chosen, warmup, test_start, test_end,
-                           contracts)
+                           contracts, roll_schedule)
         return chosen, train_equity, report.metrics["final_equity"], \
-            int(report.metrics["fills"])
+            int(report.metrics["fills"]), int(report.metrics["rolls"])
 
     def _select_window(bars_by_symbol, main_by_date, config, fee_schedule,
-                       margin_schedule, start, end, windows, warmup):
+                       margin_schedule, start, end, windows, warmup, contracts,
+                       roll_schedule):
         best_window, best_equity = None, None
         for window in sorted(windows):  # 升序遍历：平手时先到者（更小窗口）胜出
             report = _run_once(bars_by_symbol, main_by_date, config, fee_schedule,
                                margin_schedule, window, warmup, start, end,
-                               contracts)
+                               contracts, roll_schedule)
             equity = report.metrics["final_equity"]
             if best_equity is None or equity > best_equity:
                 best_window, best_equity = window, equity
         return best_window, best_equity
 
     def _run_once(bars_by_symbol, main_by_date, config, fee_schedule,
-                  margin_schedule, entry_window, warmup, start, end, contracts):
+                  margin_schedule, entry_window, warmup, start, end, contracts,
+                  roll_schedule):
         trimmed: Dict[str, ContractInput] = {}
         signals: List[TiltSignal] = []
         for symbol, data in contracts.items():
@@ -232,14 +236,14 @@ def futures_walkforward(
         if not trimmed:
             raise ValueError(f"段 [{start}, {end}] 无任何合约数据")
         return run_futures_backtest(
-            trimmed, config, fee_schedule, margin_schedule, signals)
+            trimmed, config, fee_schedule, margin_schedule, signals, roll_schedule)
 
     report = FuturesWalkforwardReport(initial_cash=config.initial_cash)
     raw_segments = segment_dates()
     for index, (train_start, train_end, test_start, test_end) in enumerate(raw_segments):
         kind = "holdout" if index == len(raw_segments) - 1 else "test"
         seg_index = -1 if kind == "holdout" else index
-        chosen, train_equity, test_equity, fills = run_segment(
+        chosen, train_equity, test_equity, fills, rolls = run_segment(
             train_start, train_end, test_start, test_end)
         report.segments.append(SegmentResult(
             index=seg_index, kind=kind,
@@ -249,7 +253,7 @@ def futures_walkforward(
             test_equity=test_equity,
             test_return=test_equity / config.initial_cash - 1
             if config.initial_cash else 0.0,
-            fills=fills))
+            fills=fills, rolls=rolls))
 
     windows_used = [seg.chosen_entry_window for seg in report.segments]
     report.manifest = {
@@ -275,6 +279,8 @@ def futures_walkforward(
         "holdout_return": report.holdout.test_return if report.holdout else None,
         "chosen_windows": windows_used,
         "test_fills_total": sum(seg.fills for seg in report.segments
+                                if seg.kind == "test"),
+        "test_rolls_total": sum(seg.rolls for seg in report.segments
                                 if seg.kind == "test"),
     }
     return report

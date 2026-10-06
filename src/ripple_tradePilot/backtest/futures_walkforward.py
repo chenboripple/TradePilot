@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from ..data.futures_meta import RULE_VERSION
-from ..signals.futures_eval import STRATEGY_KEY, DonchianParams, evaluate_tilt
+from ..signals.futures_eval import STRATEGY_KEY, DonchianParams, tilt_series
 from .futures_engine import (
     ContractInput,
     EngineConfig,
@@ -102,10 +102,10 @@ def main_timeline_signals(
     main_set = set(main_dates) if main_dates is not None else None
     signals: List[TiltSignal] = []
     last: Optional[str] = None
-    for index in range(len(bars)):
+    # tilt_series 一次算完每个前缀的倾向（旧逐前缀重算是 O(n²)，被网格放大）
+    for index, tilt in enumerate(tilt_series(bars, params, symbol=symbol)):
         if main_set is not None and str(bars[index].get("trade_date", "")) not in main_set:
             continue  # 非主力日：不评估也不发信号（状态机到主力切换日自然重评）
-        tilt = evaluate_tilt(bars[: index + 1], params, symbol=symbol)
         if tilt is None:
             continue
         if tilt.tilt != last:

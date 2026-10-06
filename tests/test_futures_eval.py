@@ -10,6 +10,8 @@ import unittest
 
 from ripple_tradePilot.data.futures_meta import RULE_VERSION
 from ripple_tradePilot.indicators import atr_series
+from ripple_tradePilot.backtest.futures_engine import donchian_tilt_signals
+from ripple_tradePilot.backtest.futures_walkforward import main_timeline_signals
 from ripple_tradePilot.signals.futures_eval import (
     TILT_LONG,
     TILT_NEUTRAL,
@@ -17,6 +19,7 @@ from ripple_tradePilot.signals.futures_eval import (
     DonchianParams,
     FuturesTilt,
     evaluate_tilt,
+    tilt_series,
 )
 
 
@@ -208,6 +211,103 @@ class TiltMalformedInputTest(unittest.TestCase):
         del bars[-1]["bar_time"]
         with self.assertRaises(ValueError):
             evaluate_tilt(bars, DEFAULTS, symbol="RB2610")
+
+
+def random_bars(n: int, seed: int) -> list:
+    """固定 seed 的随机游走 bar：三种倾向都会出现，供 parity 全前缀比对。"""
+    import random
+
+    rng = random.Random(seed)
+    bars = []
+    price = 3000.0
+    for i in range(n):
+        open_ = price
+        drift = rng.gauss(0.0, 6.0)
+        close = open_ + drift
+        high = max(open_, close) + abs(rng.gauss(0.0, 3.0))
+        low = min(open_, close) - abs(rng.gauss(0.0, 3.0))
+        bars.append({
+            "bar_time": f"2026-07-{1 + i // 24:02d}T{8 + (i % 8):02d}:00:00",
+            "trade_date": f"202607{1 + i // 24:02d}",
+            "open": round(open_, 2),
+            "high": round(high, 2),
+            "low": round(low, 2),
+            "close": round(close, 2),
+            "volume": float(1000 + rng.randint(0, 500)),
+        })
+        price = close
+    return bars
+
+
+class TiltSeriesParityTest(unittest.TestCase):
+    """tilt_series（O(n) 全序列）vs evaluate_tilt（逐前缀）逐位一致。
+
+    回测/网格原先按前缀循环调 evaluate_tilt 是 O(n²)；tilt_series 一次算完。
+    本类是"新路径不得漂移"的钉子：任一前缀的倾向快照（含 basis 字符串、
+    止损参考价、None 语义）都必须与旧路径逐位相等——float 精确比较。
+    """
+
+    PARAMS = [
+        DonchianParams(),                                   # 20/10/14×2.0
+        DonchianParams(entry_window=5, atr_period=7),       # 通道窗口 < 默认
+        DonchianParams(entry_window=30, atr_period=21,
+                       atr_stop_multiple=1.5),              # 窗口 > 默认、ATR 慢
+    ]
+
+    def test_every_prefix_bitwise_equal(self):
+        bars = random_bars(90, seed=7)
+        for params in self.PARAMS:
+            series = tilt_series(bars, params, symbol="RB2610")
+            with self.subTest(params=params):
+                self.assertEqual(len(series), len(bars))
+                for i in range(len(bars)):
+                    self.assertEqual(
+                        series[i], evaluate_tilt(bars[: i + 1], params, symbol="RB2610"),
+                        f"prefix {i} 漂移",
+                    )
+
+    def test_handcomputed_fixture_matches(self):
+        # 手算基准夹具（TR 恒 10）共 21 根：entry_window=20 → 前 20 位均数据不足，
+        # 只有末位（全 21 根前缀）可评估，且与 evaluate_tilt 逐字段一致
+        bars = prior_bars() + [last_bar(3122.0, 3112.0, 3120.0)]
+        series = tilt_series(bars, DEFAULTS, symbol="RB2610")
+        self.assertEqual(len(series), 21)
+        self.assertTrue(all(t is None for t in series[:-1]))  # 前 20 位：20 根前缀 < 21
+        self.assertEqual(series[-1], evaluate_tilt(bars, DEFAULTS, symbol="RB2610"))
+        self.assertEqual(series[-1].tilt, TILT_LONG)
+
+    def test_edge_sequences_match_reference(self):
+        """donchian_tilt_signals / main_timeline_signals 与逐前缀参考实现全等。"""
+        bars = random_bars(70, seed=99)
+        params = DonchianParams(entry_window=8, atr_period=10)
+
+        def reference_signals(symbol, bs, main_dates=None):
+            main_set = set(main_dates) if main_dates is not None else None
+            out = []
+            last = None
+            for i in range(len(bs)):
+                if main_set is not None and str(bs[i].get("trade_date", "")) not in main_set:
+                    continue
+                tilt = evaluate_tilt(bs[: i + 1], params, symbol=symbol)
+                if tilt is None:
+                    continue
+                if tilt.tilt != last:
+                    out.append((symbol, i, tilt.tilt))
+                    last = tilt.tilt
+            return out
+
+        # 引擎信号（全 bar）
+        got = [(s.symbol, s.bar_index, s.direction)
+               for s in donchian_tilt_signals("RB2610", bars, params)]
+        self.assertEqual(got, reference_signals("RB2610", bars))
+
+        # walkforward 主力时间线（偶数交易日为主力 → 门控 + 状态机跨缺口语义）
+        main_dates = sorted({b["trade_date"] for b in bars})[::2]
+        got = [(s.symbol, s.bar_index, s.direction)
+               for s in main_timeline_signals(bars, params.entry_window, symbol="RB2610",
+                                              main_dates=main_dates,
+                                              atr_period=params.atr_period)]
+        self.assertEqual(got, reference_signals("RB2610", bars, main_dates=main_dates))
 
 
 if __name__ == "__main__":

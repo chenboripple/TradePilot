@@ -30,7 +30,7 @@ from ..signals.futures_eval import (
     TILT_NEUTRAL,
     TILT_SHORT,
     DonchianParams,
-    evaluate_tilt,
+    tilt_series,
 )
 from .futures_account import FuturesAccount, FuturesFill
 from .futures_rules import FeeSchedule, MarginSchedule, fee_for, margin_for
@@ -212,14 +212,14 @@ def donchian_tilt_signals(
 ) -> List[TiltSignal]:
     """把 Donchian 倾向转成**方向变化事件**序列（状态 → 边沿，引擎消费边沿）。
 
-    每 bar 用与 P1 监控完全相同的 :func:`evaluate_tilt` 评估（同口径不漂移），
-    只保留 tilt 相对上一事件变化的 bar——「维持原倾向」不产生新订单。
+    每 bar 的倾向由 :func:`tilt_series` 一次算完（与 P1 监控的
+    :func:`evaluate_tilt` 逐位同口径，parity 测试钉死），只保留 tilt 相对
+    上一事件变化的 bar——「维持原倾向」不产生新订单。
     """
     params = params or DonchianParams()
     signals: List[TiltSignal] = []
     last: Optional[str] = None
-    for index in range(len(bars)):
-        tilt = evaluate_tilt(bars[: index + 1], params, symbol=symbol)
+    for index, tilt in enumerate(tilt_series(bars, params, symbol=symbol)):
         if tilt is None:
             continue  # 数据不足 = 没法算（不是观望）
         if tilt.tilt != last:

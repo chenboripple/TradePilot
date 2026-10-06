@@ -38,6 +38,7 @@ __all__ = [
     "TILT_NEUTRAL",
     "TILT_SHORT",
     "evaluate_tilt",
+    "tilt_series",
 ]
 
 #: 倾向常量（非订单方向）。LONG/SHORT 直接取 FuturesDirection 枚举值，
@@ -99,51 +100,27 @@ def _validate_params(params: DonchianParams) -> None:
         raise ValueError(f"atr_stop_multiple 需 > 0（当前 {params.atr_stop_multiple}）")
 
 
-def evaluate_tilt(
-    bars: List[dict],
+def _build_tilt(
+    bars: Sequence[dict],
+    index: int,
     params: DonchianParams,
     *,
     symbol: str,
-    timeframe: str = "60m",
-) -> Optional[FuturesTilt]:
-    """已完成 K 线 → 期货倾向（LONG/SHORT/NEUTRAL）。
+    timeframe: str,
+    highs: List[float],
+    lows: List[float],
+    closes: List[float],
+    atr: float,
+    channel_high: float,
+    channel_low: float,
+) -> FuturesTilt:
+    """从预计算的序列值构造第 ``index`` 根 bar 的倾向快照。
 
-    bars 契约（调用方负责，本函数不做补全/排序/过滤）：
-
-    - **升序已完成 bar**：``[{bar_time: str, open, high, low, close, ...}, ...]``，
-      最新一根在末尾；volume/hold 等额外字段可有可无；
-    - 只喂已完成 bar——未完成 bar 的 close 会随时间变动，倾向必须建立在
-      收盘定型的数据上（P1「只使用已完成 K 线」）。
-
-    语义：``close > max(high[:-1][-N:])`` → LONG；``close < min(low[:-1][-N:])``
-    → SHORT；否则 NEUTRAL（含恰好触及通道边界：突破是**严格**大于/小于）。
-
-    返回 ``None`` 与返回 NEUTRAL 含义不同：
-
-    - ``None`` = 数据不足（``len(bars) < entry_window + 1`` 或 ATR 周期不够），
-      即"没法算"——调用方不应据此发通知，也不应视为观望；
-    - NEUTRAL = 算得出来，结论是观望。
-
-    参数非法 / bar 行缺关键字段 → ValueError（调用方 bug，明确暴露而非吞掉）。
-    纯函数：同输入同输出，通知去重键依赖此性质。
+    ``evaluate_tilt``（末位）与 ``tilt_series``（全序列）共用的字段构造逻辑
+    ——单一实现保证两条路径逐位一致（含 basis 字符串）。``channel_high``/
+    ``channel_low`` 须为「不含当前 bar 的此前 entry_window 根极值」口径。
     """
-    _validate_params(params)
-    if len(bars) < params.entry_window + 1:
-        return None
-
-    highs = _series(bars, "high")
-    lows = _series(bars, "low")
-    closes = _series(bars, "close")
-
-    # ATR：复用 indicators.atr_series（TR 简单均值口径），取末值即最新完成 bar
-    atr = atr_series(highs, lows, closes, params.atr_period)[-1]
-    if atr is None:
-        return None  # ATR 周期不够：倾向必须有止损距离才有意义，否则"没法算"
-
-    # 通道：rolling_max/min 的倒数第二位 = 不含当前 bar 的此前 N 根极值
-    channel_high = rolling_max(highs, params.entry_window)[-2]
-    channel_low = rolling_min(lows, params.entry_window)[-2]
-    close = closes[-1]
+    close = closes[index]
 
     stop_distance = atr * params.atr_stop_multiple
     if close > channel_high:
@@ -171,7 +148,7 @@ def evaluate_tilt(
             "；无倾向故不设止损参考（stop_ref_price=0）"
         )
 
-    last_bar = bars[-1]
+    last_bar = bars[index]
     if "bar_time" not in last_bar:
         raise ValueError(f"最新 bar 缺少 bar_time 字段: {last_bar!r}")
 
@@ -193,3 +170,106 @@ def evaluate_tilt(
             f"+atr{params.atr_period}x{params.atr_stop_multiple}@{RULE_VERSION}"
         ),
     )
+
+
+def evaluate_tilt(
+    bars: List[dict],
+    params: DonchianParams,
+    *,
+    symbol: str,
+    timeframe: str = "60m",
+) -> Optional[FuturesTilt]:
+    """已完成 K 线 → 期货倾向（LONG/SHORT/NEUTRAL）。
+
+    bars 契约（调用方负责，本函数不做补全/排序/过滤）：
+
+    - **升序已完成 bar**：``[{bar_time: str, open, high, low, close, ...}, ...]``，
+      最新一根在末尾；volume/hold 等额外字段可有可无；
+    - 只喂已完成 bar——未完成 bar 的 close 会随时间变动，倾向必须建立在
+      收盘定型的数据上（P1「只使用已完成 K 线」）。
+
+    语义：``close > max(high[:-1][-N:])`` → LONG；``close < min(low[:-1][-N:])``
+    → SHORT；否则 NEUTRAL（含恰好触及通道边界：突破是**严格**大于/小于）。
+
+    返回 ``None`` 与返回 NEUTRAL 含义不同：
+
+    - ``None`` = 数据不足（``len(bars) < entry_window + 1`` 或 ATR 周期不够），
+      即"没法算"——调用方不应据此发通知，也不应视为观望；
+    - NEUTRAL = 算得出来，结论是观望。
+
+    参数非法 / bar 行缺关键字段 → ValueError（调用方 bug，明确暴露而非吞掉）。
+    纯函数：同输入同输出，通知去重键依赖此性质。
+
+    监控等单次评估场景用本函数；回测/网格等需要**每个前缀**的倾向时用
+    :func:`tilt_series`（O(n) 一次算完，勿在本函数上按前缀循环——那是 O(n²)）。
+    """
+    _validate_params(params)
+    if len(bars) < params.entry_window + 1:
+        return None
+
+    highs = _series(bars, "high")
+    lows = _series(bars, "low")
+    closes = _series(bars, "close")
+
+    # ATR：复用 indicators.atr_series（TR 简单均值口径），取末值即最新完成 bar
+    atr = atr_series(highs, lows, closes, params.atr_period)[-1]
+    if atr is None:
+        return None  # ATR 周期不够：倾向必须有止损距离才有意义，否则"没法算"
+
+    # 通道：rolling_max/min 的倒数第二位 = 不含当前 bar 的此前 N 根极值
+    return _build_tilt(
+        bars, len(bars) - 1, params,
+        symbol=symbol, timeframe=timeframe,
+        highs=highs, lows=lows, closes=closes, atr=atr,
+        channel_high=rolling_max(highs, params.entry_window)[-2],
+        channel_low=rolling_min(lows, params.entry_window)[-2],
+    )
+
+
+def tilt_series(
+    bars: List[dict],
+    params: DonchianParams,
+    *,
+    symbol: str,
+    timeframe: str = "60m",
+) -> List[Optional[FuturesTilt]]:
+    """每个前缀的倾向序列（``result[i] == evaluate_tilt(bars[:i+1])``）。
+
+    全序列一次算完的 O(n) 版本：ATR/唐奇安通道各滚动一遍，第 i 位倾向复用
+    已算好的 ``atr_series[i]`` 与 ``rolling_max/min(...)[i-1]``（后者即
+    「不含当前 bar 的此前 N 根极值」，与 :func:`evaluate_tilt` 对前缀取
+    ``[-2]`` 的口径逐位一致——parity 测试钉死）。字段构造与 evaluate_tilt
+    共用 :func:`_build_tilt`，含 basis 字符串逐位相同。
+
+    ``result[i] is None`` 的语义同 evaluate_tilt：数据不足（前缀长度不够
+    entry_window+1，或该位 ATR 周期未满），不是观望。
+
+    注意：字段校验是**急切**的——任何一个 bar 缺 high/low/close 都会立刻
+    ValueError，而 evaluate_tilt 只在其前缀被实际评估到时才暴露。
+    """
+    _validate_params(params)
+    result: List[Optional[FuturesTilt]] = [None] * len(bars)
+    if not bars:
+        return result
+
+    highs = _series(bars, "high")
+    lows = _series(bars, "low")
+    closes = _series(bars, "close")
+
+    atr_all = atr_series(highs, lows, closes, params.atr_period)
+    channel_high_all = rolling_max(highs, params.entry_window)
+    channel_low_all = rolling_min(lows, params.entry_window)
+
+    # 前缀 bars[:i+1] 够 entry_window+1 根 ⇔ i ≥ entry_window
+    for index in range(params.entry_window, len(bars)):
+        atr = atr_all[index]
+        if atr is None:
+            continue  # 该位 ATR 周期未满 = 前缀评估会返回 None
+        result[index] = _build_tilt(
+            bars, index, params,
+            symbol=symbol, timeframe=timeframe,
+            highs=highs, lows=lows, closes=closes, atr=atr,
+            channel_high=channel_high_all[index - 1],
+            channel_low=channel_low_all[index - 1],
+        )
+    return result

@@ -49,12 +49,8 @@ from .price_alert import (
     parse_price_alert_config,
 )
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()],
-)
+# 日志配置移入 main()（import 不得有配置全局日志的副作用——uvicorn/gunicorn
+# 宿主与测试 import 本模块时会被这里的 basicConfig 抢走 root handler）
 logger = logging.getLogger("TradePilot")
 
 # 推荐语统一 A 股口径：红=买/涨，绿=卖/跌（展示层常量；signals 内部用 BUY/SELL/HOLD/CONFLICT 编码）
@@ -1091,6 +1087,11 @@ class MarketMonitor:
 
 async def main(config_path: Optional[str] = None):
     """主函数"""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler()],
+    )
     resolved_path = resolve_config_path(config_path)
     if not resolved_path.exists():
         logger.error(

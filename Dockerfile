@@ -27,8 +27,9 @@ RUN pip install --no-cache-dir --no-deps . \
     && mkdir -p /app/data /app/output /var/lib/tradepilot \
     && chown -R tradepilot:tradepilot /app /home/tradepilot /var/lib/tradepilot
 
-# heartbeat_tradepilot.py（自动网格再拟合）不进生产镜像：
-# 无人工审批的线上参数自优化会持续制造过拟合，见 docs/project-analysis.md
+# 自动网格再拟合（tradepilot heartbeat）不在镜像内排程：默认停用，
+# 须人工显式 --allow-refit / TRADEPILOT_AUTOFIT=1 才执行——无人工审批的
+# 线上参数自优化会持续制造过拟合，见 docs/project-analysis.md
 COPY --chown=tradepilot:tradepilot monitor_brief.py ./
 COPY --chown=tradepilot:tradepilot docker-entrypoint.sh /usr/local/bin/tradepilot-entrypoint
 

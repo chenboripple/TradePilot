@@ -542,6 +542,71 @@ def monitor(symbol):
 
 
 @cli.command()
+@click.option('--allow-refit', is_flag=True,
+              help='允许网格再拟合（默认停用：过拟合风险；等价环境变量 TRADEPILOT_AUTOFIT=1）')
+@click.option('--days', '-d', type=int, default=365, show_default=True, help='回看天数')
+@click.option('--symbol', '-s', multiple=True,
+              help='指定标的代码（可多次；默认 config.symbols，再兜底科华/万华）')
+def heartbeat(allow_refit, days, symbol):
+    """心跳参数巡检（原根目录 heartbeat_tradepilot.py，P6 迁入统一引擎）。
+
+    baseline（state 文件现行参数）→ 网格候选 → 统一撮合引擎（next_open/
+    T+1/涨跌停/佣金+印花税+滑点）对比 → 优于 baseline 才写回。状态文件
+    data/backtest/heartbeat_strategy_state.json 路径与 schema 兼容存量。
+    网格再拟合默认停用——须 --allow-refit 或 TRADEPILOT_AUTOFIT=1。
+    """
+    import os
+
+    from .monitor import heartbeat as hb
+
+    if not allow_refit and os.getenv('TRADEPILOT_AUTOFIT') != '1':
+        click.echo(
+            "⚠️ 自动参数再拟合默认停用（过拟合风险，见 docs/project-analysis.md）。\n"
+            "   如确需运行：tradepilot heartbeat --allow-refit\n"
+            "   或设置环境变量 TRADEPILOT_AUTOFIT=1"
+        )
+        return
+
+    try:
+        config = load_config()
+    except Exception as e:
+        click.echo(f"❌ 无法加载配置：{e}", err=True)
+        sys.exit(1)
+
+    if symbol:
+        targets = [(code, code) for code in symbol]
+    else:
+        configured = [
+            (str(item.get('code')), item.get('name') or str(item.get('code')))
+            for item in config.get('symbols', []) if item.get('code')
+        ]
+        targets = configured or list(hb.DEFAULT_TARGETS)
+
+    run_payload = hb.run_once(targets=targets, days=days, config=config)
+    state_path, runs_dir, summary_md = hb.heartbeat_dirs()
+    hb.update_summary_md(summary_md, run_payload)
+    hb.maybe_notify(config, run_payload)
+
+    click.echo("=" * 80)
+    click.echo("✅ TradePilot 心跳参数巡检完成（统一引擎口径）")
+    for item in run_payload['results']:
+        if item.get('decision') == 'data-insufficient':
+            click.echo(f"   ⚠️ {item['name']}({item['symbol']})：{item.get('error')}")
+            continue
+        click.echo(
+            f"   {item['name']}({item['symbol']})：{item['decision']}"
+            f" → {item['active_params_label']}"
+            f"（收益 {item['active_result']['total_return']:+.2f}%，"
+            f"回撤 {item['active_result']['max_drawdown']:.2f}%，"
+            f"{item['active_result']['total_trades']} 笔）"
+        )
+    click.echo(f"状态文件：{state_path}")
+    click.echo(f"运行记录：{runs_dir}")
+    click.echo(f"摘要文件：{summary_md}")
+    click.echo("=" * 80)
+
+
+@cli.command()
 @click.option('--host', default='127.0.0.1', show_default=True,
               help='监听地址（容器内或远程访问用 0.0.0.0）')
 @click.option('--port', '-p', type=int, default=8000, show_default=True, help='监听端口')

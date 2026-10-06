@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import time
@@ -16,6 +17,8 @@ import requests
 
 from ripple_tradePilot.data.cleaning import reject_price_outliers
 from ripple_tradePilot.models.types import Bar
+
+logger = logging.getLogger(__name__)
 
 
 class MXDataLoader:
@@ -122,7 +125,7 @@ class MXDataLoader:
             val_str = re.sub(r'\([^)]+\)', '', val_str).strip()
             try:
                 return pd.to_datetime(val_str)
-            except:
+            except (TypeError, ValueError):
                 return None
         
         df['datetime'] = df['datetime'].apply(parse_datetime)
@@ -160,7 +163,7 @@ class MXDataLoader:
             val_str = val_str.replace('元', '').replace('%', '').replace(',', '')
             try:
                 return float(val_str)
-            except:
+            except (TypeError, ValueError):
                 return None
         
         # 确保数值列为 float
@@ -325,9 +328,10 @@ class MXDataLoader:
                     vol_df = vol_df.rename(columns={vol_cols[0]: 'vol'})
                     vol_df = vol_df[['datetime', 'vol']]
                     merged_df = merged_df.merge(vol_df, on='datetime', how='left')
-        except:
-            pass
-        
+        except Exception as error:
+            # 成交量是增强列：合并失败只降级（保留价量主表），不中断取数
+            logger.warning("妙想成交量合并失败（%s）：%s", symbol, error)
+
         return merged_df
 
     def load_bars(

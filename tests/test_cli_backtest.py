@@ -10,13 +10,19 @@ import os
 import sqlite3
 import tempfile
 import unittest
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+import pandas as pd
 import synth
 from click.testing import CliRunner
 
 from ripple_tradePilot.cli import cli
+from ripple_tradePilot.data.stock_service import (
+    StockDataService,
+    StockDataUnavailableError,
+)
 from ripple_tradePilot.storage.database import (
     init_database,
     load_market_daily,
@@ -30,17 +36,44 @@ from ripple_tradePilot.storage.user_store import (
 
 
 class FakeLoader:
-    """替换 TushareDataLoader：load_bars 返回合成日线。
+    """替换 TushareDataLoader：get_daily_bars/load_bars 返回合成日线。
 
-    C1：CLI ``--benchmark`` 改走 ``market_service.load_index_bars``（DB 优先），
-    不再经 loader.get_index_bars，故此处不再 mock 指数（基准测试单独 patch
-    ``market_service.load_index_bars``）。
+    P1c：CLI 三命令（backtest/walkforward/screen）改走
+    ``stock_service.load_symbol_bars_db_first``（DB 优先），网络兜底经
+    ``StockDataService._fetch_tushare`` 构造 loader——该绑定位于 stock_service
+    模块命名空间，故 _CliDbTestCase patch
+    ``ripple_tradePilot.data.stock_service.TushareDataLoader``（本类）。
+
+    合成日线整体平移到「截至运行日」（自 today 倒推 282 天锚定）：库内落库后
+    仍在 CLI 请求窗口内（start_date 过滤不丢 bar），且 staleness 判定为新鲜。
+
+    C1：CLI ``--benchmark`` 走 ``market_service.load_index_bars``（DB 优先），
+    不经 loader.get_index_bars；基准测试单独 patch 之。
     """
 
-    bars = synth.daily_bars(200, seed=21)
+    bars = synth.daily_bars(200, seed=21,
+                            start=datetime.now() - timedelta(days=282))
 
     def __init__(self, token, rate_limit_delay=1.5):
         self.token = token
+
+    def get_daily_bars(self, ts_code, start_date=None, end_date=None, **kwargs):
+        # tushare 形态 DataFrame（手口径 vol）+ qfq 标记，供 refresh 归一化落库
+        frame = pd.DataFrame(
+            [
+                {
+                    "trade_date": bar.timestamp.strftime("%Y%m%d"),
+                    "open": bar.open,
+                    "high": bar.high,
+                    "low": bar.low,
+                    "close": bar.close,
+                    "vol": bar.volume / 100.0,
+                }
+                for bar in type(self).bars
+            ]
+        )
+        frame.attrs["adjust"] = "qfq"
+        return frame
 
     def load_bars(self, symbol, start_date=None, end_date=None):
         return list(type(self).bars)
@@ -68,7 +101,7 @@ class _CliDbTestCase(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.runner = CliRunner()
         self._loader_patch = patch(
-            "ripple_tradePilot.data.tushare_loader.TushareDataLoader", FakeLoader
+            "ripple_tradePilot.data.stock_service.TushareDataLoader", FakeLoader
         )
         self._loader_patch.start()
         self.addCleanup(self._loader_patch.stop)
@@ -81,13 +114,13 @@ class CliBacktestSaveTest(_CliDbTestCase):
         拦截发生在取数之前——FakeLoader 不应被触达（不产生误导的
         「行情数据不足」）。backtest 与 walkforward 两命令同门。
         """
-        load_calls = []
+        fetch_calls = []
 
-        def _spy_load(self_loader, symbol, start_date=None, end_date=None):
-            load_calls.append(symbol)
-            return []
+        def _spy_fetch(self_loader, ts_code, start_date=None, end_date=None, **kwargs):
+            fetch_calls.append(ts_code)
+            return pd.DataFrame()
 
-        with patch.object(FakeLoader, "load_bars", _spy_load):
+        with patch.object(FakeLoader, "get_daily_bars", _spy_fetch):
             for command in ("backtest", "walkforward"):
                 with self.subTest(command=command):
                     result = self.runner.invoke(
@@ -96,11 +129,11 @@ class CliBacktestSaveTest(_CliDbTestCase):
                     self.assertEqual(result.exit_code, 2, result.output)
                     self.assertIn("期货", result.output)
                     self.assertIn("tradepilot futures backtest", result.output)
-        self.assertEqual(load_calls, [])  # 取数之前拦截
+        self.assertEqual(fetch_calls, [])  # 取数之前拦截
 
     def test_backtest_saves_by_default(self):
         result = self.runner.invoke(
-            cli, ["backtest", "600000.SH", "-d", "200", "-s", "rsi"]
+            cli, ["backtest", "600000.SH", "-d", "300", "-s", "rsi"]
         )
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertIn("已落库", result.output)
@@ -135,7 +168,7 @@ class CliBacktestSaveTest(_CliDbTestCase):
 
     def test_backtest_no_save_flag_skips_persistence(self):
         result = self.runner.invoke(
-            cli, ["backtest", "600000.SH", "-d", "200", "-s", "rsi", "--no-save"]
+            cli, ["backtest", "600000.SH", "-d", "300", "-s", "rsi", "--no-save"]
         )
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertNotIn("已落库", result.output)
@@ -154,7 +187,7 @@ class CliBacktestSaveTest(_CliDbTestCase):
         ) as mock_load:
             result = self.runner.invoke(
                 cli,
-                ["backtest", "600000.SH", "-d", "200", "-s", "rsi", "--benchmark"],
+                ["backtest", "600000.SH", "-d", "300", "-s", "rsi", "--benchmark"],
             )
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertIn("沪深300基准", result.output)
@@ -169,20 +202,20 @@ class CliBacktestSaveTest(_CliDbTestCase):
         ):
             result = self.runner.invoke(
                 cli,
-                ["backtest", "600000.SH", "-d", "200", "-s", "rsi", "--benchmark"],
+                ["backtest", "600000.SH", "-d", "300", "-s", "rsi", "--benchmark"],
             )
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertIn("未取到沪深300基准数据", result.output)
 
     def test_backtests_list_shows_records(self):
-        self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "200", "-s", "rsi"])
+        self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "300", "-s", "rsi"])
         result = self.runner.invoke(cli, ["backtests", "list"])
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertIn("600000.SH", result.output)
         self.assertIn("backtest", result.output)
 
     def test_backtests_list_filters_by_kind(self):
-        self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "200", "-s", "rsi"])
+        self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "300", "-s", "rsi"])
         result = self.runner.invoke(
             cli, ["backtests", "list", "--kind", "walkforward"]
         )
@@ -193,7 +226,7 @@ class CliBacktestSaveTest(_CliDbTestCase):
         # CLI 落库的 NULL-user 行不应出现在按 user_id 过滤的用户列表里
         from ripple_tradePilot.storage.user_store import list_user_backtests
 
-        self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "200", "-s", "rsi"])
+        self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "300", "-s", "rsi"])
         with sqlite3.connect(self.db) as connection:
             connection.execute(
                 "INSERT INTO users (username, password_hash) VALUES (?, ?)",
@@ -206,11 +239,77 @@ class CliBacktestSaveTest(_CliDbTestCase):
         self.assertEqual(len(list_backtest_runs()), 1)
 
 
+class CliDbFirstDataTest(_CliDbTestCase):
+    """P1c：CLI 三命令 DB 优先取数——离线可用性与无 token 报错口径。"""
+
+    def test_db_prefilled_runs_offline_without_token_or_network(self):
+        # 库内预置新鲜数据 + config 无 token → 零网络跑通（refresh 不应被触达）
+        bars = synth.daily_bars(150, seed=5,
+                                start=datetime.now() - timedelta(days=215))
+        upsert_daily_bars("600000.SH", synth.daily_rows(bars), "synth", self.db)
+        self.config.write_text("strategies:\n", encoding="utf-8")  # 无 tushare token
+
+        with patch(
+            "ripple_tradePilot.data.stock_service.StockDataService.refresh"
+        ) as mock_refresh:
+            result = self.runner.invoke(
+                cli, ["backtest", "600000.SH", "-d", "220", "-s", "rsi"]
+            )
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertIn("已落库", result.output)
+        mock_refresh.assert_not_called()  # DB 新鲜：零网络
+        run = list_backtest_runs()[0]
+        self.assertEqual(run["bar_count"], 150)
+
+    def test_db_stale_triggers_bounded_refresh_then_rereads(self):
+        # 库内数据落后 >7 天 → 有界补拉一次（mock refresh 写入新数据）→ 重读库
+        stale_bars = synth.daily_bars(80, seed=6,
+                                      start=datetime.now() - timedelta(days=400))
+        upsert_daily_bars("600000.SH", synth.daily_rows(stale_bars), "synth", self.db)
+
+        calls = []
+
+        def _fake_refresh(service, value, initial_days=365):
+            calls.append(value)
+            fresh = synth.daily_bars(
+                150, seed=7, start=datetime.now() - timedelta(days=215))
+            upsert_daily_bars("600000.SH", synth.daily_rows(fresh), "synth",
+                              service.database)
+            return {"total_rows": 150}
+
+        with patch(
+            "ripple_tradePilot.data.stock_service.StockDataService.refresh",
+            _fake_refresh,
+        ):
+            result = self.runner.invoke(
+                cli, ["backtest", "600000.SH", "-d", "220", "-s", "rsi"]
+            )
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(calls, ["600000.SH"])  # 过期 → 补拉恰好一次
+        run = list_backtest_runs()[0]
+        self.assertEqual(run["bar_count"], 150)  # 重读到补拉后的新数据
+
+    def test_db_empty_no_token_offline_reports_clearly(self):
+        # 库空 + 无 token + 行情源不可达 → 人话报错（指引配置），exit 1
+        self.config.write_text("strategies:\n", encoding="utf-8")  # 无 tushare token
+        with patch.object(
+            StockDataService,
+            "_fetch_akshare",
+            side_effect=StockDataUnavailableError("离线测试：行情源不可达"),
+        ):
+            result = self.runner.invoke(
+                cli, ["backtest", "600000.SH", "-d", "220", "-s", "rsi"]
+            )
+        self.assertEqual(result.exit_code, 1, result.output)
+        self.assertIn("行情数据不足", result.output)
+        self.assertIn("tushare token", result.output)
+
+
 class CliBacktestA5Test(_CliDbTestCase):
     """A5：CLI backtest 的 --param/--profile/--vote-threshold + combo_vote + provenance。"""
 
     def _run(self, *args):
-        result = self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "200", *args])
+        result = self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "300", *args])
         self.assertEqual(result.exit_code, 0, result.output)
         run = list_backtest_runs()[0]
         return result, get_backtest_run(run["id"])
@@ -231,7 +330,7 @@ class CliBacktestA5Test(_CliDbTestCase):
         # 极端 RSI 阈值（几乎不触发）vs 宽松阈值 → 交易回合数可区分，证明参数确实生效
         _, tight = self._run("-s", "rsi", "-p", "period=14", "-p", "oversold=1", "-p", "overbought=99")
         runs = list_backtest_runs()
-        self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "200", "-s", "rsi",
+        self.runner.invoke(cli, ["backtest", "600000.SH", "-d", "300", "-s", "rsi",
                                  "-p", "period=14", "-p", "oversold=45", "-p", "overbought=55"])
         loose = get_backtest_run(list_backtest_runs()[0]["id"])
         tight_trades = json.loads(tight["result_json"])["trades"]["num_trades"]
@@ -260,7 +359,7 @@ class CliBacktestA5Test(_CliDbTestCase):
 
     def test_illegal_param_exits_2(self):
         result = self.runner.invoke(
-            cli, ["backtest", "600000.SH", "-d", "200", "-s", "rsi", "-p", "bogus=1"]
+            cli, ["backtest", "600000.SH", "-d", "300", "-s", "rsi", "-p", "bogus=1"]
         )
         self.assertEqual(result.exit_code, 2)
         self.assertIn("策略解析失败", result.output)
@@ -268,14 +367,14 @@ class CliBacktestA5Test(_CliDbTestCase):
 
     def test_param_without_equals_is_usage_error(self):
         result = self.runner.invoke(
-            cli, ["backtest", "600000.SH", "-d", "200", "-s", "rsi", "-p", "novalue"]
+            cli, ["backtest", "600000.SH", "-d", "300", "-s", "rsi", "-p", "novalue"]
         )
         self.assertEqual(result.exit_code, 2)  # click.BadParameter → 用法错误
         self.assertEqual(list_backtest_runs(), [])
 
     def test_vote_threshold_out_of_range_is_usage_error(self):
         result = self.runner.invoke(
-            cli, ["backtest", "600000.SH", "-d", "200", "-s", "combo_vote", "--vote-threshold", "9"]
+            cli, ["backtest", "600000.SH", "-d", "300", "-s", "combo_vote", "--vote-threshold", "9"]
         )
         self.assertEqual(result.exit_code, 2)  # IntRange(1,3) 拦截
 
@@ -285,7 +384,7 @@ class CliWalkforwardA5Test(_CliDbTestCase):
 
     def test_walkforward_combo_vote_saves(self):
         result = self.runner.invoke(
-            cli, ["walkforward", "600000.SH", "-d", "200", "-s", "combo_vote", "--splits", "3"]
+            cli, ["walkforward", "600000.SH", "-d", "300", "-s", "combo_vote", "--splits", "3"]
         )
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertIn("已落库", result.output)
@@ -301,7 +400,7 @@ class CliWalkforwardA5Test(_CliDbTestCase):
 
     def test_walkforward_grid_json_override(self):
         result = self.runner.invoke(
-            cli, ["walkforward", "600000.SH", "-d", "200", "-s", "ma", "--splits", "3",
+            cli, ["walkforward", "600000.SH", "-d", "300", "-s", "ma", "--splits", "3",
                   "--grid-json", '{"fast": [5, 10], "slow": [20]}']
         )
         self.assertEqual(result.exit_code, 0, result.output)
@@ -311,7 +410,7 @@ class CliWalkforwardA5Test(_CliDbTestCase):
 
     def test_walkforward_illegal_grid_exits_2(self):
         result = self.runner.invoke(
-            cli, ["walkforward", "600000.SH", "-d", "200", "-s", "ma",
+            cli, ["walkforward", "600000.SH", "-d", "300", "-s", "ma",
                   "--grid-json", '{"bogus": [1]}']
         )
         self.assertEqual(result.exit_code, 2)
@@ -320,7 +419,7 @@ class CliWalkforwardA5Test(_CliDbTestCase):
 
     def test_walkforward_bad_grid_json_exits_2(self):
         result = self.runner.invoke(
-            cli, ["walkforward", "600000.SH", "-d", "200", "-s", "ma", "--grid-json", "not json"]
+            cli, ["walkforward", "600000.SH", "-d", "300", "-s", "ma", "--grid-json", "not json"]
         )
         self.assertEqual(result.exit_code, 2)
         self.assertIn("--grid-json", result.output)
@@ -328,7 +427,7 @@ class CliWalkforwardA5Test(_CliDbTestCase):
     def test_walkforward_single_strategy_profile_source_cli(self):
         # 单策略 walk-forward 不解析画像 → profile_source 仍为 "cli"（网格即参数，无基准画像）
         self.runner.invoke(
-            cli, ["walkforward", "600000.SH", "-d", "200", "-s", "ma", "--splits", "3"]
+            cli, ["walkforward", "600000.SH", "-d", "300", "-s", "ma", "--splits", "3"]
         )
         full = get_backtest_run(list_backtest_runs(kind="walkforward")[0]["id"])
         self.assertEqual(full["profile_source"], "cli")
@@ -338,7 +437,7 @@ class CliWalkforwardSaveTest(_CliDbTestCase):
     def test_walkforward_saves_report_json(self):
         result = self.runner.invoke(
             cli,
-            ["walkforward", "600000.SH", "-d", "200", "-s", "ma", "--splits", "3"],
+            ["walkforward", "600000.SH", "-d", "300", "-s", "ma", "--splits", "3"],
         )
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertIn("已落库", result.output)
@@ -380,7 +479,7 @@ class CliWalkforwardSaveTest(_CliDbTestCase):
     def test_walkforward_no_save_flag(self):
         result = self.runner.invoke(
             cli,
-            ["walkforward", "600000.SH", "-d", "200", "-s", "ma", "--splits", "3", "--no-save"],
+            ["walkforward", "600000.SH", "-d", "300", "-s", "ma", "--splits", "3", "--no-save"],
         )
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertEqual(list_backtest_runs(kind="walkforward"), [])

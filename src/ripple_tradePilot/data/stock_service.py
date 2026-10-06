@@ -15,7 +15,9 @@ import pandas as pd
 
 from ripple_tradePilot.config_loader import load_config
 from ripple_tradePilot.data.adjustment import detect_rebase
+from ripple_tradePilot.data.cleaning import is_valid_ohlc
 from ripple_tradePilot.data.tushare_loader import TushareDataLoader
+from ripple_tradePilot.models.types import Bar
 from ripple_tradePilot.storage.database import (
     database_path,
     load_daily_bars,
@@ -891,3 +893,109 @@ class StockDataService:
             "rebase_reason": rebase_report.reason,
             "data_version": data_version,
         }
+
+
+# 库内日线落后于请求区间的容忍天数：≤7 天视为"足够新"（覆盖周末+多数短假，
+# 与 heartbeat 缓存过期阈值同口径），期间不触发网络补拉
+_DB_STALE_TOLERANCE_DAYS = 7
+
+
+def _rows_to_bars(rows: list) -> List[Bar]:
+    """daily_bars 行 → Bar 序列（与 tushare_loader.load_bars 同清洗口径）。
+
+    DB 的 volume 列是 tushare/akshare 的**手**口径，转 Bar 时 ×100 成股，
+    与 ``tushare_loader.load_bars`` 逐位一致；价格合理性校验复用
+    ``cleaning.is_valid_ohlc``（0.19 元这类脏行不得进入回测）。
+    """
+    bars: List[Bar] = []
+    for row in rows:
+        try:
+            open_, high = float(row["open"]), float(row["high"])
+            low, close = float(row["low"]), float(row["close"])
+            if not is_valid_ohlc(open_, high, low, close):
+                logger.warning(
+                    "跳过异常 K 线（价格不合理）：%s %s close=%s",
+                    row.get("symbol"), row.get("trade_date"), close,
+                )
+                continue
+            bars.append(
+                Bar(
+                    timestamp=datetime.strptime(str(row["trade_date"]), "%Y%m%d"),
+                    open=open_,
+                    high=high,
+                    low=low,
+                    close=close,
+                    volume=float(row.get("vol", 0) or 0) * 100,  # 手转股
+                )
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            logger.warning("解析 daily_bars 行失败：%r，错误：%s", row, error)
+            continue
+    return bars
+
+
+def load_symbol_bars_db_first(
+    symbol: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    *,
+    refresh: bool = True,
+    initial_days: int = 365,
+    path: Optional[Path] = None,
+) -> List[Bar]:
+    """DB 优先加载个股日线为 ``Bar`` 序列（CLI 回测/walkforward/screen 数据入口）。
+
+    范式对照 ``market_service.load_index_bars``：先读 ``daily_bars``（自带
+    refresh 写入的复权审计与 A9 溯源），区间过滤后**足够新**就直接用；
+    库空或落后超过 ``_DB_STALE_TOLERANCE_DAYS`` 且 ``refresh=True`` 时，走
+    ``StockDataService.refresh`` 有界补拉一次（overlap 合并 + rebase 检测），
+    再重读。
+
+    与旧路径（直连 tushare 拉全量）的行为差异：
+
+    - **离线可用**：DB 数据足够时零网络跑通（优于旧路径必联网）；
+    - **复权受审计**：数据经 refresh 的 qfq 闸与 overlap 合并，不会把
+      不复权序列直接喂给回测；
+    - refresh 失败（无 token/网络断）→ 诚实回落 DB 现状并 warning
+      （可能为空，由调用方按数据不足处理），绝不抛错中断。
+
+    ``start_date``/``end_date`` 为 ``YYYYMMDD``；``initial_days`` 仅在库为
+    空时决定首次拉取跨度。
+    """
+    def _read() -> List[Bar]:
+        rows = load_daily_bars(symbol, path)
+        if start_date:
+            rows = [r for r in rows if str(r["trade_date"]) >= start_date]
+        if end_date:
+            rows = [r for r in rows if str(r["trade_date"]) <= end_date]
+        return _rows_to_bars(rows)
+
+    def _latest_staleness_days() -> Optional[int]:
+        rows = load_daily_bars(symbol, path)
+        if not rows:
+            return None  # 库空
+        latest = max(str(r["trade_date"]) for r in rows)
+        reference = end_date or datetime.now().strftime("%Y%m%d")
+        try:
+            delta = (
+                datetime.strptime(reference, "%Y%m%d")
+                - datetime.strptime(latest, "%Y%m%d")
+            ).days
+        except ValueError:
+            return None  # 日期格式异常：视为足够新，交给上层报数据不足
+        return max(delta, 0)
+
+    staleness = _latest_staleness_days()
+    if staleness is not None and staleness <= _DB_STALE_TOLERANCE_DAYS:
+        return _read()  # DB 足够新：零网络
+    if not refresh:
+        return _read()
+
+    try:
+        StockDataService(database=path).refresh(symbol, initial_days=initial_days)
+    except Exception as error:
+        logger.warning(
+            "%s 库外补拉失败（无 token/行情源不可用？），回落 DB 现状：%s",
+            symbol, error,
+        )
+    return _read()

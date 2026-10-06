@@ -32,7 +32,7 @@ def _expected_buy_dates():
 class CliWriteSignalsTest(_CliDbTestCase):
     def test_write_signals_persists_ledger_and_bars(self):
         result = self.runner.invoke(
-            cli, ["backtest", SYMBOL, "-d", "200", "-s", "rsi", "--write-signals"]
+            cli, ["backtest", SYMBOL, "-d", "300", "-s", "rsi", "--write-signals"]
         )
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertIn("已写入信号台账", result.output)
@@ -51,7 +51,7 @@ class CliWriteSignalsTest(_CliDbTestCase):
 
     def test_write_signals_links_backtest_id(self):
         self.runner.invoke(
-            cli, ["backtest", SYMBOL, "-d", "200", "-s", "rsi", "--write-signals"]
+            cli, ["backtest", SYMBOL, "-d", "300", "-s", "rsi", "--write-signals"]
         )
         rows = list_signals(source="backtest", symbol=SYMBOL)
         # 默认落库 → 每行带 backtest_id（指向 backtest_results）
@@ -62,7 +62,7 @@ class CliWriteSignalsTest(_CliDbTestCase):
     def test_write_signals_with_no_save_has_null_backtest_id(self):
         result = self.runner.invoke(
             cli,
-            ["backtest", SYMBOL, "-d", "200", "-s", "rsi", "--write-signals", "--no-save"],
+            ["backtest", SYMBOL, "-d", "300", "-s", "rsi", "--write-signals", "--no-save"],
         )
         self.assertEqual(result.exit_code, 0, result.output)
         rows = list_signals(source="backtest", symbol=SYMBOL)
@@ -70,14 +70,14 @@ class CliWriteSignalsTest(_CliDbTestCase):
             self.assertIsNone(row["backtest_id"])  # 未落 backtest_results
 
     def test_no_write_signals_flag_leaves_ledger_empty(self):
-        self.runner.invoke(cli, ["backtest", SYMBOL, "-d", "200", "-s", "rsi"])
+        self.runner.invoke(cli, ["backtest", SYMBOL, "-d", "300", "-s", "rsi"])
         self.assertEqual(list_signals(), [])
 
 
 class CliSignalsBackfillTest(_CliDbTestCase):
     def test_backfill_after_write_signals(self):
         self.runner.invoke(
-            cli, ["backtest", SYMBOL, "-d", "200", "-s", "rsi", "--write-signals"]
+            cli, ["backtest", SYMBOL, "-d", "300", "-s", "rsi", "--write-signals"]
         )
         result = self.runner.invoke(cli, ["signals", "backfill"])
         self.assertEqual(result.exit_code, 0, result.output)
@@ -96,7 +96,7 @@ class CliSignalsBackfillTest(_CliDbTestCase):
 
     def test_backfill_symbol_filter(self):
         self.runner.invoke(
-            cli, ["backtest", SYMBOL, "-d", "200", "-s", "rsi", "--write-signals"]
+            cli, ["backtest", SYMBOL, "-d", "300", "-s", "rsi", "--write-signals"]
         )
         result = self.runner.invoke(
             cli, ["signals", "backfill", "--symbol", "999999.SH"]
@@ -114,7 +114,7 @@ class CliSignalsStatsTest(_CliDbTestCase):
 
     def test_stats_after_write_and_backfill(self):
         self.runner.invoke(
-            cli, ["backtest", SYMBOL, "-d", "200", "-s", "rsi", "--write-signals"]
+            cli, ["backtest", SYMBOL, "-d", "300", "-s", "rsi", "--write-signals"]
         )
         self.runner.invoke(cli, ["signals", "backfill"])
         result = self.runner.invoke(cli, ["signals", "stats"])
@@ -127,7 +127,7 @@ class CliSignalsStatsTest(_CliDbTestCase):
 
     def test_stats_source_filter(self):
         self.runner.invoke(
-            cli, ["backtest", SYMBOL, "-d", "200", "-s", "rsi", "--write-signals"]
+            cli, ["backtest", SYMBOL, "-d", "300", "-s", "rsi", "--write-signals"]
         )
         result = self.runner.invoke(cli, ["signals", "stats", "--source", "monitor"])
         self.assertEqual(result.exit_code, 0, result.output)
@@ -142,7 +142,7 @@ class CliSignalsListTest(_CliDbTestCase):
 
     def test_list_shows_rows(self):
         self.runner.invoke(
-            cli, ["backtest", SYMBOL, "-d", "200", "-s", "rsi", "--write-signals"]
+            cli, ["backtest", SYMBOL, "-d", "300", "-s", "rsi", "--write-signals"]
         )
         result = self.runner.invoke(cli, ["signals", "list"])
         self.assertEqual(result.exit_code, 0, result.output)
@@ -151,7 +151,7 @@ class CliSignalsListTest(_CliDbTestCase):
 
     def test_list_status_filter(self):
         self.runner.invoke(
-            cli, ["backtest", SYMBOL, "-d", "200", "-s", "rsi", "--write-signals"]
+            cli, ["backtest", SYMBOL, "-d", "300", "-s", "rsi", "--write-signals"]
         )
         self.runner.invoke(cli, ["signals", "backfill"])
         pending = self.runner.invoke(cli, ["signals", "list", "--status", "pending"])

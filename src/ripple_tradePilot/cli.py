@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 
 from . import __version__
-from .config_loader import load_config, init_config, get_tushare_token, get_vote_threshold
+from .config_loader import load_config, init_config, get_vote_threshold
 from .signals.backtest_profile import (
     BACKTEST_STRATEGIES,
     COMBO_VOTE,
@@ -141,29 +141,29 @@ def backtest(symbol, days, strategy, cash, execution, benchmark, ledger, no_save
     from .backtest.report import compute_metrics, compute_trade_stats
     from .backtest.rules import MarketRules, price_limit_for_symbol
     from .backtest.serialize import serialize_backtest_result
-    from .data.tushare_loader import AdjustedDataUnavailableError, TushareDataLoader
+    from .data.stock_service import load_symbol_bars_db_first
 
     _reject_futures_symbol(symbol)
 
     try:
         config = load_config()
-        token = get_tushare_token(config)
     except Exception as e:
         click.echo(f"❌ 无法加载配置：{e}", err=True)
         sys.exit(1)
 
-    loader = TushareDataLoader(token, rate_limit_delay=float(config.get('tushare', {}).get('rate_limit_delay', 1.5)))
     end_date = datetime.now().strftime('%Y%m%d')
     start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
 
-    click.echo(f"加载行情：{symbol} {start_date} ~ {end_date}（前复权）")
-    try:
-        bars = list(loader.load_bars(symbol, start_date=start_date, end_date=end_date))
-    except AdjustedDataUnavailableError as e:
-        click.echo(f"❌ {e}", err=True)
-        sys.exit(1)
+    click.echo(f"加载行情：{symbol} {start_date} ~ {end_date}（前复权，库优先）")
+    # DB 优先：库内数据足够新则零网络；不足/过期时经 refresh 补拉（自带复权审计），
+    # 拉不到则回落库内现状——库空时下面的数据不足检查会给人话报错
+    bars = load_symbol_bars_db_first(
+        symbol, start_date, end_date, initial_days=max(days, 365))
     if len(bars) < 30:
-        click.echo(f"❌ 行情数据不足（{len(bars)} 条），请检查 token 权限或股票代码", err=True)
+        click.echo(
+            f"❌ 行情数据不足（{len(bars)} 条）。库内无该标的且补拉失败："
+            "请配置 tushare token（~/.tradepilot/config.yaml）或先在 Web 端添加该股票触发落库",
+            err=True)
         sys.exit(1)
 
     # A5：解析口径与 Web 端共用 resolve_backtest_strategy（显式 params > profile > 缺省链）。
@@ -336,25 +336,20 @@ def walkforward(symbol, days, strategy, splits, execution, warmup, select_by, no
     from .backtest.rules import MarketRules, price_limit_for_symbol
     from .backtest.serialize import serialize_walkforward_report
     from .backtest.walkforward import walk_forward
-    from .data.tushare_loader import AdjustedDataUnavailableError, TushareDataLoader
+    from .data.stock_service import load_symbol_bars_db_first
 
     _reject_futures_symbol(symbol)
 
     try:
         config = load_config()
-        token = get_tushare_token(config)
     except Exception as e:
         click.echo(f"❌ 无法加载配置：{e}", err=True)
         sys.exit(1)
 
-    loader = TushareDataLoader(token)
     end_date = datetime.now().strftime('%Y%m%d')
     start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
-    try:
-        bars = list(loader.load_bars(symbol, start_date=start_date, end_date=end_date))
-    except AdjustedDataUnavailableError as e:
-        click.echo(f"❌ {e}", err=True)
-        sys.exit(1)
+    bars = load_symbol_bars_db_first(
+        symbol, start_date, end_date, initial_days=days)
     if len(bars) < splits * 60:
         click.echo(f"❌ 数据不足（{len(bars)} 根 K 线），walk-forward 建议至少 {splits * 60} 根", err=True)
         sys.exit(1)
@@ -601,23 +596,15 @@ def config():
 @click.argument('symbol')
 def screen(symbol):
     """趋势筛选：均线多头排列 + 近 20 日涨幅"""
-    from .data.tushare_loader import AdjustedDataUnavailableError, TushareDataLoader
+    from .data.stock_service import load_symbol_bars_db_first
 
-    try:
-        cfg = load_config()
-        token = get_tushare_token(cfg)
-    except Exception as e:
-        click.echo(f"❌ 无法加载配置：{e}", err=True)
-        sys.exit(1)
-
-    loader = TushareDataLoader(token)
-    try:
-        bars = list(loader.load_bars(symbol, start_date=(datetime.now() - timedelta(days=90)).strftime('%Y%m%d')))
-    except AdjustedDataUnavailableError as e:
-        click.echo(f"❌ {e}", err=True)
-        sys.exit(1)
+    bars = load_symbol_bars_db_first(
+        symbol, (datetime.now() - timedelta(days=90)).strftime('%Y%m%d'))
     if len(bars) < 25:
-        click.echo(f"❌ 行情数据不足（{len(bars)} 条）", err=True)
+        click.echo(
+            f"❌ 行情数据不足（{len(bars)} 条）。库内无该标的且补拉失败："
+            "请配置 tushare token 或先在 Web 端添加该股票触发落库",
+            err=True)
         sys.exit(1)
 
     closes = [b.close for b in bars]
